@@ -1046,6 +1046,10 @@ Result VulkanContext::initContext(const HWDeviceDesc& desc,
 
   features_.populateWithAvailablePhysicalDeviceFeatures(*this, vkPhysicalDevice_);
 
+  // The query above fills the request structs with supported values, so resolve any mutually
+  // exclusive pairs before the request is checked and passed to vkCreateDevice().
+  features_.resolveMutuallyExclusiveFeatures();
+
   // ... and check whether they are available in the physical device (they should be)
   {
     auto featureCheckResult = features_.checkSelectedFeatures(availableFeatures);

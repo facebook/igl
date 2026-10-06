@@ -41,6 +41,21 @@ class NativeHWTextureBuffer : public igl::android::INativeHWTextureBuffer, publi
 
   Result createTextureInternal(AHardwareBuffer* buffer) override;
 
+  // Resolved usage contracts for a single AHB import: the VkImage usage flags for
+  // vkCreateImage and the matching IGL TextureDesc usage advertised on the texture.
+  struct AHBImportUsage {
+    VkImageUsageFlags imageUsage = 0;
+    TextureDesc::TextureUsage textureUsage = 0;
+  };
+
+  // Derives both usage contracts from the producer's AHB usage bits, the image aspect,
+  // and the resolved external format (0 for defined-format images). Attachment usages
+  // are dropped on the external-format path per VUID-VkImageCreateInfo-pNext-09457,
+  // since IGL only samples such images and never enables externalFormatResolve.
+  [[nodiscard]] static AHBImportUsage resolveAHBImportUsage(uint64_t ahbUsage,
+                                                            VkImageAspectFlags aspectMask,
+                                                            uint64_t externalFormat) noexcept;
+
   Result uploadInternal(TextureType type,
                         const TextureRangeDesc& range,
                         const void* IGL_NULLABLE data,

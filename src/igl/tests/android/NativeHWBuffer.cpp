@@ -23,6 +23,7 @@
 #include <igl/opengl/egl/PlatformDevice.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/PlatformDevice.h>
+#include <igl/vulkan/android/NativeHWBuffer.h>
 
 namespace igl::tests {
 
@@ -106,6 +107,34 @@ TEST_F(NativeHWBufferTest, getIglBufferUsage) {
               TextureDesc::TextureUsageBits::Storage);
   EXPECT_TRUE(getIglBufferUsage(AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT) |
               TextureDesc::TextureUsageBits::Attachment);
+}
+
+// resolveAHBImportUsage is protected; expose it to the test through a subclass.
+// No instance is ever created, so no Device is required.
+class TestableHWTextureBuffer : public igl::vulkan::android::NativeHWTextureBuffer {
+ public:
+  using NativeHWTextureBuffer::resolveAHBImportUsage;
+};
+
+TEST_F(NativeHWBufferTest, ResolveAHBImportUsageStripsAttachmentForExternalFormat) {
+  // Camera-style producer usage (sampled + color output), color aspect, external YUV format
+  // (e.g. 506): VUID-VkImageCreateInfo-pNext-09457 forbids attachment usage, so both
+  // contracts must come back sampled-only.
+  const auto external = TestableHWTextureBuffer::resolveAHBImportUsage(
+      AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE | AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT,
+      VK_IMAGE_ASPECT_COLOR_BIT,
+      /*externalFormat=*/506);
+  EXPECT_EQ(external.imageUsage, static_cast<VkImageUsageFlags>(VK_IMAGE_USAGE_SAMPLED_BIT));
+  EXPECT_EQ(external.textureUsage,
+            static_cast<TextureDesc::TextureUsage>(TextureDesc::TextureUsageBits::Sampled));
+
+  // Defined-format path keeps the attachment contract on both sides.
+  const auto defined = TestableHWTextureBuffer::resolveAHBImportUsage(
+      AHARDWAREBUFFER_USAGE_GPU_SAMPLED_IMAGE | AHARDWAREBUFFER_USAGE_GPU_COLOR_OUTPUT,
+      VK_IMAGE_ASPECT_COLOR_BIT,
+      /*externalFormat=*/0);
+  EXPECT_NE(defined.imageUsage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 0u);
+  EXPECT_NE(defined.textureUsage & TextureDesc::TextureUsageBits::Attachment, 0);
 }
 
 TEST_F(NativeHWBufferTest, allocateNativeHWBuffer) {

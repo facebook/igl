@@ -311,6 +311,60 @@ TEST_F(VulkanFeaturesTest, IntegerDotProductChainedOnceRequestedAndSurvivesCopy)
                              &featuresSrc.featuresShaderIntegerDotProduct));
 }
 
+// fragmentDensityMap vs pipelineFragmentShadingRate *******************************
+// populateWithAvailablePhysicalDeviceFeatures() overwrites chained structs with reported values,
+// so a GPU supporting both fragmentDensityMap and pipelineFragmentShadingRate would request
+// both, violating VUID-VkDeviceCreateInfo-fragmentDensityMap-04481 (fatal when validation runs
+// with terminateOnValidationError). resolveMutuallyExclusiveFeatures() drops the pipeline rate
+// IGL never uses whenever the density map is enabled.
+TEST_F(VulkanFeaturesTest, ResolveFragmentDensityMapPipelineShadingRateConflict) {
+  const igl::vulkan::VulkanContextConfig config;
+  igl::vulkan::VulkanFeatures features(config);
+
+  // Simulate a GPU reporting both features, as the supported-features query would fill them in.
+  features.featuresFragmentDensityMap.fragmentDensityMap = VK_TRUE;
+  features.featuresFragmentShadingRate.pipelineFragmentShadingRate = VK_TRUE;
+
+  features.resolveMutuallyExclusiveFeatures();
+
+  EXPECT_TRUE(features.featuresFragmentDensityMap.fragmentDensityMap);
+  EXPECT_FALSE(features.featuresFragmentShadingRate.pipelineFragmentShadingRate);
+}
+
+// Adreno 830 reports both fragmentDensityMap and primitiveFragmentShadingRate, violating
+// VUID-VkDeviceCreateInfo-fragmentDensityMap-04482. The resolver must drop the primitive rate
+// (and attachment rate) just like the pipeline rate.
+TEST_F(VulkanFeaturesTest, ResolveFragmentDensityMapPrimitiveShadingRateConflict) {
+  const igl::vulkan::VulkanContextConfig config;
+  igl::vulkan::VulkanFeatures features(config);
+
+  features.featuresFragmentDensityMap.fragmentDensityMap = VK_TRUE;
+  features.featuresFragmentShadingRate.primitiveFragmentShadingRate = VK_TRUE;
+  features.featuresFragmentShadingRate.attachmentFragmentShadingRate = VK_TRUE;
+  features.featuresMeshShader.primitiveFragmentShadingRateMeshShader = VK_TRUE;
+
+  features.resolveMutuallyExclusiveFeatures();
+
+  EXPECT_TRUE(features.featuresFragmentDensityMap.fragmentDensityMap);
+  EXPECT_FALSE(features.featuresFragmentShadingRate.primitiveFragmentShadingRate);
+  EXPECT_FALSE(features.featuresFragmentShadingRate.attachmentFragmentShadingRate);
+  EXPECT_FALSE(features.featuresMeshShader.primitiveFragmentShadingRateMeshShader);
+}
+
+// The resolution is narrowly scoped: without a density map there is no conflict, so a reported
+// pipeline rate is left alone.
+TEST_F(VulkanFeaturesTest, ResolveMutuallyExclusiveFeaturesKeepsPipelineWithoutDensityMap) {
+  const igl::vulkan::VulkanContextConfig config;
+  igl::vulkan::VulkanFeatures features(config);
+
+  features.featuresFragmentDensityMap.fragmentDensityMap = VK_FALSE;
+  features.featuresFragmentShadingRate.pipelineFragmentShadingRate = VK_TRUE;
+
+  features.resolveMutuallyExclusiveFeatures();
+
+  EXPECT_TRUE(features.featuresFragmentShadingRate.pipelineFragmentShadingRate);
+}
+
 // allAvailableExtensions initial state ********************************************
 TEST_F(VulkanFeaturesTest, AllAvailableExtensionsInitiallyEmpty) {
   const igl::vulkan::VulkanContextConfig config;

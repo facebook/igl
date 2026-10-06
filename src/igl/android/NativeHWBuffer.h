@@ -90,7 +90,7 @@ uint32_t getNativeHWFormat(TextureFormat iglFormat);
 uint32_t getNativeHWBufferUsage(const TextureDesc& desc);
 
 TextureFormat getIglFormat(uint32_t nativeFormat);
-TextureDesc::TextureUsage getIglBufferUsage(uint32_t nativeUsage);
+TextureDesc::TextureUsage getIglBufferUsage(uint64_t nativeUsage);
 
 Result allocateNativeHWBuffer(const TextureDesc& desc,
                               bool surfaceComposite,

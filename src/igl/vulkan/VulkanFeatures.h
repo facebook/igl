@@ -46,6 +46,16 @@ class VulkanFeatures final {
   [[nodiscard]] Result checkSelectedFeatures(
       const VulkanFeatures& availableFeatures) const noexcept;
 
+  /// @brief Resolves mutually exclusive requested features after
+  /// populateWithAvailablePhysicalDeviceFeatures(). That query overwrites every chained struct
+  /// with the device's reported values, so a GPU supporting both fragmentDensityMap and any
+  /// fragment shading rate would request both, violating
+  /// VUID-VkDeviceCreateInfo-fragmentDensityMap-04481 (pipeline) and -04482 (primitive).
+  /// IGL uses density maps and never uses shading rates, so the latter are dropped whenever
+  /// the former is enabled. Call after populateWithAvailablePhysicalDeviceFeatures() and
+  /// before vkCreateDevice().
+  void resolveMutuallyExclusiveFeatures() noexcept;
+
   VkPhysicalDeviceFeatures2 vkPhysicalDeviceFeatures2{};
 
   // Vulkan 1.1

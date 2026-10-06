@@ -182,6 +182,17 @@ void VulkanFeatures::populateWithAvailablePhysicalDeviceFeatures(
   context.vf_.vkGetPhysicalDeviceFeatures2(physicalDevice, &vkPhysicalDeviceFeatures2);
 }
 
+void VulkanFeatures::resolveMutuallyExclusiveFeatures() noexcept {
+  if (featuresFragmentDensityMap.fragmentDensityMap == VK_TRUE) {
+    featuresFragmentShadingRate.pipelineFragmentShadingRate = VK_FALSE;
+    featuresFragmentShadingRate.primitiveFragmentShadingRate = VK_FALSE;
+    featuresFragmentShadingRate.attachmentFragmentShadingRate = VK_FALSE;
+    // primitiveFragmentShadingRateMeshShader requires primitiveFragmentShadingRate, so it
+    // cannot stay enabled once the latter is dropped above.
+    featuresMeshShader.primitiveFragmentShadingRateMeshShader = VK_FALSE;
+  }
+}
+
 bool VulkanFeatures::hasExtension(const char* ext) const {
   for (const VkExtensionProperties& props : extensionProps_) {
     if (std::strcmp(ext, props.extensionName) == 0) {
