@@ -11,7 +11,7 @@
 #include <cstdint>
 #include <memory>
 #include <vector>
-#include <igl/Common.h>
+#include <igl/IGLFolly.h>
 #include <igl/webgpu/Buffer.h>
 
 namespace igl::webgpu {
