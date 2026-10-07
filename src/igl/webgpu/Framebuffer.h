@@ -9,8 +9,8 @@
 
 #include <memory>
 #include <vector>
+#include <webgpu/webgpu.h>
 #include <igl/Framebuffer.h>
-#include <igl/webgpu/Common.h>
 
 namespace igl::webgpu {
 
