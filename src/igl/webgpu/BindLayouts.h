@@ -14,7 +14,6 @@
 #include <string>
 #include <utility>
 #include <vector>
-#include <igl/Texture.h>
 #include <igl/webgpu/Common.h>
 #include <igl/webgpu/WgslReflection.h>
 
