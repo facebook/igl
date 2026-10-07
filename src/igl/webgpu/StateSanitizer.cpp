@@ -11,6 +11,7 @@
 #include <array>
 #include <cmath>
 #include <optional>
+#include <igl/webgpu/Common.h>
 #include <igl/webgpu/DeviceFeatureSet.h>
 
 namespace igl::webgpu {
