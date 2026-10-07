@@ -12,6 +12,7 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include <webgpu/webgpu.h>
 #include <igl/Buffer.h>
 #include <igl/Common.h>
 #include <igl/DepthStencilState.h>
@@ -19,7 +20,6 @@
 #include <igl/RenderPipelineState.h>
 #include <igl/SamplerState.h>
 #include <igl/VertexInputState.h>
-#include <igl/webgpu/WebGPUCompat.h>
 
 namespace igl::webgpu {
 

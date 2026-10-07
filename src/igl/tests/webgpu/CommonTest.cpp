@@ -16,6 +16,7 @@
 #include <tuple>
 #include <utility>
 #include <igl/Texture.h>
+#include <igl/webgpu/WebGPUCompat.h>
 
 namespace igl::tests {
 namespace {

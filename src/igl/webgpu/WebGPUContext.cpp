@@ -20,6 +20,7 @@
 #include <igl/webgpu/MipmapGenerator.h>
 #include <igl/webgpu/ResourcesBinder.h>
 #include <igl/webgpu/UniformArena.h>
+#include <igl/webgpu/WebGPUCompat.h>
 
 // @fb-only
 // @fb-only

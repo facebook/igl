@@ -8,6 +8,7 @@
 #include <igl/webgpu/Common.h>
 
 #include <atomic>
+#include <igl/webgpu/WebGPUCompat.h>
 
 namespace igl::webgpu {
 
