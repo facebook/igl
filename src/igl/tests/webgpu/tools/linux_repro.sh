@@ -23,7 +23,7 @@ build() {
   buck2 build "$MODE" "$1" --show-full-output | awk 'END { print $2 }'
 }
 BIN=$(build "public/src/igl:iglWebGPU${FLAVOR}Fbcode")
-LVP=$(build build_infra/vulkan:vulkan_lavapipe_libs)
+LVP=$(build fbsource//third-party/mesa/lavapipe:lavapipe_libs)
 SUPP=$(build public/src/igl:webgpu_lsan_suppressions)
 echo "binary: $BIN"
 
