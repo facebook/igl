@@ -8,7 +8,8 @@
 #pragma once
 
 #include <webgpu/webgpu.h>
-#include <igl/Core.h>
+#include <igl/Config.h>
+#include <igl/IGLFolly.h>
 
 #if IGL_PLATFORM_EMSCRIPTEN
 #include <emscripten/emscripten.h>
