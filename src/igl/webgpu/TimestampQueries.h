@@ -9,8 +9,10 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
+#include <webgpu/webgpu.h>
+#include <igl/Common.h>
 #include <igl/TimestampQueries.h>
-#include <igl/webgpu/Common.h>
 
 namespace igl::webgpu {
 
