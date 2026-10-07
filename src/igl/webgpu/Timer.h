@@ -10,8 +10,9 @@
 #include <cstdint>
 #include <memory>
 #include <optional>
+#include <webgpu/webgpu.h>
+#include <igl/Common.h>
 #include <igl/Timer.h>
-#include <igl/webgpu/Common.h>
 
 namespace igl::webgpu {
 
