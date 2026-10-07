@@ -7,6 +7,8 @@
 
 #include <igl/webgpu/RenderPipelineReflection.h>
 
+#include <igl/webgpu/Common.h>
+
 namespace igl::webgpu {
 
 namespace {

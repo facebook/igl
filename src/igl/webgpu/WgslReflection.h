@@ -13,9 +13,9 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <webgpu/webgpu.h>
 #include <igl/Shader.h>
 #include <igl/Uniform.h>
-#include <igl/webgpu/Common.h>
 
 namespace igl::webgpu {
 
