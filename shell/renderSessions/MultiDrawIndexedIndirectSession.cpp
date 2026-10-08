@@ -251,28 +251,14 @@ void MultiDrawIndexedIndirectSession::initialize() noexcept {
 
   // Indirect buffer with 3 DrawElementsIndirectCommand entries
   {
-    DrawElementsIndirectCommand indirectCommands[3];
-
-    // Command 0: Triangle (3 indices starting at firstIndex=0, baseVertex=0)
-    indirectCommands[0].count = 3;
-    indirectCommands[0].instanceCount = 1;
-    indirectCommands[0].firstIndex = 0;
-    indirectCommands[0].baseVertex = 0;
-    indirectCommands[0].reservedMustBeZero = 0;
-
-    // Command 1: Square (6 indices starting at firstIndex=3, baseVertex=0)
-    indirectCommands[1].count = 6;
-    indirectCommands[1].instanceCount = 1;
-    indirectCommands[1].firstIndex = 3;
-    indirectCommands[1].baseVertex = 0;
-    indirectCommands[1].reservedMustBeZero = 0;
-
-    // Command 2: Pentagon (9 indices starting at firstIndex=9, baseVertex=0)
-    indirectCommands[2].count = 9;
-    indirectCommands[2].instanceCount = 1;
-    indirectCommands[2].firstIndex = 9;
-    indirectCommands[2].baseVertex = 0;
-    indirectCommands[2].reservedMustBeZero = 0;
+    const DrawElementsIndirectCommand indirectCommands[3] = {
+        // Command 0: Triangle (3 indices starting at firstIndex=0, baseVertex=0)
+        {.count = 3, .instanceCount = 1, .firstIndex = 0, .baseVertex = 0, .reservedMustBeZero = 0},
+        // Command 1: Square (6 indices starting at firstIndex=3, baseVertex=0)
+        {.count = 6, .instanceCount = 1, .firstIndex = 3, .baseVertex = 0, .reservedMustBeZero = 0},
+        // Command 2: Pentagon (9 indices starting at firstIndex=9, baseVertex=0)
+        {.count = 9, .instanceCount = 1, .firstIndex = 9, .baseVertex = 0, .reservedMustBeZero = 0},
+    };
 
     const BufferDesc indirectBufDesc{
         .type = BufferDesc::BufferTypeBits::Storage | BufferDesc::BufferTypeBits::Indirect,
