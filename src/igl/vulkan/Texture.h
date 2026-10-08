@@ -77,7 +77,7 @@ class Texture : public ITexture {
  private:
   [[nodiscard]] bool needsRepacking(const TextureRangeDesc& range, size_t bytesPerRow) const final;
 
-  void clearColorTexture(const igl::Color& rgba);
+  void clearColorTexture(const Color& rgba);
 
  protected:
   /// @brief Uploads the texture's data to the device using the staging device in the context. This

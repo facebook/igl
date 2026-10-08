@@ -236,13 +236,13 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
 
   const uint32_t width = std::max(fb.getWidth() >> mipLevel, 1u);
   const uint32_t height = std::max(fb.getHeight() >> mipLevel, 1u);
-  const igl::Viewport viewport = {.x = 0.0f,
-                                  .y = 0.0f,
-                                  .width = static_cast<float>(width),
-                                  .height = static_cast<float>(height),
-                                  .minDepth = 0.0f,
-                                  .maxDepth = +1.0f};
-  const igl::ScissorRect scissor = {.x = 0, .y = 0, .width = width, .height = height};
+  const Viewport viewport = {.x = 0.0f,
+                             .y = 0.0f,
+                             .width = static_cast<float>(width),
+                             .height = static_cast<float>(height),
+                             .minDepth = 0.0f,
+                             .maxDepth = +1.0f};
+  const ScissorRect scissor = {.x = 0, .y = 0, .width = width, .height = height};
 
   bindViewport(viewport);
   bindScissorRect(scissor);
@@ -312,7 +312,7 @@ void RenderCommandEncoder::endEncoding() {
 
     // Retrieve the VulkanImage to check its usage
     const auto& vkTex = static_cast<Texture&>(*tex);
-    const igl::vulkan::VulkanImage& img = vkTex.getVulkanTexture().image;
+    const VulkanImage& img = vkTex.getVulkanTexture().image;
 
     if (tex->getProperties().isDepthOrStencil()) {
       // If the texture has not been marked as a depth/stencil attachment
@@ -363,12 +363,12 @@ void RenderCommandEncoder::endEncoding() {
 #endif
 }
 
-void RenderCommandEncoder::pushDebugGroupLabel(const char* label, const igl::Color& color) const {
+void RenderCommandEncoder::pushDebugGroupLabel(const char* label, const Color& color) const {
   IGL_DEBUG_ASSERT(label && *label);
   ivkCmdBeginDebugUtilsLabel(&ctx_.vf_, cmdBuffer_, label, color.toFloatPtr());
 }
 
-void RenderCommandEncoder::insertDebugEventLabel(const char* label, const igl::Color& color) const {
+void RenderCommandEncoder::insertDebugEventLabel(const char* label, const Color& color) const {
   IGL_DEBUG_ASSERT(label && *label);
   ivkCmdInsertDebugUtilsLabel(&ctx_.vf_, cmdBuffer_, label, color.toFloatPtr());
 }
@@ -465,16 +465,15 @@ void RenderCommandEncoder::bindDepthStencilState(
   if (!IGL_DEBUG_VERIFY(depthStencilState)) {
     return;
   }
-  const igl::vulkan::DepthStencilState* state =
-      static_cast<DepthStencilState*>(depthStencilState.get());
+  const DepthStencilState* state = static_cast<DepthStencilState*>(depthStencilState.get());
 
-  const igl::DepthStencilStateDesc& desc = state->desc;
+  const DepthStencilStateDesc& desc = state->desc;
 
   dynamicState_.depthWriteEnable = desc.isDepthWriteEnabled;
   dynamicState_.setDepthCompareOp(compareFunctionToVkCompareOp(desc.compareFunction));
   dynamicState_.stencilTestEnable = false;
 
-  auto setStencilState = [this](VkStencilFaceFlagBits faceMask, const igl::StencilStateDesc& desc) {
+  auto setStencilState = [this](VkStencilFaceFlagBits faceMask, const StencilStateDesc& desc) {
     const VkStencilOp failOp = stencilOperationToVkStencilOp(desc.stencilFailureOperation);
     const VkStencilOp passOp = stencilOperationToVkStencilOp(desc.depthStencilPassOperation);
     const VkStencilOp depthFailOp = stencilOperationToVkStencilOp(desc.depthFailureOperation);
@@ -807,7 +806,7 @@ void RenderCommandEncoder::multiDrawIndirect(IBuffer& indirectBuffer,
 
   ctx_.drawCallCount_ += drawCallCountEnabled_;
 
-  const igl::vulkan::Buffer* bufIndirect = static_cast<Buffer*>(&indirectBuffer);
+  const Buffer* bufIndirect = static_cast<Buffer*>(&indirectBuffer);
 
   ctx_.vf_.vkCmdDrawIndirect(cmdBuffer_,
                              bufIndirect->getVkBuffer(),
@@ -832,7 +831,7 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(IBuffer& indirectBuffer,
 
   ctx_.drawCallCount_ += drawCallCountEnabled_;
 
-  const igl::vulkan::Buffer* bufIndirect = static_cast<Buffer*>(&indirectBuffer);
+  const Buffer* bufIndirect = static_cast<Buffer*>(&indirectBuffer);
 
   ctx_.vf_.vkCmdDrawIndexedIndirect(cmdBuffer_,
                                     bufIndirect->getVkBuffer(),
@@ -1026,7 +1025,7 @@ void RenderCommandEncoder::ensureVertexBuffers() {
     return;
   }
 
-  const igl::vulkan::VertexInputState* vi =
+  const VertexInputState* vi =
       static_cast<VertexInputState*>(rps_->getRenderPipelineDesc().vertexInputState.get());
 
   if (!vi) {
@@ -1052,10 +1051,10 @@ void RenderCommandEncoder::ensureVertexBuffers() {
   }
 }
 
-void RenderCommandEncoder::blitColorImage(const igl::vulkan::VulkanImage& srcImage,
-                                          const igl::vulkan::VulkanImage& destImage,
-                                          const igl::TextureRangeDesc& srcRange,
-                                          const igl::TextureRangeDesc& destRange) {
+void RenderCommandEncoder::blitColorImage(const VulkanImage& srcImage,
+                                          const VulkanImage& destImage,
+                                          const TextureRangeDesc& srcRange,
+                                          const TextureRangeDesc& destRange) {
   const VkImageSubresourceRange srcResourceRange = {
       .aspectMask = srcImage.getImageAspectFlags(),
       .baseMipLevel = srcRange.mipLevel,
@@ -1173,7 +1172,7 @@ void RenderCommandEncoder::processDependencies(const Dependencies& dependencies)
         }
         VkPipelineStageFlags dstStageFlags =
             VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-        const auto* vkBuf = static_cast<const igl::vulkan::Buffer*>(buf);
+        const auto* vkBuf = static_cast<const Buffer*>(buf);
         const VkBufferUsageFlags flags = vkBuf->getBufferUsageFlags();
         if ((flags & VK_BUFFER_USAGE_INDEX_BUFFER_BIT) != 0 ||
             (flags & VK_BUFFER_USAGE_VERTEX_BUFFER_BIT) != 0) {

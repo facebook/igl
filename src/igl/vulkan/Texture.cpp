@@ -46,7 +46,7 @@ Result Texture::create(const TextureDesc& desc) {
                                 ? ctx.getClosestDepthStencilFormat(desc_.format)
                                 : textureFormatToVkFormat(desc_.format);
 
-  const igl::TextureType type = desc_.type;
+  const TextureType type = desc_.type;
   if (!IGL_DEBUG_VERIFY(type == TextureType::TwoD || type == TextureType::TwoDArray ||
                         type == TextureType::Cube || type == TextureType::ThreeD)) {
     IGL_DEBUG_ABORT("Only 1D, 1D array, 2D, 2D array, 3D and cubemap textures are supported");
@@ -284,7 +284,7 @@ Result Texture::createView(const Texture& baseTexture, const TextureViewDesc& de
   desc_.numLayers = desc.numLayers;
   desc_.numMipLevels = desc.numMipLevels;
 
-  const igl::TextureType type = desc_.type;
+  const TextureType type = desc_.type;
   if (!IGL_DEBUG_VERIFY(type == TextureType::TwoD || type == TextureType::TwoDArray ||
                         type == TextureType::Cube || type == TextureType::ThreeD)) {
     IGL_DEBUG_ABORT("Only 2D, 2D array, 3D and cubemap base textures are supported");
@@ -398,7 +398,7 @@ Result Texture::uploadInternal(TextureType /*type*/,
     return Result{};
   }
 
-  const igl::vulkan::VulkanImage& vulkanImage = texture_->image;
+  const VulkanImage& vulkanImage = texture_->image;
   if (vulkanImage.isMappedPtrAccessible()) {
     checked_memcpy(
         vulkanImage.mappedPtr_, vulkanImage.allocatedSize, data, bytesPerRow * range.width);
@@ -587,12 +587,12 @@ uint32_t Texture::getNumVkLayers() const {
   return desc_.type == TextureType::Cube ? 6u : desc_.numLayers;
 }
 
-void Texture::clearColorTexture(const igl::Color& rgba) {
+void Texture::clearColorTexture(const Color& rgba) {
   if (!texture_) {
     return;
   }
 
-  const igl::vulkan::VulkanImage& img = texture_->image;
+  const VulkanImage& img = texture_->image;
   IGL_DEBUG_ASSERT(img.valid());
 
   const auto& wrapper = img.ctx_->stagingDevice_->immediate->acquire();

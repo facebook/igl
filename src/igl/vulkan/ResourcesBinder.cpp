@@ -134,7 +134,7 @@ void ResourcesBinder::bindTexture(uint32_t index, Texture* tex) {
 
 #if IGL_DEBUG_ABORT_ENABLED
   if (newTexture) {
-    const igl::vulkan::VulkanImage& img = newTexture->image;
+    const VulkanImage& img = newTexture->image;
     IGL_DEBUG_ASSERT(img.samples_ == VK_SAMPLE_COUNT_1_BIT,
                      "Multisampled images cannot be sampled in shaders");
     if (bindPoint_ == VK_PIPELINE_BIND_POINT_GRAPHICS) {
@@ -186,7 +186,7 @@ void ResourcesBinder::bindStorageImage(uint32_t index, Texture* tex) {
 
 #if IGL_DEBUG_ABORT_ENABLED
   if (newTexture) {
-    const igl::vulkan::VulkanImage& img = newTexture->image;
+    const VulkanImage& img = newTexture->image;
     IGL_DEBUG_ASSERT(img.samples_ == VK_SAMPLE_COUNT_1_BIT,
                      "Multisampled images cannot be sampled in shaders");
     // If you trip this assert, then you are likely using an IGL texture
@@ -212,13 +212,13 @@ void ResourcesBinder::bindStorageImage(uint32_t index, Texture* tex) {
   }
 }
 
-void ResourcesBinder::updateBindings(VkPipelineLayout layout, const vulkan::PipelineState& state) {
+void ResourcesBinder::updateBindings(VkPipelineLayout layout, const PipelineState& state) {
   ctx_.features().has_VK_EXT_descriptor_buffer ? updateBindingsByDescriptorBuffer(layout, state)
                                                : updateBindingsByDescriptorSet(layout, state);
 }
 
 void ResourcesBinder::updateBindingsByDescriptorBuffer(VkPipelineLayout layout,
-                                                       const vulkan::PipelineState& state) {
+                                                       const PipelineState& state) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_UPDATE);
 
   IGL_DEBUG_ASSERT(layout != VK_NULL_HANDLE);
@@ -255,7 +255,7 @@ void ResourcesBinder::updateBindingsByDescriptorBuffer(VkPipelineLayout layout,
 }
 
 void ResourcesBinder::updateBindingsByDescriptorSet(VkPipelineLayout layout,
-                                                    const vulkan::PipelineState& state) {
+                                                    const PipelineState& state) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_UPDATE);
 
   IGL_DEBUG_ASSERT(layout != VK_NULL_HANDLE);

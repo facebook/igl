@@ -160,7 +160,7 @@ class RenderPipelineState final : public IRenderPipelineState, public PipelineSt
   /** @brief Caches the render pipeline parameters passed in `desc` for later use. A pipeline isn't
    * realized until `getVkPipeline()` is called and all mutable parameters are provided.
    */
-  RenderPipelineState(const igl::vulkan::Device& device, RenderPipelineDesc desc);
+  RenderPipelineState(const Device& device, RenderPipelineDesc desc);
   ~RenderPipelineState() override;
 
   /** @brief Creates a pipeline with the base parameters provided during construction and all
@@ -175,7 +175,7 @@ class RenderPipelineState final : public IRenderPipelineState, public PipelineSt
   /// @brief Defers destruction of all cached pipelines and the pipeline layout
   void deferDestroyPipelinesAndLayout(const VulkanContext& ctx) const;
 
-  int getIndexByName(const igl::NameHandle& name, ShaderStage stage) const override;
+  int getIndexByName(const NameHandle& name, ShaderStage stage) const override;
   int getIndexByName(const std::string& name, ShaderStage stage) const override;
 
   std::shared_ptr<IRenderPipelineReflection> renderPipelineReflection() override;
@@ -183,7 +183,7 @@ class RenderPipelineState final : public IRenderPipelineState, public PipelineSt
       const IRenderPipelineReflection& renderPipelineReflection) override;
 
  private:
-  const igl::vulkan::Device& device_;
+  const Device& device_;
 
   VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo_{};
 

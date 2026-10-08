@@ -2811,7 +2811,7 @@ BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextureDesc
   // ternary guard, so these are false positives.
   // NOLINTBEGIN(facebook-hte-NullableDereference)
   const uint32_t usageMaskPipeline =
-      compatiblePipeline ? static_cast<const igl::vulkan::RenderPipelineState&>(*compatiblePipeline)
+      compatiblePipeline ? static_cast<const RenderPipelineState&>(*compatiblePipeline)
                                .getSpvModuleInfo()
                                .usageMaskTextures
                          : 0UL;
@@ -2884,10 +2884,10 @@ BindGroupTextureHandle VulkanContext::createBindGroup(const BindGroupTextureDesc
     if (compatiblePipeline ? (usageMaskPipeline & (1UL << loc)) == 0 : !desc.textures[loc]) {
       continue;
     }
-    const igl::vulkan::VulkanTexture& texture =
+    const VulkanTexture& texture =
         desc.textures[loc] ? static_cast<Texture*>(desc.textures[loc].get())->getVulkanTexture()
                            : *textures_.objects_[0]; // use a dummy texture when necessary
-    const igl::vulkan::VulkanSampler& sampler =
+    const VulkanSampler& sampler =
         desc.samplers[loc]
             ? *samplers_.get(static_cast<SamplerState&>(*desc.samplers[loc]).sampler_)
             : samplers_.objects_[0]; // use a dummy sampler when necessary

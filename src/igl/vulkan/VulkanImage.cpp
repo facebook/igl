@@ -1192,7 +1192,7 @@ void VulkanImage::transitionLayout(VkCommandBuffer cmdBuf,
 }
 
 void VulkanImage::clearColorImage(VkCommandBuffer commandBuffer,
-                                  const igl::Color& rgba,
+                                  const Color& rgba,
                                   const VkImageSubresourceRange* subresourceRange) const {
   IGL_DEBUG_ASSERT((usageFlags_ & VK_IMAGE_USAGE_TRANSFER_DST_BIT) != 0);
   IGL_DEBUG_ASSERT(samples_ == VK_SAMPLE_COUNT_1_BIT);

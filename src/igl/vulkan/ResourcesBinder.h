@@ -72,16 +72,15 @@ class ResourcesBinder final {
 
   /// @brief Convenience function that updates all bindings in the context for all resource types
   /// that have been modified since the last time this function was called
-  void updateBindings(VkPipelineLayout layout, const vulkan::PipelineState& state);
+  void updateBindings(VkPipelineLayout layout, const PipelineState& state);
 
   /// @brief If the pipeline passed in as a parameter is different than the last pipeline bound
   /// through this class, binds it and cache it as the last pipeline bound. Does nothing otherwise
   void bindPipeline(VkPipeline pipeline, const util::SpvModuleInfo* info);
 
  private:
-  void updateBindingsByDescriptorSet(VkPipelineLayout layout, const vulkan::PipelineState& state);
-  void updateBindingsByDescriptorBuffer(VkPipelineLayout layout,
-                                        const vulkan::PipelineState& state);
+  void updateBindingsByDescriptorSet(VkPipelineLayout layout, const PipelineState& state);
+  void updateBindingsByDescriptorBuffer(VkPipelineLayout layout, const PipelineState& state);
 
  private:
   friend class VulkanContext;

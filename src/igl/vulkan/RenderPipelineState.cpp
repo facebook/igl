@@ -263,23 +263,22 @@ VkBlendFactor blendFactorToVkBlendFactor(BlendFactor value) {
 
 VkColorComponentFlags colorWriteMaskToVkColorComponentFlags(ColorWriteMask value) {
   VkColorComponentFlags result = 0;
-  if ((value & igl::kColorWriteBitsRed) != 0) {
+  if ((value & kColorWriteBitsRed) != 0) {
     result |= VK_COLOR_COMPONENT_R_BIT;
   }
-  if ((value & igl::kColorWriteBitsGreen) != 0) {
+  if ((value & kColorWriteBitsGreen) != 0) {
     result |= VK_COLOR_COMPONENT_G_BIT;
   }
-  if ((value & igl::kColorWriteBitsBlue) != 0) {
+  if ((value & kColorWriteBitsBlue) != 0) {
     result |= VK_COLOR_COMPONENT_B_BIT;
   }
-  if ((value & igl::kColorWriteBitsAlpha) != 0) {
+  if ((value & kColorWriteBitsAlpha) != 0) {
     result |= VK_COLOR_COMPONENT_A_BIT;
   }
   return result;
 }
 
-RenderPipelineState::RenderPipelineState(const igl::vulkan::Device& device,
-                                         RenderPipelineDesc desc) :
+RenderPipelineState::RenderPipelineState(const Device& device, RenderPipelineDesc desc) :
   IRenderPipelineState(desc),
   PipelineState(device.getVulkanContext(),
                 desc.shaderStages.get(),
@@ -291,8 +290,7 @@ RenderPipelineState::RenderPipelineState(const igl::vulkan::Device& device,
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   // Iterate and cache vertex input bindings and attributes
-  const igl::vulkan::VertexInputState* vstate =
-      static_cast<VertexInputState*>(desc_.vertexInputState.get());
+  const VertexInputState* vstate = static_cast<VertexInputState*>(desc_.vertexInputState.get());
 
   vertexInputStateCreateInfo_ = {.sType =
                                      VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
@@ -471,7 +469,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
        dualSrcBlendSupported = dualSrcBlendSupported](auto attachment) mutable {
         if (attachment.textureFormat != TextureFormat::Invalid) {
           // In Vulkan color write bits are part of blending.
-          if (!attachment.blendEnabled && attachment.colorWriteMask == igl::kColorWriteBitsAll) {
+          if (!attachment.blendEnabled && attachment.colorWriteMask == kColorWriteBitsAll) {
             colorBlendAttachmentStates.push_back(VkPipelineColorBlendAttachmentState{
                 .srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
                 .dstColorBlendFactor = VK_BLEND_FACTOR_ZERO,
@@ -651,7 +649,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
   return pipeline;
 }
 
-int RenderPipelineState::getIndexByName(const igl::NameHandle& name, ShaderStage stage) const {
+int RenderPipelineState::getIndexByName(const NameHandle& name, ShaderStage stage) const {
   IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
   (void)name;
   (void)stage;

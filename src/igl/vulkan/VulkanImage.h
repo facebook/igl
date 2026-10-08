@@ -270,7 +270,7 @@ class VulkanImage final {
                         VkPipelineStageFlags dstStageMask,
                         const VkImageSubresourceRange& subresourceRange) const;
   void clearColorImage(VkCommandBuffer commandBuffer,
-                       const igl::Color& rgba,
+                       const Color& rgba,
                        const VkImageSubresourceRange* subresourceRange = nullptr) const;
 
   [[nodiscard]] VkImageAspectFlags getImageAspectFlags() const;

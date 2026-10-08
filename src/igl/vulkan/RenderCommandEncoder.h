@@ -46,8 +46,8 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
   /// dependent textures to `VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL`
   void endEncoding() override;
 
-  void pushDebugGroupLabel(const char* label, const igl::Color& color) const override;
-  void insertDebugEventLabel(const char* label, const igl::Color& color) const override;
+  void pushDebugGroupLabel(const char* label, const Color& color) const override;
+  void insertDebugEventLabel(const char* label, const Color& color) const override;
   void popDebugGroupLabel() const override;
 
   /// @brief Sets the viewport size specified in `viewport`. This function flips the viewport in the
@@ -130,10 +130,10 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
   /// draw calls.
   bool setDrawCallCountEnabled(bool value);
 
-  void blitColorImage(const igl::vulkan::VulkanImage& srcImage,
-                      const igl::vulkan::VulkanImage& destImage,
-                      const igl::TextureRangeDesc& srcRange,
-                      const igl::TextureRangeDesc& destRange);
+  void blitColorImage(const VulkanImage& srcImage,
+                      const VulkanImage& destImage,
+                      const TextureRangeDesc& srcRange,
+                      const TextureRangeDesc& destRange);
 
  private:
   RenderCommandEncoder(const std::shared_ptr<CommandBuffer>& commandBuffer, VulkanContext& ctx);
@@ -172,7 +172,7 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
 
   Dependencies dependencies_ = {};
 
-  const igl::vulkan::RenderPipelineState* rps_ = nullptr;
+  const RenderPipelineState* rps_ = nullptr;
   BindGroupTextureHandle pendingBindGroupTexture_ = {};
   BindGroupBufferHandle pendingBindGroupBuffer_ = {};
   uint32_t numDynamicOffsets_ = 0;
