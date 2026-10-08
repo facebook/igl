@@ -389,7 +389,7 @@ void TQSession::initialize() noexcept {
   };
 
   // init uniforms
-  fragmentParameters_ = FragmentFormat{{1.0f, 1.0f, 1.0f}};
+  fragmentParameters_ = FragmentFormat{.color = {1.0f, 1.0f, 1.0f}};
 
   const BufferDesc fpDesc{
       .type = BufferDesc::BufferTypeBits::Uniform,
