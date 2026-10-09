@@ -41,92 +41,92 @@ TEST(PrimitiveDescTest, CopyPreservesFields) {
 // --- Quad::inputStateDesc() ---
 
 TEST(QuadInputStateDescTest, AttributeCount) {
-  const igl::VertexInputStateDesc desc = iglu::vertexdata::Quad::inputStateDesc();
+  const VertexInputStateDesc desc = iglu::vertexdata::Quad::inputStateDesc();
   EXPECT_EQ(desc.numAttributes, 2u);
 }
 
 TEST(QuadInputStateDescTest, PositionAttributeFormat) {
-  const igl::VertexInputStateDesc desc = iglu::vertexdata::Quad::inputStateDesc();
+  const VertexInputStateDesc desc = iglu::vertexdata::Quad::inputStateDesc();
   ASSERT_GE(desc.numAttributes, 1u);
   EXPECT_EQ(desc.attributes[0].format, igl::VertexAttributeFormat::Float3);
 }
 
 TEST(QuadInputStateDescTest, PositionAttributeName) {
-  const igl::VertexInputStateDesc desc = iglu::vertexdata::Quad::inputStateDesc();
+  const VertexInputStateDesc desc = iglu::vertexdata::Quad::inputStateDesc();
   ASSERT_GE(desc.numAttributes, 1u);
   EXPECT_EQ(desc.attributes[0].name, "a_position");
 }
 
 TEST(QuadInputStateDescTest, PositionAttributeLocation) {
-  const igl::VertexInputStateDesc desc = iglu::vertexdata::Quad::inputStateDesc();
+  const VertexInputStateDesc desc = iglu::vertexdata::Quad::inputStateDesc();
   ASSERT_GE(desc.numAttributes, 1u);
   EXPECT_EQ(desc.attributes[0].location, 0);
 }
 
 TEST(QuadInputStateDescTest, PositionAttributeBufferIndex) {
-  const igl::VertexInputStateDesc desc = iglu::vertexdata::Quad::inputStateDesc();
+  const VertexInputStateDesc desc = iglu::vertexdata::Quad::inputStateDesc();
   ASSERT_GE(desc.numAttributes, 1u);
   EXPECT_EQ(desc.attributes[0].bufferIndex, 0u);
 }
 
 TEST(QuadInputStateDescTest, PositionAttributeOffset) {
-  const igl::VertexInputStateDesc desc = iglu::vertexdata::Quad::inputStateDesc();
+  const VertexInputStateDesc desc = iglu::vertexdata::Quad::inputStateDesc();
   ASSERT_GE(desc.numAttributes, 1u);
   EXPECT_EQ(desc.attributes[0].offset, offsetof(iglu::vertexdata::VertexPosUv, position));
 }
 
 TEST(QuadInputStateDescTest, UvAttributeFormat) {
-  const igl::VertexInputStateDesc desc = iglu::vertexdata::Quad::inputStateDesc();
+  const VertexInputStateDesc desc = iglu::vertexdata::Quad::inputStateDesc();
   ASSERT_GE(desc.numAttributes, 2u);
   EXPECT_EQ(desc.attributes[1].format, igl::VertexAttributeFormat::Float2);
 }
 
 TEST(QuadInputStateDescTest, UvAttributeName) {
-  const igl::VertexInputStateDesc desc = iglu::vertexdata::Quad::inputStateDesc();
+  const VertexInputStateDesc desc = iglu::vertexdata::Quad::inputStateDesc();
   ASSERT_GE(desc.numAttributes, 2u);
   EXPECT_EQ(desc.attributes[1].name, "a_uv");
 }
 
 TEST(QuadInputStateDescTest, UvAttributeLocation) {
-  const igl::VertexInputStateDesc desc = iglu::vertexdata::Quad::inputStateDesc();
+  const VertexInputStateDesc desc = iglu::vertexdata::Quad::inputStateDesc();
   ASSERT_GE(desc.numAttributes, 2u);
   EXPECT_EQ(desc.attributes[1].location, 1);
 }
 
 TEST(QuadInputStateDescTest, UvAttributeBufferIndex) {
-  const igl::VertexInputStateDesc desc = iglu::vertexdata::Quad::inputStateDesc();
+  const VertexInputStateDesc desc = iglu::vertexdata::Quad::inputStateDesc();
   ASSERT_GE(desc.numAttributes, 2u);
   EXPECT_EQ(desc.attributes[1].bufferIndex, 0u);
 }
 
 TEST(QuadInputStateDescTest, UvAttributeOffset) {
-  const igl::VertexInputStateDesc desc = iglu::vertexdata::Quad::inputStateDesc();
+  const VertexInputStateDesc desc = iglu::vertexdata::Quad::inputStateDesc();
   ASSERT_GE(desc.numAttributes, 2u);
   EXPECT_EQ(desc.attributes[1].offset, offsetof(iglu::vertexdata::VertexPosUv, uv));
 }
 
 TEST(QuadInputStateDescTest, InputBindingCount) {
-  const igl::VertexInputStateDesc desc = iglu::vertexdata::Quad::inputStateDesc();
+  const VertexInputStateDesc desc = iglu::vertexdata::Quad::inputStateDesc();
   EXPECT_EQ(desc.numInputBindings, 1u);
 }
 
 TEST(QuadInputStateDescTest, InputBindingStride) {
-  const igl::VertexInputStateDesc desc = iglu::vertexdata::Quad::inputStateDesc();
+  const VertexInputStateDesc desc = iglu::vertexdata::Quad::inputStateDesc();
   ASSERT_GE(desc.numInputBindings, 1u);
   EXPECT_EQ(desc.inputBindings[0].stride, sizeof(iglu::vertexdata::VertexPosUv));
 }
 
 TEST(QuadInputStateDescTest, DescriptorConsistency) {
-  const igl::VertexInputStateDesc desc1 = iglu::vertexdata::Quad::inputStateDesc();
-  const igl::VertexInputStateDesc desc2 = iglu::vertexdata::Quad::inputStateDesc();
+  const VertexInputStateDesc desc1 = iglu::vertexdata::Quad::inputStateDesc();
+  const VertexInputStateDesc desc2 = iglu::vertexdata::Quad::inputStateDesc();
   EXPECT_EQ(desc1, desc2);
 }
 
 // --- RenderToTextureQuad ---
 
 TEST(RenderToTextureQuadTest, InputStateDescMatchesQuad) {
-  const igl::VertexInputStateDesc quadDesc = iglu::vertexdata::Quad::inputStateDesc();
-  const igl::VertexInputStateDesc rttDesc = iglu::vertexdata::RenderToTextureQuad::inputStateDesc();
+  const VertexInputStateDesc quadDesc = iglu::vertexdata::Quad::inputStateDesc();
+  const VertexInputStateDesc rttDesc = iglu::vertexdata::RenderToTextureQuad::inputStateDesc();
   EXPECT_EQ(quadDesc, rttDesc);
 }
 

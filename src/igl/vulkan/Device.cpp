@@ -1012,7 +1012,7 @@ BackendVersion Device::getBackendVersionInternal() const {
 }
 
 Holder<BindGroupTextureHandle> Device::createBindGroupInternal(
-    const igl::BindGroupTextureDesc& desc,
+    const BindGroupTextureDesc& desc,
     const IRenderPipelineState* IGL_NULLABLE compatiblePipeline,
     Result* IGL_NULLABLE outResult) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
@@ -1023,7 +1023,7 @@ Holder<BindGroupTextureHandle> Device::createBindGroupInternal(
   return {this, ctx_->createBindGroup(desc, compatiblePipeline, outResult)};
 }
 
-Holder<BindGroupBufferHandle> Device::createBindGroupInternal(const igl::BindGroupBufferDesc& desc,
+Holder<BindGroupBufferHandle> Device::createBindGroupInternal(const BindGroupBufferDesc& desc,
                                                               Result* IGL_NULLABLE outResult) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   IGL_DEBUG_ASSERT(ctx_);

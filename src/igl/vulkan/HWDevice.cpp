@@ -39,7 +39,7 @@ std::unique_ptr<Device> HWDevice::create(std::unique_ptr<VulkanContext> ctx,
                                          size_t numExtraDeviceExtensions,
                                          const char* IGL_NULLABLE* IGL_NULLABLE
                                              extraDeviceExtensions,
-                                         const igl::vulkan::VulkanFeatures* IGL_NULLABLE features,
+                                         const VulkanFeatures* IGL_NULLABLE features,
                                          const char* IGL_NULLABLE debugName,
                                          Result* IGL_NULLABLE outResult) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);

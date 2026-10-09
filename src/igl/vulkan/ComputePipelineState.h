@@ -18,7 +18,7 @@ class Device;
 
 class ComputePipelineState final : public IComputePipelineState, public PipelineState {
  public:
-  ComputePipelineState(const igl::vulkan::Device& device, ComputePipelineDesc desc);
+  ComputePipelineState(const Device& device, ComputePipelineDesc desc);
   ~ComputePipelineState() override;
   ComputePipelineState(const ComputePipelineState&) = delete;
   ComputePipelineState& operator=(const ComputePipelineState&) = delete;
@@ -35,7 +35,7 @@ class ComputePipelineState final : public IComputePipelineState, public Pipeline
   }
 
  private:
-  const igl::vulkan::Device& device_;
+  const Device& device_;
   ComputePipelineDesc desc_;
 
   // a Vulkan pipeline owned by this ComputePipelineState object

@@ -326,7 +326,7 @@ std::shared_ptr<ITexture> createCVPixelBufferTextureWithSize(TextureFormat forma
                                                              const size_t height,
                                                              const std::shared_ptr<IDevice>& device,
                                                              Result& outResult) {
-  const igl::BackendType backend = device->getBackendType();
+  const BackendType backend = device->getBackendType();
   CVPixelBufferRef pixelBuffer = nullptr;
   NSDictionary* bufferAttributes = @{
     (NSString*)kCVPixelBufferIOSurfacePropertiesKey : @{},

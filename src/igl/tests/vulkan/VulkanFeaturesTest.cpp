@@ -89,7 +89,7 @@ TEST_F(VulkanFeaturesTest, CheckSelectedFeaturesAllPresent) {
   const igl::vulkan::VulkanFeatures requested(config);
   const igl::vulkan::VulkanFeatures available(config);
 
-  const igl::Result result = requested.checkSelectedFeatures(available);
+  const Result result = requested.checkSelectedFeatures(available);
   EXPECT_TRUE(result.isOk());
 }
 
@@ -168,7 +168,7 @@ TEST_F(VulkanFeaturesTest, CheckSelectedFeaturesMissingCoreFeature) {
   igl::vulkan::VulkanFeatures available(config);
   available.vkPhysicalDeviceFeatures2.features.dualSrcBlend = VK_FALSE;
 
-  const igl::Result result = requested.checkSelectedFeatures(available);
+  const Result result = requested.checkSelectedFeatures(available);
 #if IGL_PLATFORM_APPLE
   EXPECT_TRUE(result.isOk());
 #else
@@ -185,7 +185,7 @@ TEST_F(VulkanFeaturesTest, CheckSelectedFeaturesMissingMultiview) {
   igl::vulkan::VulkanFeatures available(config);
   available.featuresMultiview.multiview = VK_FALSE;
 
-  const igl::Result result = requested.checkSelectedFeatures(available);
+  const Result result = requested.checkSelectedFeatures(available);
 #if IGL_PLATFORM_APPLE
   EXPECT_TRUE(result.isOk());
 #else
@@ -218,7 +218,7 @@ TEST_F(VulkanFeaturesTest, CheckSelectedFeaturesDescriptorIndexingEnabledAllPres
   const igl::vulkan::VulkanFeatures requested(config);
   const igl::vulkan::VulkanFeatures available(config);
 
-  const igl::Result result = requested.checkSelectedFeatures(available);
+  const Result result = requested.checkSelectedFeatures(available);
   EXPECT_TRUE(result.isOk());
 }
 
@@ -249,7 +249,7 @@ TEST_F(VulkanFeaturesTest, CheckSelectedFeaturesMissingShaderDrawParameters) {
   igl::vulkan::VulkanFeatures available(config);
   available.featuresShaderDrawParameters.shaderDrawParameters = VK_FALSE;
 
-  const igl::Result result = requested.checkSelectedFeatures(available);
+  const Result result = requested.checkSelectedFeatures(available);
 #if IGL_PLATFORM_APPLE
   EXPECT_TRUE(result.isOk());
 #else
@@ -429,7 +429,7 @@ TEST_F(VulkanFeaturesTest, CheckSelectedFeaturesDescriptorIndexingEnabledMissing
   // Remove one of the required descriptor-indexing features from "available"
   available.featuresDescriptorIndexing.shaderSampledImageArrayNonUniformIndexing = VK_FALSE;
 
-  const igl::Result result = requested.checkSelectedFeatures(available);
+  const Result result = requested.checkSelectedFeatures(available);
 #if IGL_PLATFORM_APPLE
   EXPECT_TRUE(result.isOk());
 #else
@@ -446,7 +446,7 @@ TEST_F(VulkanFeaturesTest, CheckSelectedFeaturesMissingSynchronization2) {
   igl::vulkan::VulkanFeatures available(config);
   available.featuresSynchronization2.synchronization2 = VK_FALSE;
 
-  const igl::Result result = requested.checkSelectedFeatures(available);
+  const Result result = requested.checkSelectedFeatures(available);
 #if IGL_PLATFORM_APPLE
   EXPECT_TRUE(result.isOk());
 #else

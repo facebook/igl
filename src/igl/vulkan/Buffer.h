@@ -23,7 +23,7 @@ class Buffer final : public IBuffer {
   friend class Device;
 
  public:
-  explicit Buffer(const igl::vulkan::Device& device);
+  explicit Buffer(const Device& device);
   ~Buffer() override = default;
 
   Result upload(const void* data, const BufferRange& range) override;
@@ -51,7 +51,7 @@ class Buffer final : public IBuffer {
   [[nodiscard]] const std::unique_ptr<VulkanBuffer>& currentVulkanBuffer() const;
 
  private:
-  const igl::vulkan::Device& device_;
+  const Device& device_;
   BufferDesc desc_;
   bool isRingBuffer_ = false;
   uint32_t previousBufferIndex_ = UINT32_MAX;

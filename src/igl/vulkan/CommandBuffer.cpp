@@ -52,7 +52,7 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
   const auto depthTex = framebuffer->getDepthAttachment();
   if (depthTex) {
     const auto& vkDepthTex = static_cast<Texture&>(*depthTex);
-    const igl::vulkan::VulkanImage& depthImg = vkDepthTex.getVulkanTexture().image;
+    const VulkanImage& depthImg = vkDepthTex.getVulkanTexture().image;
     IGL_DEBUG_ASSERT(depthImg.imageFormat_ != VK_FORMAT_UNDEFINED,
                      "Invalid depth attachment format");
     const VkImageAspectFlags flags = vkDepthTex.getVulkanTexture().image.getImageAspectFlags();
@@ -125,7 +125,7 @@ void CommandBuffer::present(const std::shared_ptr<ITexture>& surface) const {
   }
 }
 
-void CommandBuffer::pushDebugGroupLabel(const char* label, const igl::Color& color) const {
+void CommandBuffer::pushDebugGroupLabel(const char* label, const Color& color) const {
   IGL_DEBUG_ASSERT(label && *label);
   ivkCmdBeginDebugUtilsLabel(&ctx_.vf_, wrapper_.cmdBuf, label, color.toFloatPtr());
 }

@@ -19,7 +19,7 @@
 
 namespace igl::vulkan {
 
-Buffer::Buffer(const igl::vulkan::Device& device) : device_(device) {
+Buffer::Buffer(const Device& device) : device_(device) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 }
 

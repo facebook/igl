@@ -121,7 +121,7 @@ class Framebuffer final : public IFramebuffer {
   void validateAttachments();
   void updateDrawableInternal(SurfaceTextures surfaceTextures, bool updateDepthStencil);
 
-  const igl::vulkan::Device& device_;
+  const Device& device_;
   FramebufferDesc desc_; // attachments
 
   uint32_t width_ = 0;

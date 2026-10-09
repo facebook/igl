@@ -40,7 +40,7 @@ constexpr size_t kOffscreenTexHeight = 2;
 constexpr size_t kOffscreenSubTexWidth = 1;
 constexpr size_t kOffscreenSubTexHeight = 1;
 
-constexpr igl::TextureFormat kFloatTextureFormat = TextureFormat::RGBA_F16;
+constexpr TextureFormat kFloatTextureFormat = TextureFormat::RGBA_F16;
 using TestColorType = glm::vec<4, util::TestHalf, glm::defaultp>; // control
 // using TestColorType = glm::vec<4, float, glm::defaultp>;
 

@@ -47,8 +47,7 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& cmdBuffer, bool /* endOf
 
   --numBuffersLeftToSubmit_;
 
-  auto* vkCmdBuffer =
-      const_cast<CommandBuffer*>(static_cast<const vulkan::CommandBuffer*>(&cmdBuffer));
+  auto* vkCmdBuffer = const_cast<CommandBuffer*>(static_cast<const CommandBuffer*>(&cmdBuffer));
 
 #if IGL_COMMAND_QUEUE_DEBUG_FENCES
   // Create label with Fence handle and Fence FD, if available

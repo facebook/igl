@@ -139,7 +139,7 @@ TEST(CommonTest, GetVulkanSampleCountFlagsTest) {
 
 // atVkLayer *******************************************************************************
 TEST(CommonTest, AtVkLayerTest) {
-  const igl::TextureRangeDesc texRangeDesc = TextureRangeDesc::newCube(0, 0, 1, 1, 0, 1);
+  const TextureRangeDesc texRangeDesc = TextureRangeDesc::newCube(0, 0, 1, 1, 0, 1);
   constexpr uint32_t layerOrFaceId = 7;
 
   constexpr TextureType textureTypes[] = {

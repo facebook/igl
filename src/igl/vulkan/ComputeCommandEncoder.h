@@ -51,8 +51,8 @@ class ComputeCommandEncoder : public IComputeCommandEncoder {
   /// back to `VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL`
   void endEncoding() override;
 
-  void pushDebugGroupLabel(const char* label, const igl::Color& color) const override;
-  void insertDebugEventLabel(const char* label, const igl::Color& color) const override;
+  void pushDebugGroupLabel(const char* label, const Color& color) const override;
+  void insertDebugEventLabel(const char* label, const Color& color) const override;
   void popDebugGroupLabel() const override;
 
   /// @brief This is only for backends that MUST use single uniforms in some situations. Do not
@@ -95,11 +95,11 @@ class ComputeCommandEncoder : public IComputeCommandEncoder {
 
   // Holds sampled textures and storage images alike, so neither IGL_TEXTURE_SAMPLERS_MAX nor
   // IGL_STORAGE_IMAGES_MAX bounds it on its own: a pass binding every slot of both needs their sum.
-  std::array<const igl::vulkan::VulkanImage*, IGL_TEXTURE_SAMPLERS_MAX> restoreLayout_{};
+  std::array<const VulkanImage*, IGL_TEXTURE_SAMPLERS_MAX> restoreLayout_{};
   std::array<VkImageAspectFlags, IGL_TEXTURE_SAMPLERS_MAX> restoreLayoutAspectFlags_{};
   uint32_t numRestoreLayouts_ = 0;
 
-  const igl::vulkan::ComputePipelineState* cps_ = nullptr;
+  const ComputePipelineState* cps_ = nullptr;
 };
 
 } // namespace vulkan

@@ -336,7 +336,7 @@ TEST_F(ContextOGLTest, BasicSharedContexts) {
   ASSERT_TRUE(sharedContext->isCurrentSharegroup());
   ASSERT_FALSE(unsharedContext->isCurrentSharegroup());
 
-  const igl::TextureDesc textureDesc = igl::TextureDesc::new2D(
+  const TextureDesc textureDesc = igl::TextureDesc::new2D(
       igl::TextureFormat::RGBA_UNorm8, 16, 16, igl::TextureDesc::TextureUsageBits::Sampled);
   auto texture = device_->createTexture(textureDesc, &result);
   ASSERT_TRUE(result.isOk());

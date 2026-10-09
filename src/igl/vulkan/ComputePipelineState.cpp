@@ -16,8 +16,7 @@
 
 namespace igl::vulkan {
 
-ComputePipelineState::ComputePipelineState(const igl::vulkan::Device& device,
-                                           ComputePipelineDesc desc) :
+ComputePipelineState::ComputePipelineState(const Device& device, ComputePipelineDesc desc) :
   PipelineState(device.getVulkanContext(),
                 desc.shaderStages.get(),
                 nullptr,

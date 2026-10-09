@@ -35,7 +35,7 @@ std::shared_ptr<ITexture> TextureBufferMacTest::createCVPixelBufferTextureWithSi
     const size_t height,
     TextureDesc::TextureUsage usage,
     Result& outResult) {
-  const igl::BackendType backend = iglDev_->getBackendType();
+  const BackendType backend = iglDev_->getBackendType();
   CVPixelBufferRef pixelBuffer = nullptr;
   NSDictionary* bufferAttributes = @{
     (NSString*)kCVPixelBufferIOSurfacePropertiesKey : @{},

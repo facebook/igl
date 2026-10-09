@@ -182,7 +182,7 @@ void ComputeCommandEncoder::dispatchThreadGroupsIndirect(IBuffer& indirectBuffer
 
   binder_.updateBindings(cps_->getVkPipelineLayout(), *cps_);
 
-  const auto* bufIndirect = static_cast<const igl::vulkan::Buffer*>(&indirectBuffer);
+  const auto* bufIndirect = static_cast<const Buffer*>(&indirectBuffer);
   // Spec: bufIndirect must have been created with VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT
   // (i.e. BufferDesc::BufferTypeBits::Indirect) and the producer pass must already have
   // released its writes via the encoder boundary.
@@ -193,13 +193,12 @@ void ComputeCommandEncoder::dispatchThreadGroupsIndirect(IBuffer& indirectBuffer
   ctx_.vf_.vkCmdDispatchIndirect(cmdBuffer_, bufIndirect->getVkBuffer(), indirectBufferOffset);
 }
 
-void ComputeCommandEncoder::pushDebugGroupLabel(const char* label, const igl::Color& color) const {
+void ComputeCommandEncoder::pushDebugGroupLabel(const char* label, const Color& color) const {
   IGL_DEBUG_ASSERT(label && *label);
   ivkCmdBeginDebugUtilsLabel(&ctx_.vf_, cmdBuffer_, label, color.toFloatPtr());
 }
 
-void ComputeCommandEncoder::insertDebugEventLabel(const char* label,
-                                                  const igl::Color& color) const {
+void ComputeCommandEncoder::insertDebugEventLabel(const char* label, const Color& color) const {
   IGL_DEBUG_ASSERT(label && *label);
   ivkCmdInsertDebugUtilsLabel(&ctx_.vf_, cmdBuffer_, label, color.toFloatPtr());
 }

@@ -309,7 +309,7 @@ TEST_F(ShaderUniformsTest, BindUploadsSuballocatedUniformBuffer) {
 
   // Selecting suballocation slot 1 forces a non-zero suballocation offset in both the
   // memcpy destination and the upload source pointer.
-  const igl::Result subResult = shaderUniforms.setSuballocationIndex(memberName, 1);
+  const Result subResult = shaderUniforms.setSuballocationIndex(memberName, 1);
   ASSERT_TRUE(subResult.isOk()) << subResult.message;
 
   const iglu::simdtypes::float4 color = {0.25f, 0.5f, 0.75f, 1.0f};

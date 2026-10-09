@@ -143,13 +143,13 @@ void Framebuffer::copyTextureColorAttachment(ICommandQueue& cmdQueue,
     return;
   }
   // If we're doing MSAA, we should be using the resolve color attachment
-  const igl::vulkan::Texture& srcVkTex = static_cast<Texture&>(
+  const Texture& srcVkTex = static_cast<Texture&>(
       srcTexture->getSamples() == 1 ? *srcTexture : *getResolveColorAttachment(index));
 
   if (!IGL_DEBUG_VERIFY(destTexture)) {
     return;
   }
-  const igl::vulkan::Texture& dstVkTex = static_cast<Texture&>(*destTexture);
+  const Texture& dstVkTex = static_cast<Texture&>(*destTexture);
 
   // 1. Transition dst into TRANSFER_DST_OPTIMAL
   ivkImageMemoryBarrier(&ctx.vf_,
@@ -301,7 +301,7 @@ void Framebuffer::validateAttachments() {
   height_ = 0u;
 
   IGL_PROFILER_FUNCTION();
-  auto ensureSize = [this](const vulkan::Texture& tex) {
+  auto ensureSize = [this](const Texture& tex) {
     const uint32_t attachmentWidth = tex.getDimensions().width;
     const uint32_t attachmentHeight = tex.getDimensions().height;
 
