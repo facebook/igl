@@ -22,6 +22,10 @@ class FileLoaderLinux final : public FileLoader {
   [[nodiscard]] std::string fullPath(const std::string& fileName) const override;
 
  private:
+  /// The path `fileName` resolves to, searching the same places as `fullPath()`, or an empty
+  /// string when it is in none of them.
+  [[nodiscard]] std::string findFile(const std::string& fileName) const;
+
   std::string basePath_;
 };
 

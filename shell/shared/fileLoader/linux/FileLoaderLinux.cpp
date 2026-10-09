@@ -8,7 +8,6 @@
 #include <shell/shared/fileLoader/linux/FileLoaderLinux.h>
 
 #include <filesystem>
-#include <fstream>
 #include <iterator>
 #include <string>
 #include <system_error>
@@ -91,10 +90,8 @@ FileLoader::FileData FileLoaderLinux::loadBinaryData(const std::string& fileName
 }
 
 bool FileLoaderLinux::fileExists(const std::string& fileName) const {
-  std::ifstream file(fileName, std::ios::binary);
-  auto exists = (file.rdstate() & std::ifstream::failbit) == 0;
-  file.close();
-  return exists;
+  // Searches the same places as fullPath(), so a name that fullPath() resolves exists.
+  return !fileName.empty() && !findFile(fileName).empty();
 }
 
 std::string FileLoaderLinux::basePath() const {
@@ -103,6 +100,14 @@ std::string FileLoaderLinux::basePath() const {
 }
 
 std::string FileLoaderLinux::fullPath(const std::string& fileName) const {
+  std::string path = findFile(fileName);
+  if (path.empty()) {
+    IGL_DEBUG_ASSERT_NOT_REACHED();
+  }
+  return path;
+}
+
+std::string FileLoaderLinux::findFile(const std::string& fileName) const {
   std::error_code ec;
   if (std::filesystem::exists(fileName, ec)) {
     return fileName;
@@ -202,7 +207,6 @@ std::string FileLoaderLinux::fullPath(const std::string& fileName) const {
   // @fb-only
 // @fb-only
 
-  IGL_DEBUG_ASSERT_NOT_REACHED();
   return "";
 }
 
