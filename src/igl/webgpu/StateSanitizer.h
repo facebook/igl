@@ -10,7 +10,6 @@
 #include <cstdint>
 #include <vector>
 #include <webgpu/webgpu.h>
-#include <igl/Common.h>
 #include <igl/DepthStencilState.h>
 #include <igl/RenderPipelineState.h>
 #include <igl/SamplerState.h>
