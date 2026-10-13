@@ -43,6 +43,7 @@ class ComputePipelineState final : public WithContext, public IComputePipelineSt
 
   std::array<GLint, IGL_BUFFER_BINDINGS_MAX> bufferUnitMap_{};
   std::array<GLint, IGL_TEXTURE_SAMPLERS_MAX> imageUnitMap_{};
+  std::array<GLint, IGL_TEXTURE_SAMPLERS_MAX> samplerUnitMap_{};
 
   std::shared_ptr<ShaderStages> shaderStages_;
   std::shared_ptr<ComputePipelineReflection> reflection_;
