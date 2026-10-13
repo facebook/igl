@@ -170,10 +170,15 @@ void ComputeCommandAdapter::willDispatch() {
     if (!IS_DIRTY(textureStatesDirty_, index)) {
       continue;
     }
+    CLEAR_DIRTY(textureStatesDirty_, index);
     auto& textureState = textureStates_[index];
-    if (auto* texture = static_cast<Texture*>(textureState)) {
-      ret = pipelineState->bindImageTextureUnit(index, texture);
-      CLEAR_DIRTY(textureStatesDirty_, index);
+    if (auto* texture = static_cast<Texture*>(textureState.first)) {
+      if (auto* samplerState = static_cast<SamplerState*>(textureState.second)) {
+        ret = pipelineState->bindSamplerTextureUnit(index, texture);
+        samplerState->bind(texture);
+      } else {
+        ret = pipelineState->bindImageTextureUnit(index, texture);
+      }
       if (!ret.isOk()) {
         IGL_LOG_INFO_ONCE(ret.message.c_str());
         continue;
