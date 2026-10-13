@@ -12,6 +12,7 @@
 #include <igl/opengl/Buffer.h>
 #include <igl/opengl/ComputePipelineState.h>
 #include <igl/opengl/IContext.h>
+#include <igl/opengl/SamplerState.h>
 #include <igl/opengl/Texture.h>
 
 #define SET_DIRTY(dirtyMap, index) dirtyMap.set(index)
@@ -30,8 +31,30 @@ void ComputeCommandAdapter::setTexture(ITexture* texture, uint32_t index) {
   if (!IGL_DEBUG_VERIFY(index < IGL_TEXTURE_SAMPLERS_MAX)) {
     return;
   }
-  textureStates_[index] = texture;
+  textureStates_[index].first = texture;
   SET_DIRTY(textureStatesDirty_, index);
+}
+
+void ComputeCommandAdapter::setSamplerState(ISamplerState* samplerState, uint32_t index) {
+  if (!IGL_DEBUG_VERIFY(index < IGL_TEXTURE_SAMPLERS_MAX)) {
+    return;
+  }
+  textureStates_[index].second = samplerState;
+  SET_DIRTY(textureStatesDirty_, index);
+}
+
+void ComputeCommandAdapter::setImageTexture(ITexture* texture,
+                                            uint32_t index,
+                                            TextureFormat format) {
+  if (!IGL_DEBUG_VERIFY(index < IGL_TEXTURE_SAMPLERS_MAX)) {
+    return;
+  }
+  // For compute image textures, we store them in the same array.
+  textureStates_[index].first = texture;
+  textureStates_[index].second = nullptr; // Image textures don't use samplers
+  SET_DIRTY(textureStatesDirty_, index);
+
+  (void)format;
 }
 
 void ComputeCommandAdapter::clearBuffers() {
