@@ -28,13 +28,15 @@ struct ComputePipelineDesc {
  public:
   bool operator==(const ComputePipelineDesc& other) const {
     return shaderStages == other.shaderStages && imagesMap == other.imagesMap &&
-           buffersMap == other.buffersMap && debugName == other.debugName;
+           buffersMap == other.buffersMap && samplersMap == other.samplersMap &&
+           debugName == other.debugName;
   }
 
   /*
    * OpenGL only
    */
   std::unordered_map<size_t, NameHandle> imagesMap;
+  std::unordered_map<size_t, NameHandle> samplersMap;
   std::unordered_map<size_t, NameHandle> buffersMap;
 
   /*
@@ -77,6 +79,10 @@ struct hash<igl::ComputePipelineDesc> {
       hash ^= std::hash<std::string>()(p.second.toString());
     }
     for (const auto& p : desc.imagesMap) {
+      hash ^= std::hash<size_t>()(p.first);
+      hash ^= std::hash<std::string>()(p.second.toString());
+    }
+    for (const auto& p : desc.samplersMap) {
       hash ^= std::hash<size_t>()(p.first);
       hash ^= std::hash<std::string>()(p.second.toString());
     }
