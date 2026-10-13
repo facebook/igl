@@ -27,7 +27,8 @@ class ComputePipelineState final : public WithContext, public IComputePipelineSt
   Result create(const ComputePipelineDesc& desc);
   void bind();
   void unbind();
-  Result bindTextureUnit(size_t unit, Texture* texture);
+  Result bindImageTextureUnit(size_t unit, Texture* texture);
+  Result bindSamplerTextureUnit(size_t unit, Texture* texture);
   Result bindBuffer(size_t unit, Buffer* buffer);
 
   std::shared_ptr<IComputePipelineReflection> computePipelineReflection() override;
