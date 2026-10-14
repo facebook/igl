@@ -198,7 +198,7 @@ Result RenderPipelineState::create() {
     }
 
     vertexTextureUnitRemap_[textureUnit] = realTextureUnit;
-    unitSamplerLocationMap_[realTextureUnit] = loc;
+    vertexUnitSamplerLocationMap_[textureUnit] = loc;
   }
 
   if (!mFramebufferDesc.colorAttachments.empty()) {
@@ -359,7 +359,7 @@ void RenderPipelineState::unbindPrevPipelineVertexAttributes() {
 // bind the unit to the location, then activate the unit.
 //
 // Prerequisite: The shader program has to be loaded
-Result RenderPipelineState::bindTextureUnit(const size_t unit,
+Result RenderPipelineState::bindTextureUnit(size_t unit,
                                             uint8_t bindTarget,
                                             Texture& texture) {
   IGL_PROFILER_FUNCTION();
@@ -377,8 +377,8 @@ Result RenderPipelineState::bindTextureUnit(const size_t unit,
     if (it == vertexTextureUnitRemap_.end()) {
       return Result{Result::Code::RuntimeError, "Unable to find sampler location\n"};
     }
-    auto realUnit = it->second;
-    samplerLocation = unitSamplerLocationMap_[realUnit];
+    samplerLocation = vertexUnitSamplerLocationMap_[unit];
+    unit = it->second;
   } else {
     samplerLocation = unitSamplerLocationMap_[unit];
   }
