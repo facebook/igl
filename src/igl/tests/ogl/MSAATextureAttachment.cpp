@@ -74,8 +74,9 @@ TEST_F(MSAATextureAttachmentOGLTest, ResolveMSAA) {
   if (!iglDev_->hasFeature(DeviceFeatures::MultiSample)) {
     GTEST_SKIP() << "MultiSample not supported";
   }
-  if (!iglDev_->hasFeature(DeviceFeatures::MultiSampleResolve)) {
-    GTEST_SKIP() << "MultiSampleResolve not supported";
+  // The resolve framebuffer of the framebuffer resolves with a blit
+  if (!context_->deviceFeatures().hasInternalFeature(opengl::InternalFeatures::FramebufferBlit)) {
+    GTEST_SKIP() << "FramebufferBlit not supported";
   }
 
   Result ret;

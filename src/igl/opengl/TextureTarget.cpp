@@ -16,6 +16,7 @@ TextureTarget::~TextureTarget() {
   if (renderBufferID_ != 0) {
     getContext().deleteRenderbuffers(1, &renderBufferID_);
   }
+  releaseImplicitRenderBuffer();
 }
 
 TextureType TextureTarget::getType() const {
@@ -61,33 +62,84 @@ Result TextureTarget::createRenderBuffer(const TextureDesc& desc, bool hasStorag
     return Result{Result::Code::ArgumentInvalid, "Invalid texture format"};
   }
 
+  debugName_ = desc.debugName;
+
   // create the GL render buffer
   getContext().genRenderbuffers(1, &renderBufferID_);
 
   if (!hasStorageAlready) {
     getContext().bindRenderbuffer(GL_RENDERBUFFER, renderBufferID_);
 
-    if (desc.numSamples > 1) {
-      getContext().renderbufferStorageMultisample(
-          GL_RENDERBUFFER, desc.numSamples, glInternalFormat_, getWidth(), getHeight());
-    } else {
-      getContext().renderbufferStorage(GL_RENDERBUFFER,
-                                       glInternalFormat_,
-                                       static_cast<GLsizei>(getWidth()),
-                                       static_cast<GLsizei>(getHeight()));
+    needsStorage_ = desc.storage == ResourceStorage::Memoryless;
+    if (!needsStorage_) {
+      specifyStorage();
     }
-    if (!desc.debugName.empty() &&
-        getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugLabel)) {
-      getContext().objectLabel(GL_RENDERBUFFER,
-                               renderBufferID_,
-                               static_cast<GLsizei>(desc.debugName.size()),
-                               desc.debugName.c_str());
-    }
+    labelRenderBuffer(renderBufferID_);
 
     getContext().bindRenderbuffer(GL_RENDERBUFFER, 0);
   }
 
   return Result();
+}
+
+void TextureTarget::specifyStorage() const {
+  if (getSamples() > 1) {
+    getContext().renderbufferStorageMultisample(GL_RENDERBUFFER,
+                                                static_cast<GLsizei>(getSamples()),
+                                                glInternalFormat_,
+                                                getWidth(),
+                                                getHeight());
+  } else {
+    getContext().renderbufferStorage(GL_RENDERBUFFER, glInternalFormat_, getWidth(), getHeight());
+  }
+}
+
+void TextureTarget::labelRenderBuffer(GLuint renderBufferId) const {
+  if (!debugName_.empty() &&
+      getContext().deviceFeatures().hasInternalFeature(InternalFeatures::DebugLabel)) {
+    getContext().objectLabel(GL_RENDERBUFFER,
+                             renderBufferId,
+                             static_cast<GLsizei>(debugName_.size()),
+                             debugName_.c_str());
+  }
+}
+
+void TextureTarget::createImplicitRenderBuffer(uint32_t samples) {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  getContext().genRenderbuffers(1, &implicitRenderBufferID_);
+  getContext().bindRenderbuffer(GL_RENDERBUFFER, implicitRenderBufferID_);
+  getContext().renderbufferStorageMultisampleImplicit(
+      GL_RENDERBUFFER, static_cast<GLsizei>(samples), glInternalFormat_, getWidth(), getHeight());
+  labelRenderBuffer(implicitRenderBufferID_);
+  getContext().bindRenderbuffer(GL_RENDERBUFFER, 0);
+}
+
+void TextureTarget::releaseImplicitRenderBuffer() {
+  if (implicitRenderBufferID_ != 0) {
+    getContext().deleteRenderbuffers(1, &implicitRenderBufferID_);
+    implicitRenderBufferID_ = 0;
+  }
+}
+
+GLuint TextureTarget::prepareRenderBuffer(const AttachmentParams& params) {
+  IGL_PROFILER_FUNCTION();
+  if (params.implicitSamples > 1) {
+    // A framebuffer that resolves implicitly attaches only textures with its number of samples
+    IGL_DEBUG_ASSERT(params.implicitSamples == getSamples());
+    if (implicitRenderBufferID_ == 0) {
+      createImplicitRenderBuffer(params.implicitSamples);
+    }
+    return implicitRenderBufferID_;
+  }
+  // A framebuffer that attaches the multisampled renderbuffer has no use for the implicit one
+  releaseImplicitRenderBuffer();
+  if (needsStorage_) {
+    getContext().bindRenderbuffer(GL_RENDERBUFFER, renderBufferID_);
+    specifyStorage();
+    getContext().bindRenderbuffer(GL_RENDERBUFFER, 0);
+    needsStorage_ = false;
+  }
+  return renderBufferID_;
 }
 
 void TextureTarget::bind() {
@@ -107,7 +159,7 @@ void TextureTarget::bindImage(size_t /*unit*/) {
 void TextureTarget::attachAsColor(uint32_t index, const AttachmentParams& params) {
   IGL_PROFILER_FUNCTION();
   if (IGL_DEBUG_VERIFY(renderBufferID_)) {
-    attach(GL_COLOR_ATTACHMENT0 + index, params, renderBufferID_);
+    attach(GL_COLOR_ATTACHMENT0 + index, params, prepareRenderBuffer(params));
   }
 }
 
@@ -138,12 +190,13 @@ void TextureTarget::detachAsColor(uint32_t index, bool read) {
   AttachmentParams params{};
   params.read = read;
   attach(GL_COLOR_ATTACHMENT0 + index, params, 0);
+  releaseImplicitRenderBuffer();
 }
 
 void TextureTarget::attachAsDepth(const AttachmentParams& params) {
   IGL_PROFILER_FUNCTION();
   if (IGL_DEBUG_VERIFY(renderBufferID_)) {
-    attach(GL_DEPTH_ATTACHMENT, params, renderBufferID_);
+    attach(GL_DEPTH_ATTACHMENT, params, prepareRenderBuffer(params));
   }
 }
 
@@ -152,12 +205,13 @@ void TextureTarget::detachAsDepth(bool read) {
   AttachmentParams params{};
   params.read = read;
   attach(GL_DEPTH_ATTACHMENT, params, 0);
+  releaseImplicitRenderBuffer();
 }
 
 void TextureTarget::attachAsStencil(const AttachmentParams& params) {
   IGL_PROFILER_FUNCTION();
   if (IGL_DEBUG_VERIFY(renderBufferID_)) {
-    attach(GL_STENCIL_ATTACHMENT, params, renderBufferID_);
+    attach(GL_STENCIL_ATTACHMENT, params, prepareRenderBuffer(params));
   }
 }
 
@@ -166,6 +220,7 @@ void TextureTarget::detachAsStencil(bool read) {
   AttachmentParams params{};
   params.read = read;
   attach(GL_STENCIL_ATTACHMENT, params, 0);
+  releaseImplicitRenderBuffer();
 }
 
 bool TextureTarget::toRenderBufferFormatGL(TextureDesc::TextureUsage usage,

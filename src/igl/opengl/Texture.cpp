@@ -159,6 +159,10 @@ bool Texture::isImplicitStorage() const {
   return false;
 }
 
+bool Texture::canAttachMultisampledRenderToTexture() const {
+  return false;
+}
+
 GLenum Texture::toGLTarget(TextureType type) const {
   switch (type) {
   case TextureType::TwoD:

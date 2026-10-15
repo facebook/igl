@@ -2800,6 +2800,10 @@ void IContext::framebufferTexture2DMultisample(GLenum target,
                                                GLuint texture,
                                                GLint level,
                                                GLsizei samples) {
+  if (multisampleNeedsFramebufferTarget_ &&
+      (target == GL_DRAW_FRAMEBUFFER || target == GL_READ_FRAMEBUFFER)) {
+    target = GL_FRAMEBUFFER;
+  }
 #if IGL_API_LOG
   const char* unboundAttachmentType = framebufferAttachmentType(target, attachment);
   GLuint unboundAttachment = framebufferAttachment(target, attachment);
@@ -2817,17 +2821,23 @@ void IContext::framebufferTexture2DMultisample(GLenum target,
                      "No supported function for glFramebufferTexture2DMultisample\n");
   }
 
-  if (maxSamples_ == -1 && framebufferTexture2DMultisampleProc_ != nullptr) {
-    if (deviceFeatureSet_.hasInternalRequirement(InternalRequirement::MultiSampleExtReq) &&
-        deviceFeatureSet_.hasExtension(Extensions::MultiSampleImg)) {
-      getIntegerv(GL_MAX_SAMPLES_IMG, &maxSamples_);
-    } else {
-      getIntegerv(GL_MAX_SAMPLES, &maxSamples_);
-    }
+  if (framebufferTexture2DMultisampleProc_ != nullptr) {
+    samples = std::min(samples, getMaxMultisampledRenderToTextureSamples());
   }
 
-  if (samples > maxSamples_) {
-    samples = maxSamples_;
+  // Certain drivers (I am looking at you Adreno) misbehave according to spec,
+  // where GL_DRAW_FRAMEBUFFER is perfectly valid framebuffer target, but it only recognizes
+  // GL_FRAMEBUFFER meaning that it behaves as if it is `IMG_multisampled_render_to_texture` not
+  // `EXT_multisampled_render_to_texture`. The first call with such a target finds out which kind
+  // of driver this is, so that glGetError() is not needed after every attachment.
+  const bool verifiesTarget = (target == GL_DRAW_FRAMEBUFFER || target == GL_READ_FRAMEBUFFER) &&
+                              !multisampleDrawTargetVerified_ &&
+                              deviceFeatureSet_.hasExtension(Extensions::MultiSampleExt);
+  if (verifiesTarget) {
+    // An error that an earlier call left behind must not look like the driver rejecting the target
+    constexpr int kMaxPendingErrors = 8;
+    for (int i = 0; i < kMaxPendingErrors && getError() != GL_NO_ERROR; ++i) {
+    }
   }
 
   APILOG(
@@ -2846,19 +2856,21 @@ void IContext::framebufferTexture2DMultisample(GLenum target,
   GLCALL_PROC(
       framebufferTexture2DMultisampleProc_, target, attachment, textarget, texture, level, samples);
 
-  // Certain drivers (I am looking at you Adreno) misbehave according to spec,
-  // where GL_DRAW_FRAMEBUFFER is perfectly valid framebuffer target, but it only recognizes
-  // GL_FRAMEBUFFER meaning that it behaves as if it is `IMG_multisampled_render_to_texture` not
-  // `EXT_multisampled_render_to_texture`.
-  auto error = getError();
-  if (error == GL_INVALID_ENUM &&
-      (target == GL_DRAW_FRAMEBUFFER || target == GL_READ_FRAMEBUFFER) &&
-      deviceFeatureSet_.hasExtension(Extensions::MultiSampleExt)) {
-    // Repeat again, now using explicitly GL_FRAMEBUFFER not GL_DRAW/GL_READ.
-    framebufferTexture2DMultisample(GL_FRAMEBUFFER, attachment, textarget, texture, level, samples);
-  } else if (alwaysCheckError_) {
-    lastError_ = error;
-    GL_ASSERT_ERROR(lastError_ == GL_NO_ERROR, __FUNCTION__, __LINE__, error);
+  if (verifiesTarget || alwaysCheckError_) {
+    const GLenum error = getError();
+    if (verifiesTarget && error == GL_INVALID_ENUM) {
+      multisampleNeedsFramebufferTarget_ = true;
+      // Repeat again, now using explicitly GL_FRAMEBUFFER not GL_DRAW/GL_READ.
+      framebufferTexture2DMultisample(
+          GL_FRAMEBUFFER, attachment, textarget, texture, level, samples);
+      return;
+    }
+    multisampleDrawTargetVerified_ = multisampleDrawTargetVerified_ ||
+                                     (verifiesTarget && error == GL_NO_ERROR);
+    if (alwaysCheckError_) {
+      lastError_ = error;
+      GL_ASSERT_ERROR(lastError_ == GL_NO_ERROR, __FUNCTION__, __LINE__, error);
+    }
   }
 }
 
@@ -3199,6 +3211,23 @@ void IContext::getIntegerv(GLenum pname, GLint* params) const {
   // NOTE: Must log after call due to return value
   APILOG("glGetIntegerv(%s, %p) = %d\n",
          GL_ENUM_TO_STRING(pname),
+         params,
+         params == nullptr ? 0 : *params);
+  GLCHECK_ERRORS();
+}
+
+void IContext::getInternalformativ(GLenum target,
+                                   GLenum internalformat,
+                                   GLenum pname,
+                                   GLsizei bufSize,
+                                   GLint* params) const {
+  IGLCALL(GetInternalformativ)(target, internalformat, pname, bufSize, params);
+  // NOTE: Must log after call due to return value
+  APILOG("glGetInternalformativ(%s, %s, %s, %d, %p) = %d\n",
+         GL_ENUM_TO_STRING(target),
+         GL_ENUM_TO_STRING(internalformat),
+         GL_ENUM_TO_STRING(pname),
+         bufSize,
          params,
          params == nullptr ? 0 : *params);
   GLCHECK_ERRORS();
@@ -3743,6 +3772,72 @@ void IContext::renderbufferStorageMultisample(GLenum target,
          boundRenderbuffer_);
   GLCALL_PROC(renderbufferStorageMultisampleProc_, target, samples, internalformat, width, height);
   GLCHECK_ERRORS();
+}
+
+void IContext::renderbufferStorageMultisampleImplicit(GLenum target,
+                                                      GLsizei samples,
+                                                      GLenum internalformat,
+                                                      GLsizei width,
+                                                      GLsizei height) {
+  if (renderbufferStorageMultisampleImplicitProc_ == nullptr) {
+    if (deviceFeatureSet_.hasExtension(Extensions::MultiSampleExt)) {
+      renderbufferStorageMultisampleImplicitProc_ = iglRenderbufferStorageMultisampleEXT;
+    } else if (deviceFeatureSet_.hasExtension(Extensions::MultiSampleImg)) {
+      renderbufferStorageMultisampleImplicitProc_ = iglRenderbufferStorageMultisampleIMG;
+    }
+    IGL_DEBUG_ASSERT(renderbufferStorageMultisampleImplicitProc_,
+                     "No supported function for glRenderbufferStorageMultisampleEXT\n");
+  }
+  if (renderbufferStorageMultisampleImplicitProc_ != nullptr) {
+    samples = std::min(samples, getMaxMultisampledRenderToTextureSamples());
+  }
+
+  APILOG("glRenderbufferStorageMultisampleEXT(%s, %u, %s, %u, %u) (renderbuffer: %u)\n",
+         GL_ENUM_TO_STRING(target),
+         samples,
+         GL_ENUM_TO_STRING(internalformat),
+         width,
+         height,
+         boundRenderbuffer_);
+  GLCALL_PROC(
+      renderbufferStorageMultisampleImplicitProc_, target, samples, internalformat, width, height);
+  GLCHECK_ERRORS();
+}
+
+bool IContext::usesImgMultisampledRenderToTexture() const {
+  return !deviceFeatureSet_.hasExtension(Extensions::MultiSampleExt) &&
+         deviceFeatureSet_.hasExtension(Extensions::MultiSampleImg);
+}
+
+GLint IContext::getMaxMultisampledRenderToTextureSamples() {
+  if (maxSamples_ == -1) {
+    if (usesImgMultisampledRenderToTexture()) {
+      getIntegerv(GL_MAX_SAMPLES_IMG, &maxSamples_);
+    } else {
+      // GL_MAX_SAMPLES_EXT of the EXT version has the value of GL_MAX_SAMPLES
+      getIntegerv(GL_MAX_SAMPLES, &maxSamples_);
+    }
+  }
+  return maxSamples_;
+}
+
+GLint IContext::getMaxMultisampledRenderToTextureSamples(GLenum internalFormat) {
+  const GLint maxSamples = getMaxMultisampledRenderToTextureSamples();
+  if (maxSamples <= 0 ||
+      !deviceFeatureSet_.hasInternalFeature(InternalFeatures::InternalFormatQuery)) {
+    return maxSamples;
+  }
+  const auto cached = maxSamplesByFormat_.find(internalFormat);
+  if (cached != maxSamplesByFormat_.end()) {
+    return cached->second;
+  }
+  // The sample counts come in descending order, so the first one is the largest. A format that
+  // cannot be multisampled has none, and the query leaves the 0.
+  GLint maxFormatSamples = 0;
+  getInternalformativ(GL_RENDERBUFFER, internalFormat, GL_SAMPLES, 1, &maxFormatSamples);
+  const GLint result = std::min(maxSamples, maxFormatSamples);
+  maxSamplesByFormat_.emplace(internalFormat, result);
+  return result;
 }
 
 void IContext::framebufferTextureMultiview(GLenum target,

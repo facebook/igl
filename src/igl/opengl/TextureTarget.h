@@ -58,7 +58,28 @@ class TextureTarget final : public Texture {
 
   Result createRenderBuffer(const TextureDesc& desc, bool hasStorageAlready);
 
+  /// Specifies the storage of the bound renderbuffer
+  void specifyStorage() const;
+
+  /// @returns the renderbuffer to attach with `params`, after it gets the storage that it needs
+  [[nodiscard]] GLuint prepareRenderBuffer(const AttachmentParams& params);
+
+  /// Gives `renderBufferId` the debug name of the texture
+  void labelRenderBuffer(GLuint renderBufferId) const;
+
+  void createImplicitRenderBuffer(uint32_t samples);
+  void releaseImplicitRenderBuffer();
+
   GLuint renderBufferID_ = 0;
+  // The renderbuffer that AttachmentParams::implicitSamples attaches. Its storage needs
+  // renderbufferStorageMultisampleImplicit(), so it is created when a framebuffer needs it, and
+  // released when a framebuffer detaches it or attaches renderBufferID_.
+  GLuint implicitRenderBufferID_ = 0;
+  // Whether renderBufferID_ still needs its storage. A Memoryless renderbuffer gets it when a
+  // framebuffer attaches it, because a framebuffer that resolves implicitly never attaches the
+  // multisampled one.
+  bool needsStorage_ = false;
+  std::string debugName_;
   TextureDesc::TextureUsage usage_ = TextureDesc::TextureUsageBits::Attachment;
 #if IGL_PLATFORM_IOS
   bool canPresent_ = false;

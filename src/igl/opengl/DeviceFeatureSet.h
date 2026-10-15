@@ -78,9 +78,12 @@ enum class InternalFeatures {
   DrawArraysIndirect,        // glDrawArraysIndirect is supported
   DrawBuffersIndexed,        // glColorMaski, glEnablei and glBlend*Separatei are supported
   MultiDrawIndirect,         // glMultiDrawArraysIndirect is supported
+  // GL_EXT_multisampled_render_to_texture or the IMG version works
+  MultisampledRenderToTexture,
   FramebufferBlit,           // BlitFramebuffer is supported
   FramebufferObject,         // Framebuffer objects are supported
   GetStringi,                // GetStringi is supported
+  InternalFormatQuery,       // glGetInternalformativ is supported
   InvalidateFramebuffer,     // glInvalidateFramebuffer is supported
   MapBuffer,                 // glMapBuffer is supported
   PackRowLength,             // GL_PACK_ROW_LENGTH is supported with glPixelStorei
@@ -213,6 +216,13 @@ enum class GpuTimerTier : uint32_t {
 /// Exposed as a free function for unit testing without a GL context.
 [[nodiscard]] bool hasBrokenFramebufferFetch(const char* IGL_NULLABLE renderer,
                                              const char* IGL_NULLABLE vendor);
+
+/// Returns true if the GPU with these raw GL_RENDERER / GL_VENDOR strings advertises
+/// GL_EXT_multisampled_render_to_texture but its driver renders incorrectly with it, as the
+/// Adreno 4xx, 5xx, 615 and 620 do.
+/// Exposed as a free function for unit testing without a GL context.
+[[nodiscard]] bool hasBrokenMultisampledRenderToTexture(const char* IGL_NULLABLE renderer,
+                                                        const char* IGL_NULLABLE vendor);
 
 /// Returns true if `extensions`, a space-separated GL_EXTENSIONS string, lists `extension` as a
 /// whole token. Unlike a substring search, GL_EXT_foo does not match GL_EXT_foo_bar.

@@ -183,6 +183,8 @@ using PFNIGLGETFRAMEBUFFERATTACHMENTPARAMETERIVPROC = void (*)(GLenum target,
                                                                GLenum attachment,
                                                                GLenum pname,
                                                                GLint* params);
+using PFNIGLGETINTERNALFORMATIVPROC =
+    void (*)(GLenum target, GLenum internalformat, GLenum pname, GLsizei bufSize, GLint* params);
 using PFNIGLGETPROGRAMINTERFACEIVPROC = void (*)(GLuint program,
                                                  GLenum programInterface,
                                                  GLenum pname,
@@ -361,6 +363,11 @@ GLuint iglGetDebugMessageLog(GLuint count,
                              GLenum* severities,
                              GLsizei* lengths,
                              GLchar* messageLog);
+void iglGetInternalformativ(GLenum target,
+                            GLenum internalformat,
+                            GLenum pname,
+                            GLsizei bufSize,
+                            GLint* params);
 const GLubyte* iglGetStringi(GLenum name, GLuint index);
 void* iglMapBuffer(GLenum target, GLbitfield access);
 void iglObjectLabel(GLenum identifier, GLuint name, GLsizei length, const char* label);

@@ -222,6 +222,46 @@ GLsizei collectNotLoadedAttachments(
   }
   return numAttachments;
 }
+
+bool isMemorylessMultisampled2D(const ITexture& texture) {
+  return texture.getStorage() == ResourceStorage::Memoryless && texture.getSamples() > 1 &&
+         texture.getType() == TextureType::TwoD;
+}
+
+/// Whether multisampled rendering of `multisampled` can resolve into `resolve` with
+/// GL_EXT_multisampled_render_to_texture
+bool canResolveImplicitly(const ITexture& multisampled, const ITexture& resolve) {
+  const Dimensions size = multisampled.getDimensions();
+  const Dimensions resolveSize = resolve.getDimensions();
+  return static_cast<const Texture&>(resolve).canAttachMultisampledRenderToTexture() &&
+         (resolve.getUsage() & TextureDesc::TextureUsageBits::Attachment) != 0 &&
+         resolve.getSamples() == 1 && resolve.getFormat() == multisampled.getFormat() &&
+         resolveSize.width == size.width && resolveSize.height == size.height;
+}
+
+/// Whether GL_EXT_multisampled_render_to_texture accepts `samples` samples for the format of
+/// `texture`. A driver leaves out an attachment with more, and can still report a framebuffer with
+/// only a depth attachment complete.
+bool supportsImplicitSamples(IContext& context, const ITexture& texture, uint32_t samples) {
+  const GLint maxSamples = context.getMaxMultisampledRenderToTextureSamples(
+      static_cast<const Texture&>(texture).getGLInternalTextureFormat());
+  return maxSamples > 0 && samples <= static_cast<uint32_t>(maxSamples);
+}
+
+/// Whether `attachment` suits a framebuffer that resolves `samples` samples implicitly: it is
+/// absent, or a Memoryless multisampled renderbuffer that GL_EXT_multisampled_render_to_texture
+/// can render without a resolve texture, as depth is never resolved
+bool isImplicitDepthStencil(IContext& context,
+                            const FramebufferDesc::AttachmentDesc& attachment,
+                            uint32_t samples) {
+  if (attachment.resolveTexture != nullptr) {
+    return false;
+  }
+  return attachment.texture == nullptr ||
+         (isMemorylessMultisampled2D(*attachment.texture) &&
+          attachment.texture->getSamples() == samples &&
+          supportsImplicitSamples(context, *attachment.texture, samples));
+}
 } // namespace
 
 FramebufferBindingGuard::FramebufferBindingGuard(IContext& context) : context_(context) {
@@ -534,9 +574,27 @@ void CustomFramebuffer::updateDrawable(SurfaceTextures surfaceTextures) {
 }
 
 void CustomFramebuffer::updateResolveAttachment(std::shared_ptr<ITexture> texture) {
-  if (resolveFramebuffer_) {
-    resolveFramebuffer_->updateDrawable(std::move(texture));
+  IGL_PROFILER_FUNCTION();
+  auto& colorAttachment0 = renderTarget_.colorAttachments[0];
+  if (frameBufferID_ == 0 || colorAttachment0.resolveTexture == texture) {
+    return;
   }
+  const bool wasImplicit = resolvesImplicitly();
+  std::shared_ptr<ITexture> previousColor = wasImplicit ? colorAttachment0.resolveTexture : nullptr;
+  colorAttachment0.resolveTexture = std::move(texture);
+  if (!wasImplicit && getImplicitResolveSamples() == 0) {
+    // The framebuffer resolves with a blit before and after, so only the resolve framebuffer has
+    // to change
+    if (resolveFramebuffer_ != nullptr && colorAttachment0.resolveTexture != nullptr) {
+      resolveFramebuffer_->updateDrawable(colorAttachment0.resolveTexture);
+    } else {
+      setupResolveFramebuffer(nullptr);
+    }
+    return;
+  }
+  const FramebufferBindingGuard guard(getContext());
+  bindBuffer();
+  reattachTextures(previousColor, {.resolve = true});
 }
 
 void CustomFramebuffer::updateDrawableInternal(SurfaceTextures surfaceTextures,
@@ -549,47 +607,46 @@ void CustomFramebuffer::updateDrawableInternal(SurfaceTextures surfaceTextures,
   const bool updateColor = colorAttachment0 != surfaceTextures.color;
   updateDepthStencil = updateDepthStencil && (depthAttachment != surfaceTextures.depth ||
                                               stencilAttachment != surfaceTextures.depth);
-  if (updateColor || updateDepthStencil) {
-    const FramebufferBindingGuard guard(getContext());
-    bindBuffer();
-    if (updateColor) {
-      if (!surfaceTextures.color) {
-        static_cast<Texture&>(*colorAttachment0).detachAsColor(0, false);
-        renderTarget_.colorAttachments[0] = {};
-      } else {
-        attachAsColor(*surfaceTextures.color, 0, defaultWriteAttachmentParams(renderTarget_.mode));
-
-        renderTarget_.colorAttachments[0].texture = std::move(surfaceTextures.color);
-      }
-    }
-    if (updateDepthStencil) {
-      if (!surfaceTextures.depth) {
-        if (depthAttachment) {
-          static_cast<Texture&>(*depthAttachment).detachAsDepth(false);
-        }
-        renderTarget_.depthAttachment.texture = nullptr;
-
-        if (depthAttachment == stencilAttachment) {
-          if (stencilAttachment) {
-            static_cast<Texture&>(*stencilAttachment).detachAsStencil(false);
-          }
-          renderTarget_.stencilAttachment.texture = nullptr;
-        }
-      } else {
-        attachAsDepth(*surfaceTextures.depth, defaultWriteAttachmentParams(renderTarget_.mode));
-        if (surfaceTextures.depth->getProperties().hasStencil()) {
-          attachAsStencil(*surfaceTextures.depth, defaultWriteAttachmentParams(renderTarget_.mode));
-          renderTarget_.stencilAttachment.texture = surfaceTextures.depth;
-        } else {
-          if (stencilAttachment) {
-            static_cast<Texture&>(*stencilAttachment).detachAsStencil(false);
-          }
-          renderTarget_.stencilAttachment.texture = nullptr;
-        }
-        renderTarget_.depthAttachment.texture = std::move(surfaceTextures.depth);
-      }
-    }
+  if (!updateColor && !updateDepthStencil) {
+    return;
   }
+
+  const FramebufferBindingGuard guard(getContext());
+  bindBuffer();
+  const bool wasImplicit = resolvesImplicitly();
+  // A framebuffer that resolves implicitly has the resolve texture attached instead of the color
+  const std::shared_ptr<ITexture> previousColor =
+      wasImplicit ? renderTarget_.colorAttachments[0].resolveTexture : colorAttachment0;
+  if (updateColor) {
+    if (!surfaceTextures.color && previousColor) {
+      static_cast<Texture&>(*previousColor).detachAsColor(0, false);
+    }
+    // The resolve texture stays for the next color texture
+    renderTarget_.colorAttachments[0].texture = std::move(surfaceTextures.color);
+  }
+  if (updateDepthStencil) {
+    std::shared_ptr<ITexture> stencil;
+    if (surfaceTextures.depth) {
+      if (surfaceTextures.depth->getProperties().hasStencil()) {
+        stencil = surfaceTextures.depth;
+      }
+    } else if (depthAttachment != stencilAttachment) {
+      // Only a stencil texture that is the depth texture goes when the depth texture does
+      stencil = stencilAttachment;
+    }
+    // Detaching a texture releases its implicit renderbuffer, so an implicit framebuffer detaches
+    // the textures that others replace as well
+    if (depthAttachment && depthAttachment != surfaceTextures.depth &&
+        (wasImplicit || !surfaceTextures.depth)) {
+      static_cast<Texture&>(*depthAttachment).detachAsDepth(false);
+    }
+    if (stencilAttachment && stencilAttachment != stencil && (wasImplicit || !stencil)) {
+      static_cast<Texture&>(*stencilAttachment).detachAsStencil(false);
+    }
+    renderTarget_.stencilAttachment.texture = stencil;
+    renderTarget_.depthAttachment.texture = std::move(surfaceTextures.depth);
+  }
+  reattachTextures(previousColor, {.color = updateColor, .depthStencil = updateDepthStencil});
 }
 
 bool CustomFramebuffer::isInitialized() const {
@@ -647,15 +704,14 @@ void CustomFramebuffer::prepareResource(const std::string& debugName, Result* ou
         GL_FRAMEBUFFER, frameBufferID_, static_cast<GLsizei>(debugName.size()), debugName.c_str());
   }
 
-  std::vector<GLenum> drawBuffers;
-
-  const auto attachmentParams = defaultWriteAttachmentParams(renderTarget_.mode);
   // attach the textures and render buffers to the frame buffer
+  implicitSamples_ = getImplicitResolveSamples();
+  attachTextures();
+
+  std::vector<GLenum> drawBuffers;
   bool hasBuffers = false;
   for (size_t i = 0; i != IGL_COLOR_ATTACHMENTS_MAX; i++) {
-    const auto& colorAttachment = renderTarget_.colorAttachments[i];
-    if (colorAttachment.texture != nullptr) {
-      attachAsColor(*colorAttachment.texture, static_cast<uint32_t>(i), attachmentParams);
+    if (renderTarget_.colorAttachments[i].texture != nullptr) {
       drawBuffers.push_back(static_cast<GLenum>(GL_COLOR_ATTACHMENT0 + i));
       if (i) {
         // skip attachment 0
@@ -672,15 +728,13 @@ void CustomFramebuffer::prepareResource(const std::string& debugName, Result* ou
     getContext().drawBuffers(static_cast<GLsizei>(drawBuffers.size()), drawBuffers.data());
   }
 
-  if (renderTarget_.depthAttachment.texture != nullptr) {
-    attachAsDepth(*renderTarget_.depthAttachment.texture, attachmentParams);
-  }
-
-  if (renderTarget_.stencilAttachment.texture != nullptr) {
-    attachAsStencil(*renderTarget_.stencilAttachment.texture, attachmentParams);
-  }
-
   Result result = checkFramebufferStatus(getContext(), false);
+  if (!result.isOk() && resolvesImplicitly()) {
+    // The driver can reject the samples, for example by rounding those of the attachments up
+    // differently. Resolve with the resolve framebuffer instead.
+    fallBackToBlit();
+    result = checkFramebufferStatus(getContext(), false);
+  }
   IGL_DEBUG_ASSERT(result.isOk(), result.message.c_str());
   if (outResult) {
     *outResult = result;
@@ -689,12 +743,15 @@ void CustomFramebuffer::prepareResource(const std::string& debugName, Result* ou
     return;
   }
 
-  setupResolveFramebuffer(outResult);
+  if (!resolvesImplicitly()) {
+    setupResolveFramebuffer(outResult);
+  }
 }
 
 // NOLINTNEXTLINE(misc-no-recursion)
 void CustomFramebuffer::setupResolveFramebuffer(Result* outResult) {
   IGL_PROFILER_FUNCTION();
+  resolveFramebuffer_ = nullptr;
   // Check if resolve framebuffer is needed
   FramebufferDesc resolveDesc;
   auto createResolveFramebuffer = false;
@@ -713,7 +770,8 @@ void CustomFramebuffer::setupResolveFramebuffer(Result* outResult) {
       maskColorResolveAttachments |= 1u << i;
     }
   }
-  if (createResolveFramebuffer && maskColorResolveAttachments != maskColorAttachments) {
+  // A resolve texture that is kept for an attachment whose texture an update removed is no mismatch
+  if (createResolveFramebuffer && (maskColorAttachments & ~maskColorResolveAttachments) != 0) {
     IGL_DEBUG_ASSERT_NOT_REACHED();
     if (outResult) {
       *outResult = Result(igl::Result::Code::ArgumentInvalid,
@@ -740,6 +798,182 @@ void CustomFramebuffer::setupResolveFramebuffer(Result* outResult) {
       *outResult = result;
     }
     resolveFramebuffer_ = std::move(cfb);
+  }
+}
+
+bool CustomFramebuffer::resolvesImplicitly() const {
+  return implicitSamples_ > 1;
+}
+
+uint32_t CustomFramebuffer::getImplicitResolveSamples() const {
+  IGL_PROFILER_FUNCTION();
+  IContext& context = getContext();
+  const DeviceFeatureSet& features = context.deviceFeatures();
+  if (frameBufferID_ == 0 || renderTarget_.mode != FramebufferMode::Mono ||
+      !features.hasInternalFeature(InternalFeatures::MultisampledRenderToTexture)) {
+    return 0;
+  }
+
+  // Every color attachment has to be a Memoryless multisampled one with a resolve texture that the
+  // GPU can resolve into, and all of them have to use the same number of samples
+  uint32_t samples = 0;
+  for (size_t i = 0; i != IGL_COLOR_ATTACHMENTS_MAX; i++) {
+    const auto& colorAttachment = renderTarget_.colorAttachments[i];
+    if (colorAttachment.texture == nullptr) {
+      if (colorAttachment.resolveTexture != nullptr) {
+        return 0;
+      }
+      continue;
+    }
+    if (!isMemorylessMultisampled2D(*colorAttachment.texture) ||
+        colorAttachment.resolveTexture == nullptr ||
+        !canResolveImplicitly(*colorAttachment.texture, *colorAttachment.resolveTexture)) {
+      return 0;
+    }
+    // Only GL_COLOR_ATTACHMENT0 can use the extension without its second version
+    if (i != 0 && !features.hasExtension(Extensions::MultiSampleExt2)) {
+      return 0;
+    }
+    const uint32_t colorSamples = colorAttachment.texture->getSamples();
+    if ((samples != 0 && colorSamples != samples) ||
+        !supportsImplicitSamples(context, *colorAttachment.texture, colorSamples)) {
+      return 0;
+    }
+    samples = colorSamples;
+  }
+
+  if (samples == 0 || !isImplicitDepthStencil(context, renderTarget_.depthAttachment, samples) ||
+      !isImplicitDepthStencil(context, renderTarget_.stencilAttachment, samples)) {
+    return 0;
+  }
+  return samples;
+}
+
+void CustomFramebuffer::attachColor(size_t index, Texture::AttachmentParams params) const {
+  const auto& colorAttachment = renderTarget_.colorAttachments[index];
+  params.implicitSamples = implicitSamples_;
+  attachAsColor(resolvesImplicitly() ? *colorAttachment.resolveTexture : *colorAttachment.texture,
+                static_cast<uint32_t>(index),
+                params);
+}
+
+void CustomFramebuffer::attachDepth(Texture::AttachmentParams params) const {
+  params.implicitSamples = implicitSamples_;
+  attachAsDepth(*renderTarget_.depthAttachment.texture, params);
+}
+
+void CustomFramebuffer::attachStencil(Texture::AttachmentParams params) const {
+  params.implicitSamples = implicitSamples_;
+  attachAsStencil(*renderTarget_.stencilAttachment.texture, params);
+}
+
+void CustomFramebuffer::attachTextures() const {
+  IGL_PROFILER_FUNCTION();
+  const auto attachmentParams = defaultWriteAttachmentParams(renderTarget_.mode);
+  for (size_t i = 0; i != IGL_COLOR_ATTACHMENTS_MAX; i++) {
+    if (renderTarget_.colorAttachments[i].texture != nullptr) {
+      attachColor(i, attachmentParams);
+    }
+  }
+  if (renderTarget_.depthAttachment.texture != nullptr) {
+    attachDepth(attachmentParams);
+  }
+  if (renderTarget_.stencilAttachment.texture != nullptr) {
+    attachStencil(attachmentParams);
+  }
+}
+
+void CustomFramebuffer::detachTextures() const {
+  IGL_PROFILER_FUNCTION();
+  for (size_t i = 0; i != IGL_COLOR_ATTACHMENTS_MAX; i++) {
+    const auto& colorAttachment = renderTarget_.colorAttachments[i];
+    if (colorAttachment.texture != nullptr) {
+      const auto& attached = resolvesImplicitly() ? colorAttachment.resolveTexture
+                                                  : colorAttachment.texture;
+      static_cast<Texture&>(*attached).detachAsColor(static_cast<uint32_t>(i), false);
+    }
+  }
+  if (renderTarget_.depthAttachment.texture != nullptr) {
+    static_cast<Texture&>(*renderTarget_.depthAttachment.texture).detachAsDepth(false);
+  }
+  if (renderTarget_.stencilAttachment.texture != nullptr) {
+    static_cast<Texture&>(*renderTarget_.stencilAttachment.texture).detachAsStencil(false);
+  }
+}
+
+void CustomFramebuffer::attachReplacedTextures(const Replaced& replaced) const {
+  IGL_PROFILER_FUNCTION();
+  const auto attachmentParams = defaultWriteAttachmentParams(renderTarget_.mode);
+  // A framebuffer that resolves implicitly never attaches the multisampled color texture
+  const bool colorReplaced = resolvesImplicitly() ? replaced.resolve : replaced.color;
+  if (colorReplaced && renderTarget_.colorAttachments[0].texture != nullptr) {
+    attachColor(0, attachmentParams);
+  }
+  if (replaced.depthStencil) {
+    if (renderTarget_.depthAttachment.texture != nullptr) {
+      attachDepth(attachmentParams);
+    }
+    if (renderTarget_.stencilAttachment.texture != nullptr) {
+      attachStencil(attachmentParams);
+    }
+  }
+}
+
+void CustomFramebuffer::detachImplicitColors(const std::shared_ptr<ITexture>& previousColor) const {
+  IGL_PROFILER_FUNCTION();
+  for (size_t i = 0; i != IGL_COLOR_ATTACHMENTS_MAX; i++) {
+    // Only color attachment 0 can have another texture in renderTarget_ than the attached one
+    const auto& attached = i == 0 ? previousColor
+                                  : renderTarget_.colorAttachments[i].resolveTexture;
+    if (attached != nullptr) {
+      static_cast<Texture&>(*attached).detachAsColor(static_cast<uint32_t>(i), false);
+    }
+  }
+}
+
+void CustomFramebuffer::fallBackToBlit() {
+  IGL_PROFILER_FUNCTION();
+  detachTextures();
+  implicitSamples_ = 0;
+  attachTextures();
+}
+
+void CustomFramebuffer::reattachTextures(const std::shared_ptr<ITexture>& previousColor,
+                                         const Replaced& replaced) {
+  IGL_PROFILER_FUNCTION();
+  const uint32_t previousSamples = implicitSamples_;
+  implicitSamples_ = getImplicitResolveSamples();
+  const bool sameSamples = implicitSamples_ == previousSamples;
+  if (sameSamples) {
+    attachReplacedTextures(replaced);
+  } else {
+    if (previousSamples > 1) {
+      // Skia binds texture 0 before it changes the number of samples of a texture that is attached
+      // with glFramebufferTexture2DMultisample(), because the Adreno 3xx and Mali-G drivers corrupt
+      // the contents of the texture otherwise
+      detachImplicitColors(previousColor);
+    }
+    // The textures attach differently now, so attach all of them
+    attachTextures();
+  }
+
+  const bool triedImplicit = resolvesImplicitly();
+  if (triedImplicit) {
+    // A resolve texture that replaces another one has its format and size, and the samples stay, so
+    // the framebuffer stays complete. Any other change can have the driver round the samples of an
+    // attachment up differently.
+    const bool resolveSwap = sameSamples && replaced.resolve && !replaced.color &&
+                             !replaced.depthStencil;
+    if (!resolveSwap && !checkFramebufferStatus(getContext(), false).isOk()) {
+      fallBackToBlit();
+    }
+  }
+
+  if (resolvesImplicitly()) {
+    // The GPU resolves in tile memory, so there is no resolve blit
+    resolveFramebuffer_ = nullptr;
+  } else if (previousSamples > 1 || triedImplicit) {
+    setupResolveFramebuffer(nullptr);
   }
 }
 
@@ -848,9 +1082,7 @@ void CustomFramebuffer::bind(const RenderPassDesc& renderPass) const {
                                              renderPassAttachment.layer,
                                              renderPassAttachment.face,
                                              renderPassAttachment.mipLevel)) {
-      attachAsColor(*colorAttachment.texture,
-                    static_cast<uint32_t>(index),
-                    toAttachmentParams(renderPassAttachment, renderTarget_.mode));
+      attachColor(index, toAttachmentParams(renderPassAttachment, renderTarget_.mode));
     }
   }
   if (renderTarget_.depthAttachment.texture) {
@@ -859,8 +1091,7 @@ void CustomFramebuffer::bind(const RenderPassDesc& renderPass) const {
                                       renderPassAttachment.layer,
                                       renderPassAttachment.face,
                                       renderPassAttachment.mipLevel)) {
-      attachAsDepth(*renderTarget_.depthAttachment.texture,
-                    toAttachmentParams(renderPassAttachment, renderTarget_.mode));
+      attachDepth(toAttachmentParams(renderPassAttachment, renderTarget_.mode));
     }
   }
   if (renderTarget_.stencilAttachment.texture) {
@@ -869,8 +1100,7 @@ void CustomFramebuffer::bind(const RenderPassDesc& renderPass) const {
                                         renderPassAttachment.layer,
                                         renderPassAttachment.face,
                                         renderPassAttachment.mipLevel)) {
-      attachAsStencil(*renderTarget_.stencilAttachment.texture,
-                      toAttachmentParams(renderPassAttachment, renderTarget_.mode));
+      attachStencil(toAttachmentParams(renderPassAttachment, renderTarget_.mode));
     }
   }
 
@@ -905,10 +1135,16 @@ void CustomFramebuffer::unbind() const {
 
   for (size_t i = 0; i < IGL_COLOR_ATTACHMENTS_MAX; ++i) {
     const auto& colorAttachment = renderTarget_.colorAttachments[i];
-    if (colorAttachment.texture != nullptr &&
-        renderPass_.colorAttachments[i].storeAction != StoreAction::Store) {
-      attachments[numAttachments++] =
-          isDefaultFramebuffer ? GL_COLOR : static_cast<GLenum>(GL_COLOR_ATTACHMENT0 + i);
+    if (colorAttachment.texture != nullptr) {
+      const StoreAction storeAction = renderPass_.colorAttachments[i].storeAction;
+      // What an implicit resolve writes into the resolve texture is the result of MsaaResolve, and
+      // discarding it would discard the resolve
+      const bool discard = resolvesImplicitly() ? storeAction == StoreAction::DontCare
+                                                : storeAction != StoreAction::Store;
+      if (discard) {
+        attachments[numAttachments++] =
+            isDefaultFramebuffer ? GL_COLOR : static_cast<GLenum>(GL_COLOR_ATTACHMENT0 + i);
+      }
     }
     if (isDefaultFramebuffer) {
       // The default framebuffer has a single color buffer.
@@ -932,6 +1168,12 @@ void CustomFramebuffer::unbind() const {
     if (features.hasInternalFeature(InternalFeatures::InvalidateFramebuffer)) {
       getContext().invalidateFramebuffer(GL_FRAMEBUFFER, numAttachments, attachments);
     }
+  }
+
+  // Mali GPUs hang when passes that resolve implicitly follow each other on a framebuffer that
+  // stays bound. Binding another framebuffer ends each pass.
+  if (resolvesImplicitly()) {
+    getContext().bindFramebuffer(GL_FRAMEBUFFER, 0);
   }
 }
 

@@ -195,6 +195,47 @@ TEST(ExtensionTokenOGLTest, HasBrokenFramebufferFetch) {
 }
 
 //
+// HasBrokenMultisampledRenderToTexture
+//
+// Adreno 4xx, 5xx, 615 and 620 drivers advertise the extension but render incorrectly with it.
+// Ensure the detection function correctly identifies broken GPUs and rejects others.
+//
+TEST(ExtensionTokenOGLTest, HasBrokenMultisampledRenderToTexture) {
+  // Adreno 4xx and 5xx: true
+  EXPECT_TRUE(opengl::hasBrokenMultisampledRenderToTexture("Adreno (TM) 400", "Qualcomm"));
+  EXPECT_TRUE(opengl::hasBrokenMultisampledRenderToTexture("Adreno (TM) 530", "Qualcomm"));
+  EXPECT_TRUE(opengl::hasBrokenMultisampledRenderToTexture("Adreno (TM) 599", "Qualcomm"));
+
+  // Adreno 615 and 620: true
+  EXPECT_TRUE(opengl::hasBrokenMultisampledRenderToTexture("Adreno (TM) 615", "Qualcomm"));
+  EXPECT_TRUE(opengl::hasBrokenMultisampledRenderToTexture("Adreno (TM) 620", "Qualcomm"));
+  EXPECT_TRUE(opengl::hasBrokenMultisampledRenderToTexture("Adreno 620", "Qualcomm"));
+  EXPECT_TRUE(
+      opengl::hasBrokenMultisampledRenderToTexture("Adreno 615", "Qualcomm Technologies, Inc."));
+
+  // Boundary cases: 399 (before 4xx), 600 and 610 (between 5xx and 615), 618 (between 615 and
+  // 620), 630 (after 620): false
+  EXPECT_FALSE(opengl::hasBrokenMultisampledRenderToTexture("Adreno (TM) 399", "Qualcomm"));
+  EXPECT_FALSE(opengl::hasBrokenMultisampledRenderToTexture("Adreno (TM) 600", "Qualcomm"));
+  EXPECT_FALSE(opengl::hasBrokenMultisampledRenderToTexture("Adreno (TM) 610", "Qualcomm"));
+  EXPECT_FALSE(opengl::hasBrokenMultisampledRenderToTexture("Adreno (TM) 618", "Qualcomm"));
+  EXPECT_FALSE(opengl::hasBrokenMultisampledRenderToTexture("Adreno (TM) 630", "Qualcomm"));
+
+  // Only Qualcomm drivers match, so an Adreno renderer string from another vendor (e.g. ANGLE) does
+  // not
+  EXPECT_FALSE(opengl::hasBrokenMultisampledRenderToTexture("Adreno (TM) 620", "ARM"));
+
+  // Non-Adreno GPUs: false
+  EXPECT_FALSE(opengl::hasBrokenMultisampledRenderToTexture("Mali-G78", "ARM"));
+  EXPECT_FALSE(
+      opengl::hasBrokenMultisampledRenderToTexture("llvmpipe (LLVM 22.1.3, 256 bits)", "Mesa"));
+
+  // Null renderer or vendor: false
+  EXPECT_FALSE(opengl::hasBrokenMultisampledRenderToTexture(nullptr, "Qualcomm"));
+  EXPECT_FALSE(opengl::hasBrokenMultisampledRenderToTexture("Adreno (TM) 620", nullptr));
+}
+
+//
 // ShaderFramebufferFetchNeedsCoherentExtension
 //
 // Extensions::ShaderFramebufferFetch looks for the extension in the GL_EXTENSIONS string that

@@ -57,6 +57,9 @@ class Texture : public WithContext, public ITexture {
     uint32_t layer = 0; // Array texture layer
     bool read = false;
     bool stereo = false;
+    // The number of samples of GL_EXT_multisampled_render_to_texture, which renders in tile memory
+    // and resolves into the attachment. Applies when above 1.
+    uint32_t implicitSamples = 0;
   };
 
   // frame buffer attachments
@@ -68,6 +71,10 @@ class Texture : public WithContext, public ITexture {
   virtual void detachAsStencil(bool read) = 0;
 
   [[nodiscard]] virtual bool isImplicitStorage() const;
+
+  /// Whether this texture can be attached with AttachmentParams::implicitSamples greater than 1 as
+  /// the target that multisampled rendering resolves into
+  [[nodiscard]] virtual bool canAttachMultisampledRenderToTexture() const;
 
   [[nodiscard]] GLenum toGLTarget(TextureType type) const;
   static TextureFormat glInternalFormatToTextureFormat(GLuint glTexInternalFormat,

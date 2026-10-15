@@ -292,6 +292,12 @@ class IContext {
                                            GLenum pname,
                                            GLint* IGL_NULLABLE params) const;
   void getIntegerv(GLenum pname, GLint* IGL_NULLABLE params) const;
+  /// Needs InternalFeatures::InternalFormatQuery
+  void getInternalformativ(GLenum target,
+                           GLenum internalformat,
+                           GLenum pname,
+                           GLsizei bufSize,
+                           GLint* IGL_NULLABLE params) const;
   void getProgramiv(GLuint program, GLenum pname, GLint* IGL_NULLABLE params) const;
   void getProgramInterfaceiv(GLuint program,
                              GLenum programInterface,
@@ -363,6 +369,21 @@ class IContext {
                                       GLenum internalformat,
                                       GLsizei width,
                                       GLsizei height);
+  /// Like renderbufferStorageMultisample(), for a renderbuffer that is attached to a framebuffer
+  /// together with textures that use GL_EXT_multisampled_render_to_texture. That framebuffer can be
+  /// incomplete with a renderbuffer whose storage renderbufferStorageMultisample() specified.
+  void renderbufferStorageMultisampleImplicit(GLenum target,
+                                              GLsizei samples,
+                                              GLenum internalformat,
+                                              GLsizei width,
+                                              GLsizei height);
+  /// The largest number of samples that GL_EXT_multisampled_render_to_texture, or its IMG version
+  /// where that is what the context uses, accepts for any format
+  [[nodiscard]] GLint getMaxMultisampledRenderToTextureSamples();
+  /// Like getMaxMultisampledRenderToTextureSamples(), for textures and renderbuffers with
+  /// `internalFormat`. A format that cannot be multisampled gets 0. Where the context cannot
+  /// query it (before OpenGL ES 3.0), the limit for any format applies.
+  [[nodiscard]] GLint getMaxMultisampledRenderToTextureSamples(GLenum internalFormat);
   void framebufferTextureMultiview(GLenum target,
                                    GLenum attachment,
                                    GLuint texture,
@@ -758,6 +779,8 @@ class IContext {
   PFNIGLREADBUFFERPROC IGL_NULLABLE readBufferProc_ = nullptr;
   PFNIGLRENDERBUFFERSTORAGEMULTISAMPLEPROC IGL_NULLABLE renderbufferStorageMultisampleProc_ =
       nullptr;
+  PFNIGLRENDERBUFFERSTORAGEMULTISAMPLEPROC IGL_NULLABLE
+      renderbufferStorageMultisampleImplicitProc_ = nullptr;
   PFNIGLTEXIMAGE3DPROC IGL_NULLABLE texImage3DProc_ = nullptr;
   PFNIGLTEXSTORAGE2DPROC IGL_NULLABLE texStorage2DProc_ = nullptr;
   PFNIGLTEXSTORAGE3DPROC IGL_NULLABLE texStorage3DProc_ = nullptr;
@@ -820,14 +843,22 @@ class IContext {
 
   void getGLMajorAndMinorVersions(GLint& majorVersion, GLint& minorVersion) const;
   void getGlMajorAndMinorVersions(GLint& majorVersion, GLint& minorVersion) const;
+  /// Whether the entry points of GL_EXT_multisampled_render_to_texture that the context uses are
+  /// those of the IMG version. Like the calls that use them, this prefers the EXT version.
+  [[nodiscard]] bool usesImgMultisampledRenderToTexture() const;
   friend class DestructionGuard;
   std::vector<std::unique_ptr<RenderCommandAdapter>> renderAdapterPool_;
   std::vector<std::unique_ptr<ComputeCommandAdapter>> computeAdapterPool_;
 
   DeviceFeatureSet deviceFeatureSet_;
 
-  // For framebufferTexture2DMultisample
+  // For framebufferTexture2DMultisample and renderbufferStorageMultisampleImplicit
   GLint maxSamples_ = -1;
+  std::unordered_map<GLenum, GLint> maxSamplesByFormat_;
+  // Some drivers only take GL_FRAMEBUFFER as the target of glFramebufferTexture2DMultisampleEXT().
+  // The first call with GL_DRAW_FRAMEBUFFER or GL_READ_FRAMEBUFFER finds out which kind this is.
+  bool multisampleNeedsFramebufferTarget_ = false;
+  bool multisampleDrawTargetVerified_ = false;
   GLint maxDebugStackSize_ = -1;
   GLint debugStackSize_ = 0;
 

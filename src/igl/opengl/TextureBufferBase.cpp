@@ -81,8 +81,11 @@ void TextureBufferBase::attach(GLenum attachment,
   }
   const auto numSamples = getSamples();
   const auto numLayers = getNumLayers();
+  // A multisampled texture always renders with multisampled render-to-texture, and so does a
+  // single-sampled texture that a framebuffer attaches with implicitSamples
+  const uint32_t renderToTextureSamples = numSamples > 1 ? numSamples : params.implicitSamples;
 
-  if (numSamples > 1) {
+  if (renderToTextureSamples > 1) {
     if (!deviceFeatures.hasExtension(Extensions::MultiSampleExt2)) {
       IGL_DEBUG_ASSERT(
           attachment == GL_COLOR_ATTACHMENT0 || attachment == GL_DEPTH_ATTACHMENT ||
@@ -91,13 +94,14 @@ void TextureBufferBase::attach(GLenum attachment,
           "or GL_STENCIL_ATTACHMENT");
     }
     if (params.stereo) {
-      getContext().framebufferTextureMultisampleMultiview(framebufferTarget,
-                                                          attachment,
-                                                          textureID,
-                                                          params.mipLevel,
-                                                          static_cast<GLsizei>(numSamples),
-                                                          0,
-                                                          2);
+      getContext().framebufferTextureMultisampleMultiview(
+          framebufferTarget,
+          attachment,
+          textureID,
+          params.mipLevel,
+          static_cast<GLsizei>(renderToTextureSamples),
+          0,
+          2);
     } else {
       // `IMG_multisampled_render_to_texture` unlike `EXT_multisampled_render_to_texture`,
       // only supports  GL_FRAMEBUFFER, not GL_DRAW/READ_FRAMEBUFFER
@@ -106,8 +110,12 @@ void TextureBufferBase::attach(GLenum attachment,
           deviceFeatures.hasExtension(Extensions::MultiSampleImg)) {
         framebufferTarget = GL_FRAMEBUFFER;
       }
-      getContext().framebufferTexture2DMultisample(
-          framebufferTarget, attachment, target, textureID, params.mipLevel, getSamples());
+      getContext().framebufferTexture2DMultisample(framebufferTarget,
+                                                   attachment,
+                                                   target,
+                                                   textureID,
+                                                   params.mipLevel,
+                                                   static_cast<GLsizei>(renderToTextureSamples));
     }
   } else {
     if (params.stereo) {
@@ -189,6 +197,10 @@ bool TextureBufferBase::isRequiredGenerateMipmap() const {
   }
 
   return numMipLevels_ > 1;
+}
+
+bool TextureBufferBase::canAttachMultisampledRenderToTexture() const {
+  return target_ == GL_TEXTURE_2D && textureID_ != 0;
 }
 
 bool TextureBufferBase::isValidForTexImage(const TextureRangeDesc& range) const {

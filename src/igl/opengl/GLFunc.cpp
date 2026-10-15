@@ -228,6 +228,11 @@ IGL_EXTERN_BEGIN
 #else
 #define CAN_CALL_glVertexAttribDivisor 0
 #endif
+#if defined(GL_VERSION_4_2) || defined(GL_ES_VERSION_3_0) || defined(GL_ARB_internalformat_query)
+#define CAN_CALL_glGetInternalformativ CAN_CALL
+#else
+#define CAN_CALL_glGetInternalformativ 0
+#endif
 
 void iglDebugMessageCallback(PFNIGLDEBUGPROC callback, const void* userParam) {
   GLEXTENSION_METHOD_BODY(CAN_CALL_glDebugMessageCallback,
@@ -378,6 +383,21 @@ GLuint iglGetDebugMessageLog(GLuint count,
                                       severities,
                                       lengths,
                                       messageLog);
+}
+
+void iglGetInternalformativ(GLenum target,
+                            GLenum internalformat,
+                            GLenum pname,
+                            GLsizei bufSize,
+                            GLint* params) {
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glGetInternalformativ,
+                          glGetInternalformativ,
+                          PFNIGLGETINTERNALFORMATIVPROC,
+                          target,
+                          internalformat,
+                          pname,
+                          bufSize,
+                          params);
 }
 
 const GLubyte* iglGetStringi(GLenum name, GLuint index) {

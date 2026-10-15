@@ -156,13 +156,48 @@ class CustomFramebuffer final : public Framebuffer {
   // opengl::Framebuffer
   [[nodiscard]] bool hasTextureAttachments() const override;
 
+  /// Whether GL_EXT_multisampled_render_to_texture resolves the multisampled color attachments. The
+  /// framebuffer then attaches their resolve textures instead of them, and the GPU resolves in tile
+  /// memory, so getResolveFramebuffer() is null.
+  [[nodiscard]] bool resolvesImplicitly() const;
+
  private:
+  /// The attachments of renderTarget_ that an update replaced
+  struct Replaced {
+    bool color = false;
+    bool resolve = false;
+    bool depthStencil = false;
+  };
+
   void prepareResource(const std::string& debugName, Result* outResult);
   void updateDrawableInternal(SurfaceTextures surfaceTextures, bool updateDepthStencil);
   void applyClearMask(int targetCount) const;
   void setupResolveFramebuffer(Result* outResult);
 
+  /// @returns the number of samples to resolve implicitly with, or 0 if the attachments of
+  /// renderTarget_ do not allow it
+  [[nodiscard]] uint32_t getImplicitResolveSamples() const;
+  void attachTextures() const;
+  void detachTextures() const;
+  void attachColor(size_t index, Texture::AttachmentParams params) const;
+  void attachDepth(Texture::AttachmentParams params) const;
+  void attachStencil(Texture::AttachmentParams params) const;
+  /// Attaches only the textures that `replaced` has an effect on
+  void attachReplacedTextures(const Replaced& replaced) const;
+  /// Detaches the color attachments of a framebuffer that resolved implicitly
+  /// @param previousColor What was attached to color attachment 0, whose texture an update may
+  /// have replaced in renderTarget_ already
+  void detachImplicitColors(const std::shared_ptr<ITexture>& previousColor) const;
+  /// Resolves with the resolve framebuffer after all, with the textures of renderTarget_
+  void fallBackToBlit();
+  /// Attaches the textures of renderTarget_ again after an update replaced those of `replaced`,
+  /// and moves the framebuffer between resolving implicitly and with a blit if they require it
+  /// @param previousColor What was attached to color attachment 0 before the update
+  void reattachTextures(const std::shared_ptr<ITexture>& previousColor, const Replaced& replaced);
+
   bool initialized_ = false;
+  // The number of samples of the multisampled color attachments if resolvesImplicitly()
+  uint32_t implicitSamples_ = 0;
 
   friend class Framebuffer; // Needed to enable copyBytesColorAttachment
   FramebufferDesc renderTarget_; // attachments

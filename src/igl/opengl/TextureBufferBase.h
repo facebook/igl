@@ -36,6 +36,7 @@ class TextureBufferBase : public Texture {
   void generateMipmap(ICommandBuffer& cmdBuffer,
                       const TextureRangeDesc* IGL_NULLABLE range = nullptr) const override;
   [[nodiscard]] bool isRequiredGenerateMipmap() const override;
+  [[nodiscard]] bool canAttachMultisampledRenderToTexture() const override;
 
   [[nodiscard]] GLuint getId() const override {
     return textureID_;

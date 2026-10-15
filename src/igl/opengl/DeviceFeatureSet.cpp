@@ -244,6 +244,18 @@ bool hasBrokenFramebufferFetch(const char* renderer, const char* vendor) {
   return adrenoNumber.has_value() && *adrenoNumber >= 500 && *adrenoNumber < 600;
 }
 
+bool hasBrokenMultisampledRenderToTexture(const char* renderer, const char* vendor) {
+  if (renderer == nullptr) {
+    return false;
+  }
+  // These Adreno drivers advertise the extension but render incorrectly with it. ANGLE disables it
+  // on the Adreno 4xx and 5xx for several Android versions, and Skia disables MSAA on the Adreno
+  // 615 and 620. The Android version is unknown here, so every Adreno 4xx and 5xx counts as broken.
+  const std::optional<int> adrenoNumber = parseAdrenoNumber(renderer, vendor);
+  return adrenoNumber.has_value() && ((*adrenoNumber >= 400 && *adrenoNumber < 600) ||
+                                      *adrenoNumber == 615 || *adrenoNumber == 620);
+}
+
 bool containsExtensionToken(std::string_view extensions, std::string_view extension) {
   if (extension.empty()) {
     return false;
@@ -396,7 +408,8 @@ bool DeviceFeatureSet::isExtensionSupported(Extensions extension) const {
   case Extensions::MultiSampleApple:
     return hasESExtension(*this, "GL_APPLE_framebuffer_multisample");
   case Extensions::MultiSampleExt:
-    return hasESExtension(*this, "GL_EXT_multisampled_render_to_texture");
+    // This name is a prefix of GL_EXT_multisampled_render_to_texture2, so match it as a whole
+    return usesOpenGLES() && isSupportedExact("GL_EXT_multisampled_render_to_texture");
   case Extensions::MultiSampleExt2:
     return hasESExtension(*this, "GL_EXT_multisampled_render_to_texture2");
   case Extensions::MultiSampleImg:
@@ -831,10 +844,24 @@ bool DeviceFeatureSet::isInternalFeatureSupported(InternalFeatures feature) cons
   case InternalFeatures::GetStringi:
     return hasDesktopOrESVersion(*this, GLVersion::v3_0, GLVersion::v3_0_ES);
 
+  case InternalFeatures::InternalFormatQuery:
+    return hasDesktopOrESVersionOrExtension(
+        *this, GLVersion::v4_2, GLVersion::v3_0_ES, "GL_ARB_internalformat_query");
+
   case InternalFeatures::InvalidateFramebuffer:
     return hasDesktopOrESVersion(*this, GLVersion::v4_3, GLVersion::v3_0_ES) ||
            hasExtension(Extensions::InvalidateSubdata) ||
            hasExtension(Extensions::DiscardFramebuffer);
+
+  case InternalFeatures::MultisampledRenderToTexture: {
+    if (!usesOpenGLES() ||
+        (!hasExtension(Extensions::MultiSampleExt) && !hasExtension(Extensions::MultiSampleImg))) {
+      return false;
+    }
+    const auto* renderer = reinterpret_cast<const char*>(glContext_.getString(GL_RENDERER));
+    const auto* vendor = reinterpret_cast<const char*>(glContext_.getString(GL_VENDOR));
+    return !hasBrokenMultisampledRenderToTexture(renderer, vendor);
+  }
 
   case InternalFeatures::PolygonFillMode:
     return hasDesktopVersion(*this, GLVersion::v2_0);
