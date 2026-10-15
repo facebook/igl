@@ -80,8 +80,8 @@ struct hash<igl::ComputePipelineDesc> {
       hash ^= std::hash<size_t>()(p.first);
       hash ^= std::hash<std::string>()(p.second.toString());
     }
-    // @fb-only
     return hash;
+    // @fb-only
   }
 };
 
