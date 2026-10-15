@@ -30,6 +30,7 @@
 #include <shell/renderSessions/MeshShaderTriangleSession.h>
 #include <shell/renderSessions/MultiDrawIndexedIndirectSession.h>
 #include <shell/renderSessions/ScissorTestSession.h>
+#include <shell/renderSessions/SlangSplatsSession.h>
 #include <shell/renderSessions/SpecConstantsSession.h>
 #include <shell/renderSessions/SrgbMipmapGammaSession.h>
 #include <shell/renderSessions/StencilOutlineSession.h>
@@ -79,6 +80,11 @@ TEST_F(RenderSnapshotTests, DrawInstancedSession) {
 TEST_F(RenderSnapshotTests, MRTSession) {
   MRTSession session(platform_);
   render(session, "MRTSession");
+}
+
+TEST_F(RenderSnapshotTests, SlangSplatsSession) {
+  SlangSplatsSession session(platform_);
+  render(session, "SlangSplatsSession", 75);
 }
 
 TEST_F(RenderSnapshotTests, TQMultiRenderPassSession) {
