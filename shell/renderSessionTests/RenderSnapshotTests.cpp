@@ -106,6 +106,19 @@ TEST_F(RenderSnapshotTests, SlangShowcaseHalf) {
   render(session, "SlangShowcaseHalf", 2);
 }
 
+TEST_F(RenderSnapshotTests, SlangShowcaseInverse) {
+  SlangShowcaseSession session(platform_);
+  session.setChapter(SlangShowcaseSession::Chapter::InverseRendering);
+  render(session, "SlangShowcaseInverse", 60);
+}
+
+TEST_F(RenderSnapshotTests, SlangShowcaseSensitivity) {
+  SlangShowcaseSession session(platform_);
+  session.setChapter(SlangShowcaseSession::Chapter::InverseRendering);
+  session.setShowSensitivity(true);
+  render(session, "SlangShowcaseSensitivity", 60);
+}
+
 TEST_F(RenderSnapshotTests, TQMultiRenderPassSession) {
   TQMultiRenderPassSession session(platform_);
   render(session, "TQMultiRenderPassSession");
