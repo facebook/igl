@@ -105,7 +105,8 @@ struct RenderPassDesc {
    * A fragment shader reads input attachment i as:
    *  - Vulkan: layout(input_attachment_index = i, set = 2, binding = IGL_STORAGE_IMAGES_MAX + i)
    *            uniform subpassInput
-   *  - Metal: a fragment input with the [[color(i)]] attribute
+   *  - Metal: a fragment input with the [[color(i)]] attribute; writes are not masked, so the
+   *           fragment function outputs only the attachments in colorAttachmentMask
    *  - OpenGL: layout(location = i) inout with GL_EXT_shader_framebuffer_fetch; the backend masks
    *            writes outside colorAttachmentMask
    */

@@ -10,6 +10,7 @@
 #include "util/Common.h"
 
 #include <array>
+#include <string>
 #include <igl/Buffer.h>
 #include <igl/CommandBuffer.h>
 #include <igl/Framebuffer.h>
@@ -27,55 +28,121 @@ namespace {
 
 constexpr uint32_t kSize = 4; // width and height of the test textures
 
-// The vertex shader of the GPU tests: a triangle that covers the framebuffer
-constexpr const char* kVertexShader = R"(#version 460
+// The Vulkan vertex shader of the GPU tests: a triangle that covers the framebuffer
+constexpr const char* kVulkanVertexShader = R"(#version 460
 out gl_PerVertex { vec4 gl_Position; };
 void main() {
   vec2 uv = vec2((gl_VertexIndex << 1) & 2, gl_VertexIndex & 2);
   gl_Position = vec4(uv * 2.0 - 1.0, 0.0, 1.0);
 })";
 
+// The Metal vertex function of the GPU tests, which precedes the fragment function of each
+// FragmentShader::metal
+constexpr const char* kMetalVertexShader = R"(#include <metal_stdlib>
+using namespace metal;
+
+struct VertexOut {
+  float4 position [[position]];
+};
+
+vertex VertexOut vertexMain(uint vid [[vertex_id]]) {
+  const float2 uv = float2(float((vid << 1) & 2), float(vid & 2));
+  VertexOut out;
+  out.position = float4(uv * 2.0 - 1.0, 0.0, 1.0);
+  return out;
+}
+)";
+
+// A fragment shader of the GPU tests for each backend that runs them
+struct FragmentShader {
+  const char* vulkan = nullptr; // GLSL
+  const char* metal = nullptr; // MSL with a `fragmentMain` function
+};
+
 // Writes (100, 20, 0, 255) to color attachment 1 and (0, 50, 30, 255) to color attachment 2
-constexpr const char* kWriteAttachments1And2 = R"(#version 460
+constexpr FragmentShader kWriteAttachments1And2 = {
+    .vulkan = R"(#version 460
 layout(location = 1) out vec4 outA;
 layout(location = 2) out vec4 outB;
 void main() {
   outA = vec4(100.0 / 255.0, 20.0 / 255.0, 0.0, 1.0);
   outB = vec4(0.0, 50.0 / 255.0, 30.0 / 255.0, 1.0);
-})";
+})",
+    .metal = R"(
+struct FragmentOut {
+  float4 a [[color(1)]];
+  float4 b [[color(2)]];
+};
+
+fragment FragmentOut fragmentMain() {
+  FragmentOut out;
+  out.a = float4(100.0 / 255.0, 20.0 / 255.0, 0.0, 1.0);
+  out.b = float4(0.0, 50.0 / 255.0, 30.0 / 255.0, 1.0);
+  return out;
+}
+)",
+};
 
 // Writes the sum of input attachments 1 and 2 to color attachment 0
-constexpr const char* kSumInputs1And2 = R"(#version 460
+constexpr FragmentShader kSumInputs1And2 = {
+    .vulkan = R"(#version 460
 layout(input_attachment_index = 1, set = 2, binding = 17) uniform subpassInput inA;
 layout(input_attachment_index = 2, set = 2, binding = 18) uniform subpassInput inB;
 layout(location = 0) out vec4 outColor;
 void main() {
   outColor = vec4(subpassLoad(inA).rgb + subpassLoad(inB).rgb, 1.0);
-})";
+})",
+    .metal = R"(
+fragment float4 fragmentMain(float4 a [[color(1)]], float4 b [[color(2)]]) {
+  return float4(a.rgb + b.rgb, 1.0);
+}
+)",
+};
 
 // pack(100, 70, 30, 255): kSumInputs1And2 after kWriteAttachments1And2
 constexpr uint32_t kSumOfAttachments1And2 = 0xFF1E4664;
 
 // Writes input attachment 1 with red and green swapped to color attachment 3
-constexpr const char* kSwapInput1To3 = R"(#version 460
+constexpr FragmentShader kSwapInput1To3 = {
+    .vulkan = R"(#version 460
 layout(input_attachment_index = 1, set = 2, binding = 17) uniform subpassInput inA;
 layout(location = 3) out vec4 outColor;
 void main() {
   vec4 a = subpassLoad(inA);
   outColor = vec4(a.g, a.r, 0.0, 1.0);
-})";
+})",
+    .metal = R"(
+struct FragmentOut {
+  float4 color [[color(3)]];
+};
+
+fragment FragmentOut fragmentMain(float4 a [[color(1)]]) {
+  FragmentOut out;
+  out.color = float4(a.g, a.r, 0.0, 1.0);
+  return out;
+}
+)",
+};
 
 // Writes the sum of input attachments 2 and 3 to color attachment 0
-constexpr const char* kSumInputs2And3 = R"(#version 460
+constexpr FragmentShader kSumInputs2And3 = {
+    .vulkan = R"(#version 460
 layout(input_attachment_index = 2, set = 2, binding = 18) uniform subpassInput inB;
 layout(input_attachment_index = 3, set = 2, binding = 19) uniform subpassInput inC;
 layout(location = 0) out vec4 outColor;
 void main() {
   outColor = vec4(subpassLoad(inB).rgb + subpassLoad(inC).rgb, 1.0);
-})";
+})",
+    .metal = R"(
+fragment float4 fragmentMain(float4 b [[color(2)]], float4 c [[color(3)]]) {
+  return float4(b.rgb + c.rgb, 1.0);
+}
+)",
+};
 
 // Writes red, green and blue to color attachments 0, 1 and 2
-constexpr const char* kWriteRgb = R"(#version 460
+constexpr FragmentShader kWriteRgb = {
+    .vulkan = R"(#version 460
 layout(location = 0) out vec4 out0;
 layout(location = 1) out vec4 out1;
 layout(location = 2) out vec4 out2;
@@ -83,14 +150,37 @@ void main() {
   out0 = vec4(1.0, 0.0, 0.0, 1.0);
   out1 = vec4(0.0, 1.0, 0.0, 1.0);
   out2 = vec4(0.0, 0.0, 1.0, 1.0);
-})";
+})",
+    .metal = R"(
+struct FragmentOut {
+  float4 out0 [[color(0)]];
+  float4 out1 [[color(1)]];
+  float4 out2 [[color(2)]];
+};
+
+fragment FragmentOut fragmentMain() {
+  FragmentOut out;
+  out.out0 = float4(1.0, 0.0, 0.0, 1.0);
+  out.out1 = float4(0.0, 1.0, 0.0, 1.0);
+  out.out2 = float4(0.0, 0.0, 1.0, 1.0);
+  return out;
+}
+)",
+};
 
 // Writes red to color attachment 0
-constexpr const char* kWriteRed = R"(#version 460
+constexpr FragmentShader kWriteRed = {
+    .vulkan = R"(#version 460
 layout(location = 0) out vec4 out0;
 void main() {
   out0 = vec4(1.0, 0.0, 0.0, 1.0);
-})";
+})",
+    .metal = R"(
+fragment float4 fragmentMain() {
+  return float4(1.0, 0.0, 0.0, 1.0);
+}
+)",
+};
 
 constexpr uint32_t kRed = 0xFF0000FF; // pack(255, 0, 0, 255)
 constexpr uint32_t kBlue = 0xFFFF0000; // pack(0, 0, 255, 255)
@@ -161,20 +251,35 @@ class SubpassesTest : public ::testing::Test {
     if (!iglDev_->hasFeature(DeviceFeatures::MultipleRenderTargets)) {
       return "Multiple render targets are not supported";
     }
-    if (iglDev_->getBackendType() != BackendType::Vulkan) {
+    const BackendType backend = iglDev_->getBackendType();
+    if (backend != BackendType::Vulkan && backend != BackendType::Metal) {
       return "The GPU tests have no shaders for this backend";
     }
     return nullptr;
   }
 
-  // Creates a pipeline with kVertexShader, `fragmentShader`, and an RGBA_UNorm8 format for each of
-  // the `numColorAttachments` color attachments
-  [[nodiscard]] std::shared_ptr<IRenderPipelineState> createPipeline(const char* fragmentShader,
-                                                                     size_t numColorAttachments,
-                                                                     const char* debugName) const {
+  // Creates a pipeline with the vertex shader of the backend, the backend's `fragmentShader`, and
+  // an RGBA_UNorm8 format for each of the `numColorAttachments` color attachments
+  [[nodiscard]] std::shared_ptr<IRenderPipelineState> createPipeline(
+      const FragmentShader& fragmentShader,
+      size_t numColorAttachments,
+      const char* debugName) const {
     Result ret;
-    std::unique_ptr<IShaderStages> stages = ShaderStagesCreator::fromModuleStringInput(
-        *iglDev_, kVertexShader, "main", "", fragmentShader, "main", "", &ret);
+    const bool isMetal = iglDev_->getBackendType() == BackendType::Metal;
+    const char* source = isMetal ? fragmentShader.metal : fragmentShader.vulkan;
+    if (source == nullptr) {
+      ADD_FAILURE() << "No fragment shader for this backend";
+      return nullptr;
+    }
+    std::unique_ptr<IShaderStages> stages;
+    if (isMetal) {
+      const std::string metalSource = std::string(kMetalVertexShader) + source;
+      stages = ShaderStagesCreator::fromLibraryStringInput(
+          *iglDev_, metalSource.c_str(), "vertexMain", "fragmentMain", "", &ret);
+    } else {
+      stages = ShaderStagesCreator::fromModuleStringInput(
+          *iglDev_, kVulkanVertexShader, "main", "", source, "main", "", &ret);
+    }
     EXPECT_TRUE(ret.isOk()) << ret.message;
     RenderPipelineDesc::TargetDesc targetDesc;
     targetDesc.colorAttachments.resize(numColorAttachments);
@@ -333,6 +438,51 @@ TEST_F(SubpassesTest, EncoderRejectsSubpassesWhenUnsupported) {
 
   const auto encoder = cmdBuf->createRenderCommandEncoder(renderPass, fb, &ret);
   EXPECT_EQ(ret.code, Result::Code::Unsupported);
+  EXPECT_EQ(encoder, nullptr);
+}
+
+TEST_F(SubpassesTest, EncoderRejectsSubpassesWithNullFramebuffer) {
+  if (!iglDev_->hasFeature(DeviceFeatures::Subpasses)) {
+    GTEST_SKIP() << "Subpasses are not supported";
+  }
+
+  const RenderPassDesc renderPass =
+      makeRenderPass(1, {{.colorAttachmentMask = 0b1}, {.colorAttachmentMask = 0b1}});
+
+  Result ret;
+  const auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  ASSERT_NE(cmdBuf, nullptr);
+
+  const auto encoder = cmdBuf->createRenderCommandEncoder(renderPass, nullptr, &ret);
+  EXPECT_EQ(ret.code, Result::Code::ArgumentNull);
+  EXPECT_EQ(encoder, nullptr);
+}
+
+TEST_F(SubpassesTest, EncoderRejectsInvalidSubpasses) {
+  if (!iglDev_->hasFeature(DeviceFeatures::Subpasses) ||
+      !iglDev_->hasFeature(DeviceFeatures::MultipleRenderTargets)) {
+    GTEST_SKIP() << "Subpasses or multiple render targets are not supported";
+  }
+
+  const auto att0 = createColorTexture(TextureDesc::TextureUsageBits::Attachment);
+  const auto att1 = createColorTexture(TextureDesc::TextureUsageBits::Attachment |
+                                       TextureDesc::TextureUsageBits::InputAttachment);
+  const auto fb = createFramebuffer({att0, att1});
+  ASSERT_NE(fb, nullptr);
+
+  // Subpass 0 reads attachment 1 before any subpass writes it
+  const RenderPassDesc renderPass = makeRenderPass(
+      2,
+      {{.colorAttachmentMask = 0b01, .inputAttachmentMask = 0b10}, {.colorAttachmentMask = 0b10}});
+
+  Result ret;
+  const auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  ASSERT_NE(cmdBuf, nullptr);
+
+  const auto encoder = cmdBuf->createRenderCommandEncoder(renderPass, fb, &ret);
+  EXPECT_EQ(ret.code, Result::Code::ArgumentInvalid);
   EXPECT_EQ(encoder, nullptr);
 }
 
@@ -536,6 +686,11 @@ TEST_F(SubpassesTest, BindGroupsPersistAcrossSubpasses) {
     GTEST_SKIP() << reason;
   }
 
+  // Tests how the Vulkan backend keeps the descriptor sets of bind groups across subpasses
+  if (iglDev_->getBackendType() != BackendType::Vulkan) {
+    GTEST_SKIP() << "Vulkan only";
+  }
+
   const auto att0 = createColorTexture(TextureDesc::TextureUsageBits::Attachment |
                                        TextureDesc::TextureUsageBits::Sampled);
   const auto att1 = createColorTexture(TextureDesc::TextureUsageBits::Attachment |
@@ -604,7 +759,7 @@ void main() {
   out2 = c;
 })";
 
-  auto pipeline = createPipeline(fs, 3, "bind groups");
+  auto pipeline = createPipeline(FragmentShader{.vulkan = fs}, 3, "bind groups");
   ASSERT_NE(pipeline, nullptr);
 
   const RenderPassDesc renderPass{

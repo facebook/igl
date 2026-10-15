@@ -275,7 +275,6 @@ TEST_F(DeviceFeatureSetTest, hasFeatureForMacOSOrWinOrAndroidTest) {
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::ExternalMemoryObjects));
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::PushConstants));
       EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::FillBuffer));
-      EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::Subpasses));
       EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::DynamicCullMode));
       EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::DynamicFrontFacingWinding));
     } else if (iglDev_->getBackendType() == igl::BackendType::D3D12) {

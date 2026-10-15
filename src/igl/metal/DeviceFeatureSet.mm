@@ -278,7 +278,6 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::DynamicVertexBufferStride:
     return supportsDynamicVertexBufferStride_;
   case DeviceFeatures::Subpasses:
-    return false;
   case DeviceFeatures::MemorylessAttachments:
     return supportsMemorylessAndProgrammableBlending_;
   default:

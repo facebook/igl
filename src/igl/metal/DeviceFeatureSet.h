@@ -53,7 +53,8 @@ class DeviceFeatureSet final {
   bool supportsTimestampQueries_ = false;
   bool supportsDynamicVertexBufferStride_ = false;
   // Apple GPU family 1+ outside of the simulator: tile memory, i.e. MTLStorageModeMemoryless
-  // textures and programmable blending.
+  // textures, and programmable blending. Gates DeviceFeatures::MemorylessAttachments and
+  // DeviceFeatures::Subpasses.
   bool supportsMemorylessAndProgrammableBlending_ = false;
 };
 

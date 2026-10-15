@@ -9,6 +9,7 @@
 
 #include <igl/metal/DeviceFeatureSet.h>
 
+#include <TargetConditionals.h>
 #include <igl/Assert.h>
 #include <igl/DeviceFeatures.h>
 
@@ -72,7 +73,21 @@ TEST_F(DeviceFeatureSetMTLTest, HasFeatureTest) {
   ASSERT_EQ(mtlDeviceFeatureSet.hasFeature(DeviceFeatures::ExplicitBindingExt), false);
   ASSERT_EQ(mtlDeviceFeatureSet.hasFeature(DeviceFeatures::ValidationLayersEnabled), false);
   ASSERT_EQ(mtlDeviceFeatureSet.hasFeature(DeviceFeatures::ExternalMemoryObjects), false);
-  ASSERT_EQ(mtlDeviceFeatureSet.hasFeature(DeviceFeatures::Subpasses), false);
+}
+
+TEST_F(DeviceFeatureSetMTLTest, SubpassesAndMemorylessFollowAppleGpu) {
+  const auto mtlDeviceFeatureSet = metal::DeviceFeatureSet(mtlDevice_);
+
+  bool supportsProgrammableBlending = false;
+#if !TARGET_OS_SIMULATOR
+  if (@available(macOS 11.0, iOS 13.0, tvOS 13.0, *)) {
+    supportsProgrammableBlending = [mtlDevice_ supportsFamily:MTLGPUFamilyApple1];
+  }
+#endif
+  EXPECT_EQ(mtlDeviceFeatureSet.hasFeature(DeviceFeatures::Subpasses),
+            supportsProgrammableBlending);
+  EXPECT_EQ(mtlDeviceFeatureSet.hasFeature(DeviceFeatures::MemorylessAttachments),
+            supportsProgrammableBlending);
 }
 
 TEST_F(DeviceFeatureSetMTLTest, HasRequirementTest) {

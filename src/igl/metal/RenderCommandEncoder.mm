@@ -189,6 +189,11 @@ void RenderCommandEncoder::initialize(const std::shared_ptr<CommandBuffer>& comm
   }
 
   encoder_ = [commandBuffer->get() renderCommandEncoderWithDescriptor:metalRenderPassDesc];
+
+  // CommandBuffer has validated the subpasses
+  if (!renderPass.subpasses.empty()) {
+    numSubpasses_ = static_cast<uint32_t>(renderPass.subpasses.size());
+  }
 }
 
 std::unique_ptr<RenderCommandEncoder> RenderCommandEncoder::create(
@@ -205,10 +210,28 @@ std::unique_ptr<RenderCommandEncoder> RenderCommandEncoder::create(
 
 void RenderCommandEncoder::endEncoding() {
   IGL_PROFILER_FUNCTION();
+  IGL_DEBUG_ASSERT(currentSubpass_ + 1 == numSubpasses_,
+                   "nextSubpass() must be called RenderPassDesc::subpasses.size() - 1 times before "
+                   "endEncoding()");
   // @fb-only
   // @fb-only
   [encoder_ endEncoding];
   encoder_ = nil;
+}
+
+void RenderCommandEncoder::nextSubpass() {
+  IGL_PROFILER_FUNCTION();
+  if (!IGL_DEBUG_VERIFY(encoder_)) {
+    return;
+  }
+  if (currentSubpass_ + 1 >= numSubpasses_) {
+    IGL_DEBUG_ABORT(
+        "nextSubpass() was called more than RenderPassDesc::subpasses.size() - 1 times");
+    return;
+  }
+  // No Metal command is needed: the subpasses share this encoder, and programmable blending orders
+  // the color attachment reads and writes of its draws at each pixel.
+  ++currentSubpass_;
 }
 
 void RenderCommandEncoder::pushDebugGroupLabel(const char* label, const Color& /*color*/) const {

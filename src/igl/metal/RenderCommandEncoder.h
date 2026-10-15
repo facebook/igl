@@ -29,6 +29,8 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
 
   void endEncoding() override;
 
+  void nextSubpass() override;
+
   void pushDebugGroupLabel(const char* label, const Color& color) const override;
   void insertDebugEventLabel(const char* label, const Color& color) const override;
   void popDebugGroupLabel() const override;
@@ -112,6 +114,10 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
   static constexpr uint32_t kMaxRecommendedBytes = 4 * 1024;
 
   MTLPrimitiveType metalPrimitive_ = MTLPrimitiveTypeTriangle;
+
+  // A render pass without subpasses has 1 subpass
+  uint32_t numSubpasses_ = 1;
+  uint32_t currentSubpass_ = 0;
 
   Device& device_;
 };
