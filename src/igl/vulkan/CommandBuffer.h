@@ -100,6 +100,9 @@ class CommandBuffer final : public ICommandBuffer,
   mutable std::shared_ptr<ITexture> presentedSurface_;
 
   VulkanImmediateCommands::SubmitHandle lastSubmitHandle_ = {};
+
+  // The slot of the Timer in `desc.timer` that measures this command buffer
+  uint32_t timerSlot_ = 0;
 };
 
 } // namespace igl::vulkan

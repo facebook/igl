@@ -197,6 +197,13 @@ class VulkanContext final {
     return vkPhysicalDeviceProperties2_.properties;
   }
 
+  /// @brief Returns `VkQueueFamilyProperties::timestampValidBits` of the graphics queue family: the
+  /// number of meaningful bits of the timestamps that its queues write, or 0 if they cannot write
+  /// timestamps.
+  [[nodiscard]] uint32_t getGraphicsQueueTimestampValidBits() const noexcept {
+    return graphicsQueueTimestampValidBits_;
+  }
+
   // Driver metadata used for vendor and driver-generation workaround gates.
   const VkPhysicalDeviceDriverPropertiesKHR& getVkPhysicalDeviceDriverProperties() const {
     return vkPhysicalDeviceDriverProperties_;
@@ -379,6 +386,8 @@ class VulkanContext final {
   VkPhysicalDeviceProperties2 vkPhysicalDeviceProperties2_{};
   // Provided by VK_EXT_mesh_shader
   VkPhysicalDeviceMeshShaderPropertiesEXT vkPhysicalDeviceMeshShaderPropertiesEXT_{};
+
+  uint32_t graphicsQueueTimestampValidBits_ = 0;
 
   std::vector<VkFormat> deviceDepthFormats_;
   std::vector<VkSurfaceFormatKHR> deviceSurfaceFormats_;

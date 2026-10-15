@@ -13,6 +13,7 @@
 #include <igl/vulkan/ComputeCommandEncoder.h>
 #include <igl/vulkan/RenderCommandEncoder.h>
 #include <igl/vulkan/Texture.h>
+#include <igl/vulkan/Timer.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanImage.h>
 #include <igl/vulkan/VulkanTexture.h>
@@ -23,6 +24,13 @@ CommandBuffer::CommandBuffer(VulkanContext& ctx, CommandBufferDesc desc) :
   ICommandBuffer(std::move(desc)), ctx_(ctx), wrapper_(ctx_.immediate_->acquire()) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   IGL_DEBUG_ASSERT(wrapper_.cmdBuf != VK_NULL_HANDLE);
+
+  // The `desc` parameter was moved into the base class, so use the member
+  if (this->desc.timer) {
+    auto& timer = static_cast<Timer&>(*this->desc.timer);
+    IGL_DEBUG_ASSERT(timer.belongsTo(ctx_), "The timer was created by another Vulkan device");
+    timerSlot_ = timer.begin(wrapper_.cmdBuf);
+  }
 }
 
 std::unique_ptr<IComputeCommandEncoder> CommandBuffer::createComputeCommandEncoder() {

@@ -8,6 +8,7 @@
 #include <igl/vulkan/CommandQueue.h>
 
 #include <igl/vulkan/CommandBuffer.h>
+#include <igl/vulkan/Timer.h>
 #include <igl/vulkan/VulkanContext.h>
 #include <igl/vulkan/VulkanSwapchain.h>
 
@@ -83,6 +84,8 @@ SubmitHandle CommandQueue::endCommandBuffer(VulkanContext& ctx,
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_SUBMIT);
   IGL_ENSURE_VULKAN_CONTEXT_THREAD(&ctx);
 
+  auto* const timer = static_cast<Timer*>(cmdBuffer->desc.timer.get());
+
   // Submit to the graphics queue.
   const bool shouldPresent = ctx.hasSwapchain() && cmdBuffer->isFromSwapchain() && present;
   const auto finishCommandBuffer = [&](VulkanImmediateCommands::SubmitHandle submitHandle) {
@@ -115,7 +118,13 @@ SubmitHandle CommandQueue::endCommandBuffer(VulkanContext& ctx,
     }
   }
 
+  if (timer) {
+    timer->end(cmdBuffer->wrapper_.cmdBuf, cmdBuffer->timerSlot_);
+  }
   const auto submitHandle = ctx.immediate_->submit(cmdBuffer->wrapper_);
+  if (timer) {
+    timer->submitted(cmdBuffer->timerSlot_, submitHandle);
+  }
 
   if (shouldPresent) {
     ctx.present();

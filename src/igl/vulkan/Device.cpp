@@ -22,6 +22,7 @@
 #include <igl/vulkan/SamplerState.h>
 #include <igl/vulkan/ShaderModule.h>
 #include <igl/vulkan/Texture.h>
+#include <igl/vulkan/Timer.h>
 #include <igl/vulkan/TimestampQueries.h>
 #include <igl/vulkan/VulkanBuffer.h>
 #include <igl/vulkan/VulkanShaderModule.h>
@@ -884,7 +885,9 @@ bool Device::hasFeatureInternal(DeviceFeatures feature) const {
   case DeviceFeatures::TextureViews:
     return true;
   case DeviceFeatures::Timers:
-    return false;
+    return deviceProperties.limits.timestampPeriod > 0.0f &&
+           (deviceProperties.limits.timestampComputeAndGraphics == VK_TRUE) &&
+           ctx_->getGraphicsQueueTimestampValidBits() > 0;
   case DeviceFeatures::TimestampQueries:
     return deviceProperties.limits.timestampPeriod > 0.0f &&
            (deviceProperties.limits.timestampComputeAndGraphics == VK_TRUE);
@@ -1114,10 +1117,24 @@ Holder<BindGroupBufferHandle> Device::createBindGroupInternal(const BindGroupBuf
 }
 
 std::shared_ptr<ITimer> Device::createTimer(Result* IGL_NULLABLE outResult) const noexcept {
-  if (outResult) {
-    *outResult = Result(Result::Code::Unsupported, "Timer is not supported on Vulkan");
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
+
+  if (!hasFeatureInternal(DeviceFeatures::Timers)) {
+    Result::setResult(
+        outResult, Result::Code::Unsupported, "Timers are not supported by this Vulkan device");
+    return nullptr;
   }
-  return nullptr;
+
+  auto timer = std::make_shared<Timer>(*ctx_);
+  if (!timer->isValid()) {
+    Result::setResult(
+        outResult, Result::Code::RuntimeError, "Timer: failed to create Vulkan query pool");
+    return nullptr;
+  }
+
+  Result::setOk(outResult);
+  return timer;
 }
 
 void Device::destroyInternal(BindGroupTextureHandle handle) {

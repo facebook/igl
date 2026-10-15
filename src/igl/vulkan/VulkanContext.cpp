@@ -373,6 +373,16 @@ inline size_t alignUp(size_t value, size_t alignment) {
   return (value + alignment - 1) & ~(alignment - 1);
 }
 
+uint32_t queryTimestampValidBits(const VulkanFunctionTable& vf,
+                                 VkPhysicalDevice physicalDevice,
+                                 uint32_t queueFamilyIndex) {
+  uint32_t numFamilies = 0;
+  vf.vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &numFamilies, nullptr);
+  std::vector<VkQueueFamilyProperties> families(numFamilies);
+  vf.vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &numFamilies, families.data());
+  return queueFamilyIndex < numFamilies ? families[queueFamilyIndex].timestampValidBits : 0;
+}
+
 class DescriptorBuffersArena final {
  public:
   explicit DescriptorBuffersArena(const VulkanContext& ctx) : ctx_(ctx) {
@@ -1173,6 +1183,8 @@ Result VulkanContext::initContext(const HWDeviceDesc& desc,
 
   deviceQueues_.graphicsQueueFamilyIndex = graphicsQueueDescriptor.familyIndex;
   deviceQueues_.computeQueueFamilyIndex = computeQueueDescriptor.familyIndex;
+  graphicsQueueTimestampValidBits_ =
+      queryTimestampValidBits(vf_, vkPhysicalDevice_, deviceQueues_.graphicsQueueFamilyIndex);
 
   queuePool.reserveQueue(graphicsQueueDescriptor);
   queuePool.reserveQueue(computeQueueDescriptor);
