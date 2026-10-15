@@ -55,6 +55,9 @@ void RenderCommandAdapter::initialize(const RenderPassDesc& renderPass,
                                       const std::shared_ptr<IFramebuffer>& framebuffer,
                                       Result* IGL_NULLABLE outResult) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  numSubpassColorAttachments_ = 0;
+  subpassColorAttachmentMask_ = 0;
+  subpassColorAttachmentsApplied_ = false;
   if (!IGL_DEBUG_VERIFY(framebuffer)) {
     Result::setResult(outResult, Result::Code::ArgumentNull, "framebuffer is null");
     return;
@@ -312,6 +315,19 @@ void RenderCommandAdapter::setPipelineState(const std::shared_ptr<IRenderPipelin
   setDirty(StateMask::PIPELINE);
 }
 
+void RenderCommandAdapter::beginSubpasses(uint32_t numColorAttachments,
+                                          uint8_t colorAttachmentMask) {
+  IGL_PROFILER_FUNCTION();
+  numSubpassColorAttachments_ = numColorAttachments;
+  setSubpassColorAttachmentMask(colorAttachmentMask);
+}
+
+void RenderCommandAdapter::setSubpassColorAttachmentMask(uint8_t colorAttachmentMask) {
+  IGL_PROFILER_FUNCTION();
+  subpassColorAttachmentMask_ = colorAttachmentMask;
+  setDirty(StateMask::SubpassColorAttachments);
+}
+
 void RenderCommandAdapter::drawArrays(GLenum mode, GLint first, GLsizei count) {
   IGL_PROFILER_FUNCTION();
   willDraw();
@@ -428,6 +444,13 @@ void RenderCommandAdapter::endEncoding() {
   IGL_PROFILER_FUNCTION();
   // Some minimal cleanup needs to occur in order. Otherwise, OpenGL can end in a bad state
   // with complex rendering.
+  if (subpassColorAttachmentsApplied_) {
+    // Unlike their indexed variants, glColorMask() and glDisable() set the state of every draw
+    // buffer
+    getContext().colorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    getContext().disable(GL_BLEND);
+    subpassColorAttachmentsApplied_ = false;
+  }
   if (pipelineState_) {
     unbindVertexAttributes();
   }
@@ -476,6 +499,15 @@ void RenderCommandAdapter::willDraw() {
     if (isDirty(StateMask::PIPELINE)) {
       pipelineState->bind();
       clearDirty(StateMask::PIPELINE);
+      if (numSubpassColorAttachments_ != 0) {
+        // bind() sets the color mask and the blending of every draw buffer from the first
+        // color attachment
+        setDirty(StateMask::SubpassColorAttachments);
+      }
+    }
+    if (isDirty(StateMask::SubpassColorAttachments)) {
+      applySubpassColorAttachments(*pipelineState);
+      clearDirty(StateMask::SubpassColorAttachments);
     }
     if (isDirty(StateMask::CullMode)) {
       if (cullMode_ == CullMode::Disabled) {
@@ -606,6 +638,42 @@ void RenderCommandAdapter::unbindVertexAttributes() {
   if (pipelineState) {
     pipelineState->unbindVertexAttributes();
   }
+}
+
+void RenderCommandAdapter::applySubpassColorAttachments(const RenderPipelineState& pipelineState) {
+  IGL_PROFILER_FUNCTION();
+  const auto& colorAttachments = pipelineState.getRenderPipelineDesc().targetDesc.colorAttachments;
+  for (uint32_t i = 0; i != numSubpassColorAttachments_; ++i) {
+    // A pipeline that does not describe an attachment writes all of its channels without blending
+    const bool isDescribed = i < colorAttachments.size();
+    ColorWriteMask writeMask = 0;
+    if ((subpassColorAttachmentMask_ & (1u << i)) != 0) {
+      writeMask = isDescribed ? colorAttachments[i].colorWriteMask : kColorWriteBitsAll;
+    }
+    getContext().colorMaski(i,
+                            static_cast<GLboolean>((writeMask & kColorWriteBitsRed) != 0),
+                            static_cast<GLboolean>((writeMask & kColorWriteBitsGreen) != 0),
+                            static_cast<GLboolean>((writeMask & kColorWriteBitsBlue) != 0),
+                            static_cast<GLboolean>((writeMask & kColorWriteBitsAlpha) != 0));
+
+    if (isDescribed && colorAttachments[i].blendEnabled) {
+      const auto& attachment = colorAttachments[i];
+      getContext().enablei(GL_BLEND, i);
+      getContext().blendEquationSeparatei(
+          i,
+          RenderPipelineState::convertBlendOp(attachment.rgbBlendOp),
+          RenderPipelineState::convertBlendOp(attachment.alphaBlendOp));
+      getContext().blendFuncSeparatei(
+          i,
+          RenderPipelineState::convertBlendFactor(attachment.srcRGBBlendFactor),
+          RenderPipelineState::convertBlendFactor(attachment.dstRGBBlendFactor),
+          RenderPipelineState::convertBlendFactor(attachment.srcAlphaBlendFactor),
+          RenderPipelineState::convertBlendFactor(attachment.dstAlphaBlendFactor));
+    } else {
+      getContext().disablei(GL_BLEND, i);
+    }
+  }
+  subpassColorAttachmentsApplied_ = true;
 }
 
 void RenderCommandAdapter::bindBufferWithShaderStorageBufferOverride(

@@ -1690,6 +1690,42 @@ void IContext::blendEquationSeparate(GLenum modeRGB, GLenum modeAlpha) {
   GLCHECK_ERRORS();
 }
 
+namespace {
+// Returns the function that sets the state of one draw buffer: `core` if the context has it as a
+// core function, otherwise `oes` or `ext` if the context has that extension, or nullptr
+template<typename Proc>
+Proc IGL_NULLABLE
+selectDrawBuffersIndexedProc(const DeviceFeatureSet& features, Proc core, Proc oes, Proc ext) {
+  if (features.hasInternalRequirement(InternalRequirement::DrawBuffersIndexedExtReq)) {
+    if (features.hasExtension(Extensions::DrawBuffersIndexedOes)) {
+      return oes;
+    }
+    if (features.hasExtension(Extensions::DrawBuffersIndexedExt)) {
+      return ext;
+    }
+    return nullptr;
+  }
+  return features.hasInternalFeature(InternalFeatures::DrawBuffersIndexed) ? core : nullptr;
+}
+} // namespace
+
+void IContext::blendEquationSeparatei(GLuint buf, GLenum modeRGB, GLenum modeAlpha) {
+  if (blendEquationSeparateiProc_ == nullptr) {
+    blendEquationSeparateiProc_ = selectDrawBuffersIndexedProc(deviceFeatureSet_,
+                                                               iglBlendEquationSeparatei,
+                                                               iglBlendEquationSeparateiOES,
+                                                               iglBlendEquationSeparateiEXT);
+    IGL_DEBUG_ASSERT(blendEquationSeparateiProc_,
+                     "No supported function for glBlendEquationSeparatei\n");
+  }
+  APILOG("glBlendEquationSeparatei(%u, %s, %s)\n",
+         buf,
+         GL_ENUM_TO_STRING(modeRGB),
+         GL_ENUM_TO_STRING(modeAlpha));
+  GLCALL_PROC(blendEquationSeparateiProc_, buf, modeRGB, modeAlpha);
+  GLCHECK_ERRORS();
+}
+
 void IContext::blendFunc(GLenum sfactor, GLenum dfactor) {
   APILOG("glBlendFunc(%s, %s)\n", GL_ENUM_TO_STRING(sfactor), GL_ENUM_TO_STRING(dfactor));
   GLCALL(BlendFunc)(sfactor, dfactor);
@@ -1703,6 +1739,28 @@ void IContext::blendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, 
          GL_ENUM_TO_STRING(srcAlpha),
          GL_ENUM_TO_STRING(dstAlpha));
   GLCALL(BlendFuncSeparate)(srcRGB, dstRGB, srcAlpha, dstAlpha);
+  GLCHECK_ERRORS();
+}
+
+void IContext::blendFuncSeparatei(GLuint buf,
+                                  GLenum srcRGB,
+                                  GLenum dstRGB,
+                                  GLenum srcAlpha,
+                                  GLenum dstAlpha) {
+  if (blendFuncSeparateiProc_ == nullptr) {
+    blendFuncSeparateiProc_ = selectDrawBuffersIndexedProc(deviceFeatureSet_,
+                                                           iglBlendFuncSeparatei,
+                                                           iglBlendFuncSeparateiOES,
+                                                           iglBlendFuncSeparateiEXT);
+    IGL_DEBUG_ASSERT(blendFuncSeparateiProc_, "No supported function for glBlendFuncSeparatei\n");
+  }
+  APILOG("glBlendFuncSeparatei(%u, %s, %s, %s, %s)\n",
+         buf,
+         GL_ENUM_TO_STRING(srcRGB),
+         GL_ENUM_TO_STRING(dstRGB),
+         GL_ENUM_TO_STRING(srcAlpha),
+         GL_ENUM_TO_STRING(dstAlpha));
+  GLCALL_PROC(blendFuncSeparateiProc_, buf, srcRGB, dstRGB, srcAlpha, dstAlpha);
   GLCHECK_ERRORS();
 }
 
@@ -1870,6 +1928,27 @@ void IContext::colorMask(GLboolean red, GLboolean green, GLboolean blue, GLboole
          GL_BOOL_TO_STRING(alpha),
          boundFramebuffer(GL_DRAW_FRAMEBUFFER));
   GLCALL(ColorMask)(red, green, blue, alpha);
+  GLCHECK_ERRORS();
+}
+
+void IContext::colorMaski(GLuint index,
+                          GLboolean red,
+                          GLboolean green,
+                          GLboolean blue,
+                          GLboolean alpha) {
+  if (colorMaskiProc_ == nullptr) {
+    colorMaskiProc_ = selectDrawBuffersIndexedProc(
+        deviceFeatureSet_, iglColorMaski, iglColorMaskiOES, iglColorMaskiEXT);
+    IGL_DEBUG_ASSERT(colorMaskiProc_, "No supported function for glColorMaski\n");
+  }
+  APILOG("glColorMaski(%u, %s, %s, %s, %s) (framebuffer: %u)\n",
+         index,
+         GL_BOOL_TO_STRING(red),
+         GL_BOOL_TO_STRING(green),
+         GL_BOOL_TO_STRING(blue),
+         GL_BOOL_TO_STRING(alpha),
+         boundFramebuffer(GL_DRAW_FRAMEBUFFER));
+  GLCALL_PROC(colorMaskiProc_, index, red, green, blue, alpha);
   GLCHECK_ERRORS();
 }
 
@@ -2340,6 +2419,17 @@ void IContext::disable(GLenum cap) {
   GLCHECK_ERRORS();
 }
 
+void IContext::disablei(GLenum cap, GLuint index) {
+  if (disableiProc_ == nullptr) {
+    disableiProc_ = selectDrawBuffersIndexedProc(
+        deviceFeatureSet_, iglDisablei, iglDisableiOES, iglDisableiEXT);
+    IGL_DEBUG_ASSERT(disableiProc_, "No supported function for glDisablei\n");
+  }
+  APILOG("glDisablei(%s, %u)\n", GL_ENUM_TO_STRING(cap), index);
+  GLCALL_PROC(disableiProc_, cap, index);
+  GLCHECK_ERRORS();
+}
+
 void IContext::disableVertexAttribArray(GLuint index) {
 #if IGL_API_LOG
   if (index < enabledAttributes_.size()) {
@@ -2591,6 +2681,17 @@ void IContext::multiDrawElementsIndirect(GLenum mode,
 void IContext::enable(GLenum cap) {
   APILOG("glEnable(%s)\n", GL_ENUM_TO_STRING(cap));
   GLCALL(Enable)(cap);
+  GLCHECK_ERRORS();
+}
+
+void IContext::enablei(GLenum cap, GLuint index) {
+  if (enableiProc_ == nullptr) {
+    enableiProc_ =
+        selectDrawBuffersIndexedProc(deviceFeatureSet_, iglEnablei, iglEnableiOES, iglEnableiEXT);
+    IGL_DEBUG_ASSERT(enableiProc_, "No supported function for glEnablei\n");
+  }
+  APILOG("glEnablei(%s, %u)\n", GL_ENUM_TO_STRING(cap), index);
+  GLCALL_PROC(enableiProc_, cap, index);
   GLCHECK_ERRORS();
 }
 

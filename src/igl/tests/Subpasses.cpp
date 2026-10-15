@@ -53,10 +53,18 @@ vertex VertexOut vertexMain(uint vid [[vertex_id]]) {
 }
 )";
 
+// The OpenGL ES vertex shader of the GPU tests
+constexpr const char* kOpenGLVertexShader = R"(#version 300 es
+void main() {
+  vec2 uv = vec2((gl_VertexID << 1) & 2, gl_VertexID & 2);
+  gl_Position = vec4(uv * 2.0 - 1.0, 0.0, 1.0);
+})";
+
 // A fragment shader of the GPU tests for each backend that runs them
 struct FragmentShader {
   const char* vulkan = nullptr; // GLSL
   const char* metal = nullptr; // MSL with a `fragmentMain` function
+  const char* opengl = nullptr; // GLSL ES 3.00 with GL_EXT_shader_framebuffer_fetch for inputs
 };
 
 // Writes (100, 20, 0, 255) to color attachment 1 and (0, 50, 30, 255) to color attachment 2
@@ -81,6 +89,14 @@ fragment FragmentOut fragmentMain() {
   return out;
 }
 )",
+    .opengl = R"(#version 300 es
+precision highp float;
+layout(location = 1) out vec4 outA;
+layout(location = 2) out vec4 outB;
+void main() {
+  outA = vec4(100.0 / 255.0, 20.0 / 255.0, 0.0, 1.0);
+  outB = vec4(0.0, 50.0 / 255.0, 30.0 / 255.0, 1.0);
+})",
 };
 
 // Writes the sum of input attachments 1 and 2 to color attachment 0
@@ -97,6 +113,15 @@ fragment float4 fragmentMain(float4 a [[color(1)]], float4 b [[color(2)]]) {
   return float4(a.rgb + b.rgb, 1.0);
 }
 )",
+    .opengl = R"(#version 300 es
+#extension GL_EXT_shader_framebuffer_fetch : require
+precision highp float;
+layout(location = 0) out vec4 outColor;
+layout(location = 1) inout vec4 inA;
+layout(location = 2) inout vec4 inB;
+void main() {
+  outColor = vec4(inA.rgb + inB.rgb, 1.0);
+})",
 };
 
 // pack(100, 70, 30, 255): kSumInputs1And2 after kWriteAttachments1And2
@@ -122,6 +147,14 @@ fragment FragmentOut fragmentMain(float4 a [[color(1)]]) {
   return out;
 }
 )",
+    .opengl = R"(#version 300 es
+#extension GL_EXT_shader_framebuffer_fetch : require
+precision highp float;
+layout(location = 1) inout vec4 inA;
+layout(location = 3) out vec4 outColor;
+void main() {
+  outColor = vec4(inA.g, inA.r, 0.0, 1.0);
+})",
 };
 
 // Writes the sum of input attachments 2 and 3 to color attachment 0
@@ -138,6 +171,15 @@ fragment float4 fragmentMain(float4 b [[color(2)]], float4 c [[color(3)]]) {
   return float4(b.rgb + c.rgb, 1.0);
 }
 )",
+    .opengl = R"(#version 300 es
+#extension GL_EXT_shader_framebuffer_fetch : require
+precision highp float;
+layout(location = 0) out vec4 outColor;
+layout(location = 2) inout vec4 inB;
+layout(location = 3) inout vec4 inC;
+void main() {
+  outColor = vec4(inB.rgb + inC.rgb, 1.0);
+})",
 };
 
 // Writes red, green and blue to color attachments 0, 1 and 2
@@ -166,6 +208,16 @@ fragment FragmentOut fragmentMain() {
   return out;
 }
 )",
+    .opengl = R"(#version 300 es
+precision highp float;
+layout(location = 0) out vec4 out0;
+layout(location = 1) out vec4 out1;
+layout(location = 2) out vec4 out2;
+void main() {
+  out0 = vec4(1.0, 0.0, 0.0, 1.0);
+  out1 = vec4(0.0, 1.0, 0.0, 1.0);
+  out2 = vec4(0.0, 0.0, 1.0, 1.0);
+})",
 };
 
 // Writes red to color attachment 0
@@ -180,6 +232,12 @@ fragment float4 fragmentMain() {
   return float4(1.0, 0.0, 0.0, 1.0);
 }
 )",
+    .opengl = R"(#version 300 es
+precision highp float;
+layout(location = 0) out vec4 out0;
+void main() {
+  out0 = vec4(1.0, 0.0, 0.0, 1.0);
+})",
 };
 
 constexpr uint32_t kRed = 0xFF0000FF; // pack(255, 0, 0, 255)
@@ -252,21 +310,32 @@ class SubpassesTest : public ::testing::Test {
       return "Multiple render targets are not supported";
     }
     const BackendType backend = iglDev_->getBackendType();
-    if (backend != BackendType::Vulkan && backend != BackendType::Metal) {
+    if (backend == BackendType::OpenGL) {
+      const BackendVersion version = iglDev_->getBackendVersion();
+      if (version.flavor != BackendFlavor::OpenGL_ES || version.majorVersion < 3) {
+        return "The GPU tests have OpenGL ES 3.0 shaders only";
+      }
+    } else if (backend != BackendType::Vulkan && backend != BackendType::Metal) {
       return "The GPU tests have no shaders for this backend";
     }
     return nullptr;
   }
 
   // Creates a pipeline with the vertex shader of the backend, the backend's `fragmentShader`, and
-  // an RGBA_UNorm8 format for each of the `numColorAttachments` color attachments
+  // an RGBA_UNorm8 format for each of the `numColorAttachments` color attachments. If
+  // `additiveBlendMask` has bit i set, attachment i uses additive blending (BlendOp::Add with all
+  // blend factors set to BlendFactor::One).
   [[nodiscard]] std::shared_ptr<IRenderPipelineState> createPipeline(
       const FragmentShader& fragmentShader,
       size_t numColorAttachments,
-      const char* debugName) const {
+      const char* debugName,
+      uint8_t additiveBlendMask = 0) const {
     Result ret;
-    const bool isMetal = iglDev_->getBackendType() == BackendType::Metal;
-    const char* source = isMetal ? fragmentShader.metal : fragmentShader.vulkan;
+    const BackendType backend = iglDev_->getBackendType();
+    const bool isMetal = backend == BackendType::Metal;
+    const bool isOpenGL = backend == BackendType::OpenGL;
+    const char* source = isOpenGL ? fragmentShader.opengl
+                                  : (isMetal ? fragmentShader.metal : fragmentShader.vulkan);
     if (source == nullptr) {
       ADD_FAILURE() << "No fragment shader for this backend";
       return nullptr;
@@ -276,6 +345,9 @@ class SubpassesTest : public ::testing::Test {
       const std::string metalSource = std::string(kMetalVertexShader) + source;
       stages = ShaderStagesCreator::fromLibraryStringInput(
           *iglDev_, metalSource.c_str(), "vertexMain", "fragmentMain", "", &ret);
+    } else if (isOpenGL) {
+      stages = ShaderStagesCreator::fromModuleStringInput(
+          *iglDev_, kOpenGLVertexShader, "main", "", source, "main", "", &ret);
     } else {
       stages = ShaderStagesCreator::fromModuleStringInput(
           *iglDev_, kVulkanVertexShader, "main", "", source, "main", "", &ret);
@@ -283,8 +355,18 @@ class SubpassesTest : public ::testing::Test {
     EXPECT_TRUE(ret.isOk()) << ret.message;
     RenderPipelineDesc::TargetDesc targetDesc;
     targetDesc.colorAttachments.resize(numColorAttachments);
-    for (auto& attachment : targetDesc.colorAttachments) {
+    for (size_t i = 0; i < numColorAttachments; ++i) {
+      auto& attachment = targetDesc.colorAttachments[i];
       attachment.textureFormat = TextureFormat::RGBA_UNorm8;
+      if ((additiveBlendMask & (1u << i)) != 0) {
+        attachment.blendEnabled = true;
+        attachment.rgbBlendOp = BlendOp::Add;
+        attachment.alphaBlendOp = BlendOp::Add;
+        attachment.srcRGBBlendFactor = BlendFactor::One;
+        attachment.srcAlphaBlendFactor = BlendFactor::One;
+        attachment.dstRGBBlendFactor = BlendFactor::One;
+        attachment.dstAlphaBlendFactor = BlendFactor::One;
+      }
     }
     const RenderPipelineDesc desc{
         .shaderStages = std::move(stages),
@@ -321,13 +403,21 @@ class SubpassesTest : public ::testing::Test {
     cmdBuf->waitUntilCompleted();
   }
 
+  // Reads every pixel of `texture` the way expectPixels() does
+  [[nodiscard]] std::array<uint32_t, kSize * kSize> readPixels(
+      const std::shared_ptr<ITexture>& texture) const {
+    const auto framebuffer = createFramebuffer({texture});
+    std::array<uint32_t, kSize * kSize> pixels{};
+    if (framebuffer) {
+      framebuffer->copyBytesColorAttachment(*cmdQueue_, 0, pixels.data(), texture->getFullRange(0));
+    }
+    return pixels;
+  }
+
   // Expects every pixel of `texture` to be `expected`. Reads `texture` through a framebuffer that
   // has it as its only color attachment, because some backends can only read color attachment 0.
   void expectPixels(const std::shared_ptr<ITexture>& texture, uint32_t expected) const {
-    const auto framebuffer = createFramebuffer({texture});
-    ASSERT_NE(framebuffer, nullptr);
-    std::array<uint32_t, kSize * kSize> pixels{};
-    framebuffer->copyBytesColorAttachment(*cmdQueue_, 0, pixels.data(), texture->getFullRange(0));
+    const auto pixels = readPixels(texture);
     for (const uint32_t pixel : pixels) {
       EXPECT_EQ(pixel, expected) << std::hex << pixel;
     }
@@ -791,6 +881,228 @@ void main() {
   expectPixels(att0, expected);
   expectPixels(att1, expected);
   expectPixels(att2, expected);
+}
+
+// Writes blue to color attachment 0 and green to color attachment 1
+constexpr FragmentShader kWriteBlueGreen = {
+    .vulkan = R"(#version 460
+layout(location = 0) out vec4 out0;
+layout(location = 1) out vec4 out1;
+void main() {
+  out0 = vec4(0.0, 0.0, 1.0, 1.0);
+  out1 = vec4(0.0, 1.0, 0.0, 1.0);
+})",
+    .opengl = R"(#version 300 es
+precision highp float;
+layout(location = 0) out vec4 out0;
+layout(location = 1) out vec4 out1;
+void main() {
+  out0 = vec4(0.0, 0.0, 1.0, 1.0);
+  out1 = vec4(0.0, 1.0, 0.0, 1.0);
+})",
+};
+
+// Writes red to color attachment 0 and yellow to color attachment 1
+constexpr FragmentShader kWriteRedYellow = {
+    .vulkan = R"(#version 460
+layout(location = 0) out vec4 out0;
+layout(location = 1) out vec4 out1;
+void main() {
+  out0 = vec4(1.0, 0.0, 0.0, 1.0);
+  out1 = vec4(1.0, 1.0, 0.0, 1.0);
+})",
+    .opengl = R"(#version 300 es
+precision highp float;
+layout(location = 0) out vec4 out0;
+layout(location = 1) out vec4 out1;
+void main() {
+  out0 = vec4(1.0, 0.0, 0.0, 1.0);
+  out1 = vec4(1.0, 1.0, 0.0, 1.0);
+})",
+};
+
+// Writes red (1,0,0,1) to color attachment 0 and green (0,1,0,1) to color attachment 1
+constexpr FragmentShader kWriteRedGreen = {
+    .vulkan = R"(#version 460
+layout(location = 0) out vec4 out0;
+layout(location = 1) out vec4 out1;
+void main() {
+  out0 = vec4(1.0, 0.0, 0.0, 1.0);
+  out1 = vec4(0.0, 1.0, 0.0, 1.0);
+})",
+    .opengl = R"(#version 300 es
+precision highp float;
+layout(location = 0) out vec4 out0;
+layout(location = 1) out vec4 out1;
+void main() {
+  out0 = vec4(1.0, 0.0, 0.0, 1.0);
+  out1 = vec4(0.0, 1.0, 0.0, 1.0);
+})",
+};
+
+// Writes dark red (64/255, 0, 0, 1) to color attachment 0 and blue (0, 0, 1, 1) to color
+// attachment 1
+constexpr FragmentShader kBlendDarkRedWriteBlue = {
+    .vulkan = R"(#version 460
+layout(location = 0) out vec4 out0;
+layout(location = 1) out vec4 out1;
+void main() {
+  out0 = vec4(64.0 / 255.0, 0.0, 0.0, 1.0);
+  out1 = vec4(0.0, 0.0, 1.0, 1.0);
+})",
+    .metal = R"(
+struct FragmentOut {
+  float4 out0 [[color(0)]];
+  float4 out1 [[color(1)]];
+};
+
+fragment FragmentOut fragmentMain() {
+  FragmentOut out;
+  out.out0 = float4(64.0 / 255.0, 0.0, 0.0, 1.0);
+  out.out1 = float4(0.0, 0.0, 1.0, 1.0);
+  return out;
+}
+)",
+    .opengl = R"(#version 300 es
+precision highp float;
+layout(location = 0) out vec4 out0;
+layout(location = 1) out vec4 out1;
+void main() {
+  out0 = vec4(64.0 / 255.0, 0.0, 0.0, 1.0);
+  out1 = vec4(0.0, 0.0, 1.0, 1.0);
+})",
+};
+
+// Writes red (1, 0, 0, 0) to color attachment 1 only
+constexpr FragmentShader kAddRedToAttachment1 = {
+    .vulkan = R"(#version 460
+layout(location = 1) out vec4 out1;
+void main() {
+  out1 = vec4(1.0, 0.0, 0.0, 0.0);
+})",
+    .metal = R"(
+struct FragmentOut {
+  float4 out1 [[color(1)]];
+};
+
+fragment FragmentOut fragmentMain() {
+  FragmentOut out;
+  out.out1 = float4(1.0, 0.0, 0.0, 0.0);
+  return out;
+}
+)",
+    .opengl = R"(#version 300 es
+precision highp float;
+layout(location = 1) out vec4 out1;
+void main() {
+  out1 = vec4(1.0, 0.0, 0.0, 0.0);
+})",
+};
+
+constexpr uint32_t kGreen = 0xFF00FF00; // pack(0, 255, 0, 255)
+
+TEST_F(SubpassesTest, SubpassesWriteOnlyTheirColorAttachments) {
+  if (const char* reason = gpuTestSkipReason()) {
+    GTEST_SKIP() << reason;
+  }
+  // Metal does not mask the writes to color attachments outside colorAttachmentMask
+  if (iglDev_->getBackendType() == BackendType::Metal) {
+    GTEST_SKIP() << "Metal does not mask writes";
+  }
+
+  const auto att0 = createColorTexture(TextureDesc::TextureUsageBits::Attachment);
+  const auto att1 = createColorTexture(TextureDesc::TextureUsageBits::Attachment);
+  const auto fb = createFramebuffer({att0, att1});
+  ASSERT_NE(fb, nullptr);
+  const auto p0 = createPipeline(kWriteBlueGreen, 2, "subpass 0");
+  ASSERT_NE(p0, nullptr);
+  const auto p1 = createPipeline(kWriteRedYellow, 2, "subpass 1");
+  ASSERT_NE(p1, nullptr);
+
+  // Both pipelines write both attachments: subpass 0 keeps only the write to attachment 1, and
+  // subpass 1 only the write to attachment 0
+  const RenderPassDesc renderPass =
+      makeRenderPass(2, {{.colorAttachmentMask = 0b10}, {.colorAttachmentMask = 0b01}});
+  renderSubpasses(renderPass, fb, {p0, p1});
+  expectPixels(att0, kRed);
+  expectPixels(att1, 0xFF00FF00); // pack(0, 255, 0, 255)
+}
+
+TEST_F(SubpassesTest, MasksFollowNextSubpassWithoutPipelineRebind) {
+  if (const char* reason = gpuTestSkipReason()) {
+    GTEST_SKIP() << reason;
+  }
+  // Metal does not mask writes to color attachments outside colorAttachmentMask
+  if (iglDev_->getBackendType() == BackendType::Metal) {
+    GTEST_SKIP() << "Metal does not mask writes";
+  }
+
+  const auto att0 = createColorTexture(TextureDesc::TextureUsageBits::Attachment);
+  const auto att1 = createColorTexture(TextureDesc::TextureUsageBits::Attachment);
+  const auto fb = createFramebuffer({att0, att1});
+  ASSERT_NE(fb, nullptr);
+
+  const auto pipeline = createPipeline(kWriteRedGreen, 2, "both subpasses");
+  ASSERT_NE(pipeline, nullptr);
+
+  const RenderPassDesc renderPass =
+      makeRenderPass(2, {{.colorAttachmentMask = 0b10}, {.colorAttachmentMask = 0b01}});
+
+  Result ret;
+  const auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  const auto encoder = cmdBuf->createRenderCommandEncoder(renderPass, fb, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  ASSERT_NE(encoder, nullptr);
+
+  encoder->bindRenderPipelineState(pipeline);
+  encoder->draw(3); // subpass 0: colorAttachmentMask = 0b10, only writes attachment 1
+  encoder->nextSubpass();
+  encoder->bindScissorRect({.x = 0, .y = 0, .width = kSize / 2, .height = kSize});
+  encoder->draw(3); // subpass 1: colorAttachmentMask = 0b01, only writes attachment 0
+  encoder->endEncoding();
+  cmdQueue_->submit(*cmdBuf);
+  cmdBuf->waitUntilCompleted();
+
+  // Attachment 1 should be entirely green
+  expectPixels(att1, kGreen);
+
+  // Attachment 0: pixels with x < kSize/2 should be red, x >= kSize/2 should be (0,0,0,0)
+  const auto att0Pixels = readPixels(att0);
+  for (size_t y = 0; y < kSize; ++y) {
+    for (size_t x = 0; x < kSize; ++x) {
+      const size_t index = y * kSize + x;
+      const uint32_t expectedPixel = x < kSize / 2 ? kRed : 0x00000000;
+      EXPECT_EQ(att0Pixels[index], expectedPixel) << "at (" << x << ", " << y << ")";
+    }
+  }
+}
+
+TEST_F(SubpassesTest, SubpassesBlendPerAttachment) {
+  if (const char* reason = gpuTestSkipReason()) {
+    GTEST_SKIP() << reason;
+  }
+
+  const auto att0 = createColorTexture(TextureDesc::TextureUsageBits::Attachment);
+  const auto att1 = createColorTexture(TextureDesc::TextureUsageBits::Attachment);
+  const auto fb = createFramebuffer({att0, att1});
+  ASSERT_NE(fb, nullptr);
+
+  const auto p0 = createPipeline(kBlendDarkRedWriteBlue, 2, "blend attachment 0", 0b01);
+  ASSERT_NE(p0, nullptr);
+  const auto p1 = createPipeline(kAddRedToAttachment1, 2, "blend attachment 1", 0b10);
+  ASSERT_NE(p1, nullptr);
+
+  RenderPassDesc renderPass =
+      makeRenderPass(2, {{.colorAttachmentMask = 0b11}, {.colorAttachmentMask = 0b10}});
+  renderPass.colorAttachments[0].clearColor = {0.0f, 128.0f / 255.0f, 0.0f, 0.0f};
+
+  renderSubpasses(renderPass, fb, {p0, p1});
+
+  // Attachment 0: clear color (0, 128, 0, 0) + (64, 0, 0, 255) blended = (64, 128, 0, 255)
+  expectPixels(att0, 0xFF008040);
+  // Attachment 1: blue (0, 0, 255, 255) + red (255, 0, 0, 255) blended = (255, 0, 255, 255)
+  expectPixels(att1, 0xFFFF00FF);
 }
 
 } // namespace igl::tests

@@ -45,6 +45,9 @@ using PFNIGLBINDIMAGETEXTUREPROC = void (*)(GLuint unit,
                                             GLenum format);
 using PFNIGLBINDRENDERBUFFERPROC = void (*)(GLenum target, GLuint renderbuffer);
 using PFNIGLBINDVERTEXARRAYPROC = void (*)(GLuint vao);
+using PFNIGLBLENDEQUATIONSEPARATEIPROC = void (*)(GLuint buf, GLenum modeRGB, GLenum modeAlpha);
+using PFNIGLBLENDFUNCSEPARATEIPROC =
+    void (*)(GLuint buf, GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha);
 using PFNIGLBLITFRAMEBUFFERPROC = void (*)(GLint srcX0,
                                            GLint srcY0,
                                            GLint srcX1,
@@ -60,6 +63,8 @@ using PFNIGLCLEARBUFFERFVPROC = void (*)(GLenum buffer, GLint drawBuffer, const 
 using PFNIGLCLEARDEPTHPROC = void (*)(GLdouble depth);
 using PFNIGLCLEARDEPTHFPROC = void (*)(GLfloat depth);
 using PFNIGLCLIENTWAITSYNCPROC = GLenum (*)(GLsync sync, GLbitfield flags, GLuint64 timeoutNs);
+using PFNIGLCOLORMASKIPROC =
+    void (*)(GLuint index, GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
 using PFNIGLCOMPRESSEDTEXIMAGE3DPROC = void (*)(GLenum target,
                                                 GLint level,
                                                 GLenum internalformat,
@@ -101,6 +106,7 @@ using PFNIGLDELETEQUERIESPROC = void (*)(GLsizei n, GLuint* ids);
 using PFNIGLDELETERENDERBUFFERSPROC = void (*)(GLsizei n, const GLuint* renderbuffers);
 using PFNIGLDELETESYNCPROC = void (*)(GLsync sync);
 using PFNIGLDELETEVERTEXARRAYSPROC = void (*)(GLsizei n, const GLuint* vertexArrays);
+using PFNIGLDISABLEIPROC = void (*)(GLenum cap, GLuint index);
 using PFNIGLDISCARDFRAMEBUFFERPROC = void (*)(GLenum target,
                                               GLsizei numAttachments,
                                               const GLenum* attachments);
@@ -115,6 +121,7 @@ using PFNIGLMULTIDRAWARRAYSINDIRECTPROC = void (*)(GLenum mode,
                                                    GLsizei stride);
 using PFNIGLMULTIDRAWELEMENTSINDIRECTPROC =
     void (*)(GLenum mode, GLenum type, const void* indirect, GLsizei drawcount, GLsizei stride);
+using PFNIGLENABLEIPROC = void (*)(GLenum cap, GLuint index);
 using PFNIGLENDQUERYPROC = void (*)(GLenum target);
 using PFNIGLFENCESYNCPROC = GLsync (*)(GLenum condition, GLbitfield flags);
 using PFNIGLFRAMEBUFFERRENDERBUFFERPROC = void (*)(GLenum target,
@@ -306,9 +313,16 @@ using PFNPOLYGONOFFSETCLAMPPROC = void (*)(float factor, float units, float clam
 ///--------------------------------------
 /// MARK: - OpenGL ES / OpenGL
 
+void iglBlendEquationSeparatei(GLuint buf, GLenum modeRGB, GLenum modeAlpha);
+void iglBlendFuncSeparatei(GLuint buf,
+                           GLenum srcRGB,
+                           GLenum dstRGB,
+                           GLenum srcAlpha,
+                           GLenum dstAlpha);
 // NOTE: Public IGL signature of clearDepth altered to match clearDepthf.
 void iglClearBufferfv(GLenum buffer, GLint drawBuffer, const GLfloat* value);
 void iglClearDepth(GLfloat depth);
+void iglColorMaski(GLuint index, GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
 void iglCompressedTexImage3D(GLenum target,
                              GLint level,
                              GLenum internalformat,
@@ -336,7 +350,9 @@ void iglDebugMessageInsert(GLenum source,
                            GLenum severity,
                            GLsizei length,
                            const GLchar* buf);
+void iglDisablei(GLenum cap, GLuint index);
 void iglDrawBuffers(GLsizei n, const GLenum* bufs);
+void iglEnablei(GLenum cap, GLuint index);
 GLuint iglGetDebugMessageLog(GLuint count,
                              GLsizei bufSize,
                              GLenum* sources,
@@ -616,6 +632,23 @@ void iglDiscardFramebufferEXT(GLenum target, GLsizei numAttachments, const GLenu
 void iglDrawBuffersEXT(GLsizei n, const GLenum* bufs);
 
 ///--------------------------------------
+/// MARK: - GL_EXT_draw_buffers_indexed
+
+void iglBlendEquationSeparateiEXT(GLuint buf, GLenum modeRGB, GLenum modeAlpha);
+void iglBlendFuncSeparateiEXT(GLuint buf,
+                              GLenum srcRGB,
+                              GLenum dstRGB,
+                              GLenum srcAlpha,
+                              GLenum dstAlpha);
+void iglColorMaskiEXT(GLuint index,
+                      GLboolean red,
+                      GLboolean green,
+                      GLboolean blue,
+                      GLboolean alpha);
+void iglDisableiEXT(GLenum cap, GLuint index);
+void iglEnableiEXT(GLenum cap, GLuint index);
+
+///--------------------------------------
 /// MARK: - GL_EXT_framebuffer_blit
 
 void iglBlitFramebufferEXT(GLint srcX0,
@@ -771,6 +804,23 @@ void iglFramebufferTextureMultisampleMultiviewOVR(GLenum target,
                                                   GLsizei samples,
                                                   GLint baseViewIndex,
                                                   GLsizei numViews);
+///--------------------------------------
+/// MARK: - GL_OES_draw_buffers_indexed
+
+void iglBlendEquationSeparateiOES(GLuint buf, GLenum modeRGB, GLenum modeAlpha);
+void iglBlendFuncSeparateiOES(GLuint buf,
+                              GLenum srcRGB,
+                              GLenum dstRGB,
+                              GLenum srcAlpha,
+                              GLenum dstAlpha);
+void iglColorMaskiOES(GLuint index,
+                      GLboolean red,
+                      GLboolean green,
+                      GLboolean blue,
+                      GLboolean alpha);
+void iglDisableiOES(GLenum cap, GLuint index);
+void iglEnableiOES(GLenum cap, GLuint index);
+
 ///--------------------------------------
 /// MARK: - GL_OES_mapbuffer
 

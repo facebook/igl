@@ -182,6 +182,22 @@ IGL_EXTERN_BEGIN
 #define CAN_CALL_glClearBufferfv 0
 #define CAN_CALL_glGetStringi 0
 #endif
+#if defined(GL_VERSION_3_0) || defined(GL_ES_VERSION_3_2)
+#define CAN_CALL_glColorMaski CAN_CALL
+#define CAN_CALL_glDisablei CAN_CALL
+#define CAN_CALL_glEnablei CAN_CALL
+#else
+#define CAN_CALL_glColorMaski 0
+#define CAN_CALL_glDisablei 0
+#define CAN_CALL_glEnablei 0
+#endif
+#if defined(GL_VERSION_4_0) || defined(GL_ES_VERSION_3_2)
+#define CAN_CALL_glBlendEquationSeparatei CAN_CALL
+#define CAN_CALL_glBlendFuncSeparatei CAN_CALL
+#else
+#define CAN_CALL_glBlendEquationSeparatei 0
+#define CAN_CALL_glBlendFuncSeparatei 0
+#endif
 #if defined(GL_VERSION_3_1) || defined(GL_ES_VERSION_3_0)
 #define CAN_CALL_glDrawElementsInstanced CAN_CALL
 #else
@@ -238,6 +254,30 @@ void iglDebugMessageInsert(GLenum source,
                           buf);
 }
 
+void iglBlendEquationSeparatei(GLuint buf, GLenum modeRGB, GLenum modeAlpha) {
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glBlendEquationSeparatei,
+                          glBlendEquationSeparatei,
+                          PFNIGLBLENDEQUATIONSEPARATEIPROC,
+                          buf,
+                          modeRGB,
+                          modeAlpha);
+}
+
+void iglBlendFuncSeparatei(GLuint buf,
+                           GLenum srcRGB,
+                           GLenum dstRGB,
+                           GLenum srcAlpha,
+                           GLenum dstAlpha) {
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glBlendFuncSeparatei,
+                          glBlendFuncSeparatei,
+                          PFNIGLBLENDFUNCSEPARATEIPROC,
+                          buf,
+                          srcRGB,
+                          dstRGB,
+                          srcAlpha,
+                          dstAlpha);
+}
+
 void iglClearBufferfv(GLenum buffer, GLint drawBuffer, const GLfloat* value) {
   GLEXTENSION_METHOD_BODY(
       CAN_CALL_glClearBufferfv, glClearBufferfv, PFNIGLCLEARBUFFERFVPROC, buffer, drawBuffer, value)
@@ -245,6 +285,11 @@ void iglClearBufferfv(GLenum buffer, GLint drawBuffer, const GLfloat* value) {
 
 void iglClearDepth(GLfloat depth) {
   GLEXTENSION_METHOD_BODY(CAN_CALL_glClearDepth, glClearDepth, PFNIGLCLEARDEPTHPROC, depth)
+}
+
+void iglColorMaski(GLuint index, GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha) {
+  GLEXTENSION_METHOD_BODY(
+      CAN_CALL_glColorMaski, glColorMaski, PFNIGLCOLORMASKIPROC, index, red, green, blue, alpha);
 }
 
 void iglCompressedTexImage3D(GLenum target,
@@ -297,8 +342,16 @@ void iglCompressedTexSubImage3D(GLenum target,
                           data);
 }
 
+void iglDisablei(GLenum cap, GLuint index) {
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glDisablei, glDisablei, PFNIGLDISABLEIPROC, cap, index);
+}
+
 void iglDrawBuffers(GLsizei n, const GLenum* bufs) {
   GLEXTENSION_METHOD_BODY(CAN_CALL_glDrawBuffers, glDrawBuffers, PFNIGLDRAWBUFFERSPROC, n, bufs);
+}
+
+void iglEnablei(GLenum cap, GLuint index) {
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glEnablei, glEnablei, PFNIGLENABLEIPROC, cap, index);
 }
 
 void iglReadBuffer(GLenum src) {
@@ -1388,6 +1441,70 @@ void iglDrawBuffersEXT(GLsizei n, const GLenum* bufs) {
 }
 
 ///--------------------------------------
+/// MARK: - GL_EXT_draw_buffers_indexed
+
+#if defined(GL_EXT_draw_buffers_indexed)
+#define CAN_CALL_glBlendEquationSeparateiEXT CAN_CALL_OPENGL_ES
+#define CAN_CALL_glBlendFuncSeparateiEXT CAN_CALL_OPENGL_ES
+#define CAN_CALL_glColorMaskiEXT CAN_CALL_OPENGL_ES
+#define CAN_CALL_glDisableiEXT CAN_CALL_OPENGL_ES
+#define CAN_CALL_glEnableiEXT CAN_CALL_OPENGL_ES
+#else
+#define CAN_CALL_glBlendEquationSeparateiEXT 0
+#define CAN_CALL_glBlendFuncSeparateiEXT 0
+#define CAN_CALL_glColorMaskiEXT 0
+#define CAN_CALL_glDisableiEXT 0
+#define CAN_CALL_glEnableiEXT 0
+#endif
+
+void iglBlendEquationSeparateiEXT(GLuint buf, GLenum modeRGB, GLenum modeAlpha) {
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glBlendEquationSeparateiEXT,
+                          glBlendEquationSeparateiEXT,
+                          PFNIGLBLENDEQUATIONSEPARATEIPROC,
+                          buf,
+                          modeRGB,
+                          modeAlpha);
+}
+
+void iglBlendFuncSeparateiEXT(GLuint buf,
+                              GLenum srcRGB,
+                              GLenum dstRGB,
+                              GLenum srcAlpha,
+                              GLenum dstAlpha) {
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glBlendFuncSeparateiEXT,
+                          glBlendFuncSeparateiEXT,
+                          PFNIGLBLENDFUNCSEPARATEIPROC,
+                          buf,
+                          srcRGB,
+                          dstRGB,
+                          srcAlpha,
+                          dstAlpha);
+}
+
+void iglColorMaskiEXT(GLuint index,
+                      GLboolean red,
+                      GLboolean green,
+                      GLboolean blue,
+                      GLboolean alpha) {
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glColorMaskiEXT,
+                          glColorMaskiEXT,
+                          PFNIGLCOLORMASKIPROC,
+                          index,
+                          red,
+                          green,
+                          blue,
+                          alpha);
+}
+
+void iglDisableiEXT(GLenum cap, GLuint index) {
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glDisableiEXT, glDisableiEXT, PFNIGLDISABLEIPROC, cap, index);
+}
+
+void iglEnableiEXT(GLenum cap, GLuint index) {
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glEnableiEXT, glEnableiEXT, PFNIGLENABLEIPROC, cap, index);
+}
+
+///--------------------------------------
 /// MARK: - GL_EXT_framebuffer_blit
 
 #if defined(GL_EXT_framebuffer_blit)
@@ -1899,6 +2016,70 @@ void iglFramebufferTextureMultisampleMultiviewOVR(GLenum target,
                             samples,
                             baseViewIndex,
                             numViews)}
+
+///--------------------------------------
+/// MARK: - GL_OES_draw_buffers_indexed
+
+#if defined(GL_OES_draw_buffers_indexed)
+#define CAN_CALL_glBlendEquationSeparateiOES CAN_CALL_OPENGL_ES
+#define CAN_CALL_glBlendFuncSeparateiOES CAN_CALL_OPENGL_ES
+#define CAN_CALL_glColorMaskiOES CAN_CALL_OPENGL_ES
+#define CAN_CALL_glDisableiOES CAN_CALL_OPENGL_ES
+#define CAN_CALL_glEnableiOES CAN_CALL_OPENGL_ES
+#else
+#define CAN_CALL_glBlendEquationSeparateiOES 0
+#define CAN_CALL_glBlendFuncSeparateiOES 0
+#define CAN_CALL_glColorMaskiOES 0
+#define CAN_CALL_glDisableiOES 0
+#define CAN_CALL_glEnableiOES 0
+#endif
+
+void iglBlendEquationSeparateiOES(GLuint buf, GLenum modeRGB, GLenum modeAlpha) {
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glBlendEquationSeparateiOES,
+                          glBlendEquationSeparateiOES,
+                          PFNIGLBLENDEQUATIONSEPARATEIPROC,
+                          buf,
+                          modeRGB,
+                          modeAlpha);
+}
+
+void iglBlendFuncSeparateiOES(GLuint buf,
+                              GLenum srcRGB,
+                              GLenum dstRGB,
+                              GLenum srcAlpha,
+                              GLenum dstAlpha) {
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glBlendFuncSeparateiOES,
+                          glBlendFuncSeparateiOES,
+                          PFNIGLBLENDFUNCSEPARATEIPROC,
+                          buf,
+                          srcRGB,
+                          dstRGB,
+                          srcAlpha,
+                          dstAlpha);
+}
+
+void iglColorMaskiOES(GLuint index,
+                      GLboolean red,
+                      GLboolean green,
+                      GLboolean blue,
+                      GLboolean alpha) {
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glColorMaskiOES,
+                          glColorMaskiOES,
+                          PFNIGLCOLORMASKIPROC,
+                          index,
+                          red,
+                          green,
+                          blue,
+                          alpha);
+}
+
+void iglDisableiOES(GLenum cap, GLuint index) {
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glDisableiOES, glDisableiOES, PFNIGLDISABLEIPROC, cap, index);
+}
+
+void iglEnableiOES(GLenum cap, GLuint index) {
+  GLEXTENSION_METHOD_BODY(CAN_CALL_glEnableiOES, glEnableiOES, PFNIGLENABLEIPROC, cap, index);
+}
 
 ///--------------------------------------
 /// MARK: - GL_OES_mapbuffer

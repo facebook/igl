@@ -9,6 +9,10 @@
 
 #include "../util/Common.h"
 
+#include <string>
+#include <string_view>
+#include <unordered_set>
+#include <utility>
 #include <igl/opengl/Device.h>
 #include <igl/opengl/DeviceFeatureSet.h>
 #include <igl/opengl/IContext.h>
@@ -139,6 +143,77 @@ TEST_F(DeviceFeatureSetFullOGLTest, HasInternalFeature) {
   (void)polyFill;
 
   SUCCEED();
+}
+
+//
+// ContainsExtensionToken
+//
+// GL_EXT_shader_framebuffer_fetch is a prefix of GL_EXT_shader_framebuffer_fetch_non_coherent, so
+// extensions have to be matched as whole tokens.
+//
+TEST(ExtensionTokenOGLTest, ContainsExtensionToken) {
+  const std::string_view fetch = "GL_EXT_shader_framebuffer_fetch";
+
+  EXPECT_FALSE(
+      opengl::containsExtensionToken("GL_EXT_shader_framebuffer_fetch_non_coherent", fetch));
+  EXPECT_FALSE(opengl::containsExtensionToken("XGL_EXT_shader_framebuffer_fetch", fetch));
+  EXPECT_FALSE(opengl::containsExtensionToken("", fetch));
+  EXPECT_FALSE(opengl::containsExtensionToken("GL_OES_depth24", ""));
+
+  EXPECT_TRUE(opengl::containsExtensionToken("GL_EXT_shader_framebuffer_fetch", fetch));
+  EXPECT_TRUE(opengl::containsExtensionToken(
+      "GL_EXT_shader_framebuffer_fetch_non_coherent GL_EXT_shader_framebuffer_fetch", fetch));
+  EXPECT_TRUE(opengl::containsExtensionToken(
+      "GL_OES_depth24 GL_EXT_shader_framebuffer_fetch GL_OES_depth32 ", fetch));
+}
+
+//
+// HasBrokenFramebufferFetch
+//
+// Adreno 5xx series has broken framebuffer fetch despite advertising the extension. Ensure the
+// detection function correctly identifies broken GPUs and rejects others.
+//
+TEST(ExtensionTokenOGLTest, HasBrokenFramebufferFetch) {
+  // Adreno 5xx series: true
+  EXPECT_TRUE(opengl::hasBrokenFramebufferFetch("Adreno (TM) 505", "Qualcomm"));
+  EXPECT_TRUE(opengl::hasBrokenFramebufferFetch("Adreno (TM) 530", "Qualcomm"));
+  EXPECT_TRUE(opengl::hasBrokenFramebufferFetch("Adreno (TM) 540", "Qualcomm"));
+  EXPECT_TRUE(opengl::hasBrokenFramebufferFetch("Adreno 530", "Qualcomm"));
+
+  // Adreno outside 5xx range or non-Qualcomm vendor: false
+  EXPECT_FALSE(opengl::hasBrokenFramebufferFetch("Adreno (TM) 418", "Qualcomm"));
+  EXPECT_FALSE(opengl::hasBrokenFramebufferFetch("Adreno (TM) 630", "Qualcomm"));
+  EXPECT_FALSE(opengl::hasBrokenFramebufferFetch("Adreno (TM) 740", "Qualcomm"));
+
+  // Non-Adreno GPUs: false
+  EXPECT_FALSE(opengl::hasBrokenFramebufferFetch("Mali-G78", "ARM"));
+  EXPECT_FALSE(opengl::hasBrokenFramebufferFetch("llvmpipe (LLVM 22.1.3, 256 bits)", "Mesa"));
+
+  // Null renderer or vendor: false
+  EXPECT_FALSE(opengl::hasBrokenFramebufferFetch(nullptr, "Qualcomm"));
+  EXPECT_FALSE(opengl::hasBrokenFramebufferFetch("Adreno (TM) 530", nullptr));
+}
+
+//
+// ShaderFramebufferFetchNeedsCoherentExtension
+//
+// Extensions::ShaderFramebufferFetch looks for the extension in the GL_EXTENSIONS string that
+// OpenGL (ES) below 3.0 reports and in the set of names that it reports from 3.0.
+//
+TEST_F(DeviceFeatureSetFullOGLTest, ShaderFramebufferFetchNeedsCoherentExtension) {
+  const auto hasFetch = [this](std::string extensions,
+                               std::unordered_set<std::string> extensionSet) {
+    opengl::DeviceFeatureSet features(*context_);
+    features.initializeExtensions(std::move(extensions), std::move(extensionSet));
+    return features.hasExtension(opengl::Extensions::ShaderFramebufferFetch);
+  };
+  const std::string nonCoherent = "GL_EXT_shader_framebuffer_fetch_non_coherent";
+  const std::string coherent = "GL_EXT_shader_framebuffer_fetch";
+
+  EXPECT_FALSE(hasFetch(nonCoherent, {}));
+  EXPECT_TRUE(hasFetch(nonCoherent + " " + coherent, {}));
+  EXPECT_FALSE(hasFetch("", {nonCoherent}));
+  EXPECT_TRUE(hasFetch("", {nonCoherent, coherent}));
 }
 
 //

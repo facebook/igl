@@ -118,7 +118,7 @@ bool isBrokenPowerVrRenderer(const char* renderer) {
          std::strncmp(renderer, "PowerVR SGX", 11) == 0;
 }
 
-// Classify Adreno (Qualcomm) timer tier from renderer string.
+// Returns the model number of an Adreno (Qualcomm) GPU, such as 530, from the renderer string.
 // Returns nullopt if renderer is not a recognized Adreno string.
 // Handles both "Adreno (TM) NNN" and newer "Adreno NNN" formats. Qualcomm
 // ships at least three vendor string variants in Android GL drivers —
@@ -126,7 +126,7 @@ bool isBrokenPowerVrRenderer(const char* renderer) {
 // (older / some OEM-tuned builds) — accept all three. Exact `strcmp`
 // here previously fell any non-"Qualcomm" variant through to the
 // default `Full` tier.
-std::optional<GpuTimerTier> classifyAdrenoTimerTier(const char* renderer, const char* vendor) {
+std::optional<int> parseAdrenoNumber(const char* renderer, const char* IGL_NULLABLE vendor) {
   if (vendor == nullptr || !isQualcommVendor(vendor)) {
     return std::nullopt;
   }
@@ -135,10 +135,20 @@ std::optional<GpuTimerTier> classifyAdrenoTimerTier(const char* renderer, const 
       std::sscanf(renderer, "Adreno %d", &adrenoNumber) != 1) {
     return std::nullopt;
   }
-  if (adrenoNumber < 620) {
+  return adrenoNumber;
+}
+
+// Classify Adreno (Qualcomm) timer tier from renderer string.
+// Returns nullopt if renderer is not a recognized Adreno string.
+std::optional<GpuTimerTier> classifyAdrenoTimerTier(const char* renderer, const char* vendor) {
+  const std::optional<int> adrenoNumber = parseAdrenoNumber(renderer, vendor);
+  if (!adrenoNumber) {
+    return std::nullopt;
+  }
+  if (*adrenoNumber < 620) {
     return GpuTimerTier::Disabled; // 3xx–619: 0 slots
   }
-  if (adrenoNumber < 640) {
+  if (*adrenoNumber < 640) {
     return GpuTimerTier::Conservative; // 620, 630: 32 slots
   }
   return GpuTimerTier::Full; // 640+: 64 slots
@@ -225,6 +235,33 @@ GpuTimerTier classifyGpuTimerTier(const char* renderer, const char* vendor) {
   return GpuTimerTier::Full;
 }
 
+bool hasBrokenFramebufferFetch(const char* renderer, const char* vendor) {
+  if (renderer == nullptr) {
+    return false;
+  }
+  // The Adreno 5xx drivers advertise the extension, but fetching from the framebuffer is broken
+  const std::optional<int> adrenoNumber = parseAdrenoNumber(renderer, vendor);
+  return adrenoNumber.has_value() && *adrenoNumber >= 500 && *adrenoNumber < 600;
+}
+
+bool containsExtensionToken(std::string_view extensions, std::string_view extension) {
+  if (extension.empty()) {
+    return false;
+  }
+  std::string_view remaining = extensions;
+  while (!remaining.empty()) {
+    const size_t tokenEnd = remaining.find(' ');
+    if (remaining.substr(0, tokenEnd) == extension) {
+      return true;
+    }
+    if (tokenEnd == std::string_view::npos) {
+      break;
+    }
+    remaining.remove_prefix(tokenEnd + 1);
+  }
+  return false;
+}
+
 bool DeviceFeatureSet::usesOpenGLES() noexcept {
 #if IGL_OPENGL_ES
   return true;
@@ -309,6 +346,13 @@ bool DeviceFeatureSet::isSupported(const std::string& extensionName) const {
   }
 }
 
+bool DeviceFeatureSet::isSupportedExact(const std::string& extensionName) const {
+  if (!extensions_.empty()) {
+    return containsExtensionToken(extensions_, extensionName);
+  }
+  return supportedExtensions_.find(extensionName) != supportedExtensions_.end();
+}
+
 bool DeviceFeatureSet::isExtensionSupported(Extensions extension) const {
   switch (extension) {
   case Extensions::AppleRgb422:
@@ -333,6 +377,10 @@ bool DeviceFeatureSet::isExtensionSupported(Extensions extension) const {
     return hasESExtension(*this, "GL_EXT_discard_framebuffer");
   case Extensions::DrawBuffers:
     return hasESExtension(*this, "GL_EXT_draw_buffers");
+  case Extensions::DrawBuffersIndexedExt:
+    return hasESExtension(*this, "GL_EXT_draw_buffers_indexed");
+  case Extensions::DrawBuffersIndexedOes:
+    return hasESExtension(*this, "GL_OES_draw_buffers_indexed");
   case Extensions::Es2Compatibility:
     return hasDesktopExtension(*this, "GL_ARB_ES2_compatibility");
   case Extensions::FramebufferBlit:
@@ -359,6 +407,10 @@ bool DeviceFeatureSet::isExtensionSupported(Extensions extension) const {
     return hasDesktopOrESExtension(*this, "GL_ARB_polygon_offset_clamp");
   case Extensions::RequiredInternalFormat:
     return hasESExtension(*this, "GL_OES_required_internalformat");
+  case Extensions::ShaderFramebufferFetch:
+    // This name is a prefix of GL_EXT_shader_framebuffer_fetch_non_coherent, whose reads are not
+    // coherent with earlier writes
+    return isSupportedExact("GL_EXT_shader_framebuffer_fetch");
   case Extensions::ShaderImageLoadStore:
     return hasESExtension(*this, "GL_EXT_shader_image_load_store");
   case Extensions::Srgb:
@@ -589,6 +641,21 @@ bool DeviceFeatureSet::isFeatureSupportedMiscGroup(DeviceFeatures feature) const
   case DeviceFeatures::Timers:
     return hasExtension(Extensions::TimerQuery);
 
+  case DeviceFeatures::Subpasses: {
+    // Framebuffer fetch lets a subpass read the attachments that earlier subpasses wrote, and
+    // indexed color masks and blending give each attachment its own state. Desktop OpenGL needs
+    // 4.0 for the explicit fragment output locations of GLSL 4.00 and for the per-draw-buffer
+    // blend functions.
+    if (!hasDesktopOrESVersion(*this, GLVersion::v4_0, GLVersion::v3_0_ES) ||
+        !hasExtension(Extensions::ShaderFramebufferFetch) ||
+        !hasInternalFeature(InternalFeatures::DrawBuffersIndexed)) {
+      return false;
+    }
+    const auto* renderer = reinterpret_cast<const char*>(glContext_.getString(GL_RENDERER));
+    const auto* vendor = reinterpret_cast<const char*>(glContext_.getString(GL_VENDOR));
+    return !hasBrokenFramebufferFetch(renderer, vendor);
+  }
+
   case DeviceFeatures::DynamicCullMode:
   case DeviceFeatures::DynamicFrontFacingWinding:
   case DeviceFeatures::DynamicVertexBufferStride:
@@ -615,7 +682,6 @@ bool DeviceFeatureSet::isFeatureSupported(DeviceFeatures feature) const {
   case DeviceFeatures::ShaderLibrary:
   case DeviceFeatures::BindBytes:
   case DeviceFeatures::ValidationLayersEnabled:
-  case DeviceFeatures::Subpasses:
   case DeviceFeatures::MemorylessAttachments:
     return false;
 
@@ -745,6 +811,12 @@ bool DeviceFeatureSet::isInternalFeatureSupported(InternalFeatures feature) cons
   case InternalFeatures::DebugMessageCallback:
     return hasDesktopOrESVersion(*this, GLVersion::v4_3, GLVersion::v3_2_ES) ||
            hasExtension(Extensions::Debug);
+
+  case InternalFeatures::DrawBuffersIndexed:
+    // The functions for the draw buffer state are core from OpenGL 4.0 and OpenGL ES 3.2
+    return hasDesktopOrESVersion(*this, GLVersion::v4_0, GLVersion::v3_2_ES) ||
+           hasExtension(Extensions::DrawBuffersIndexedOes) ||
+           hasExtension(Extensions::DrawBuffersIndexedExt);
 
   case InternalFeatures::FramebufferBlit:
     // TODO: Add support for GL_ANGLE_framebuffer_blit
@@ -1422,6 +1494,11 @@ bool DeviceFeatureSet::hasInternalRequirementMiscGroup(InternalRequirement requi
   switch (requirement) {
   case InternalRequirement::DrawBuffersExtReq:
     return usesOpenGLES() && !hasESVersion(*this, GLVersion::v3_0_ES);
+
+  case InternalRequirement::DrawBuffersIndexedExtReq:
+    // The functions for the draw buffer state are core from OpenGL ES 3.2; before that they need
+    // one of the extensions
+    return usesOpenGLES() && !hasESVersion(*this, GLVersion::v3_2_ES);
 
   case InternalRequirement::Depth24Stencil8Unsized:
     return usesOpenGLES() && !hasESVersion(*this, GLVersion::v3_0_ES);

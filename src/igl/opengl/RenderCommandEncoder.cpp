@@ -131,6 +131,16 @@ void RenderCommandEncoder::beginEncoding(const RenderPassDesc& renderPass,
   framebuffer_ = std::static_pointer_cast<Framebuffer>(framebuffer);
   resolveFramebuffer_ = framebuffer_->getResolveFramebuffer();
 
+  // CommandBuffer has validated the subpasses
+  if (!renderPass.subpasses.empty()) {
+    numSubpasses_ = static_cast<uint32_t>(renderPass.subpasses.size());
+    for (size_t i = 0; i != renderPass.subpasses.size(); ++i) {
+      subpassColorMasks_[i] = renderPass.subpasses[i].colorAttachmentMask;
+    }
+    adapter_->beginSubpasses(static_cast<uint32_t>(framebuffer->getColorAttachmentIndices().size()),
+                             subpassColorMasks_[0]);
+  }
+
   // GPU timing: if the render pass descriptor contains a timestamp query,
   // start a GL_TIME_ELAPSED query to measure this render pass's GPU time.
   if (renderPass.timestampQuery.queries) {
@@ -156,6 +166,9 @@ void RenderCommandEncoder::beginEncoding(const RenderPassDesc& renderPass,
  */
 void RenderCommandEncoder::endEncoding() {
   IGL_PROFILER_FUNCTION();
+  IGL_DEBUG_ASSERT(currentSubpass_ + 1 == numSubpasses_,
+                   "nextSubpass() must be called RenderPassDesc::subpasses.size() - 1 times before "
+                   "endEncoding()");
   if (IGL_DEBUG_VERIFY(adapter_)) {
     // Restore caller state
     getContext().setEnabled(scissorEnabled_, GL_SCISSOR_TEST);
@@ -306,6 +319,22 @@ void RenderCommandEncoder::endEncoding() {
     }
     framebuffer_->unbind();
   }
+}
+
+void RenderCommandEncoder::nextSubpass() {
+  IGL_PROFILER_FUNCTION();
+  if (!IGL_DEBUG_VERIFY(adapter_)) {
+    return;
+  }
+  if (currentSubpass_ + 1 >= numSubpasses_) {
+    IGL_DEBUG_ABORT(
+        "nextSubpass() was called more than RenderPassDesc::subpasses.size() - 1 times");
+    return;
+  }
+  ++currentSubpass_;
+  // No GL command is needed: GL_EXT_shader_framebuffer_fetch is coherent, so a fragment reads
+  // everything that the earlier subpasses wrote at its pixel. Only the attachments to write change.
+  adapter_->setSubpassColorAttachmentMask(subpassColorMasks_[currentSubpass_]);
 }
 
 void RenderCommandEncoder::pushDebugGroupLabel(const char* label, const Color& /*color*/) const {

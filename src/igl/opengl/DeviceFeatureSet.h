@@ -8,6 +8,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <unordered_set>
 #include <igl/DeviceFeatures.h>
@@ -32,6 +33,8 @@ enum class Extensions {
   DiscardFramebuffer,         // GL_EXT_discard_framebuffer is supported
   Es2Compatibility,           // GL_ARB_ES2_compatibility is supported
   DrawBuffers,                // GL_EXT_draw_buffers is supported
+  DrawBuffersIndexedExt,      // GL_EXT_draw_buffers_indexed is supported
+  DrawBuffersIndexedOes,      // GL_OES_draw_buffers_indexed is supported
   FramebufferBlit,            // GL_EXT_framebuffer_blit is supported
   FramebufferObject,          // GL_ARB_framebuffer_object is supported
   InvalidateSubdata,          // GL_ARB_invalidate_subdata is supported
@@ -44,6 +47,7 @@ enum class Extensions {
   MultiViewMultiSample,       // GL_OVR_multiview_multisampled_render_to_texture is supported
   PolygonOffsetClamp,         // GL_ARB_polygon_offset_clamp is supported
   RequiredInternalFormat,     // GL_OES_required_internalformat is supported
+  ShaderFramebufferFetch,     // GL_EXT_shader_framebuffer_fetch is supported (not _non_coherent)
   ShaderImageLoadStore,       // GL_EXT_shader_image_load_store is supported
   Srgb,                       // GL_EXT_sRGB is supported
   SrgbWriteControl,           // GL_EXT_sRGB_write_control is supported
@@ -72,6 +76,7 @@ enum class InternalFeatures {
   DebugMessage,              // Debug messages and group markers are supported
   DebugMessageCallback,      // Debug message callbacks are supported
   DrawArraysIndirect,        // glDrawArraysIndirect is supported
+  DrawBuffersIndexed,        // glColorMaski, glEnablei and glBlend*Separatei are supported
   MultiDrawIndirect,         // glMultiDrawArraysIndirect is supported
   FramebufferBlit,           // BlitFramebuffer is supported
   FramebufferObject,         // Framebuffer objects are supported
@@ -173,6 +178,7 @@ enum class InternalRequirement {
   Depth24Stencil8Unsized,
   Depth32Unsized,
   DrawBuffersExtReq,
+  DrawBuffersIndexedExtReq,
   FramebufferBlitExtReq,
   InvalidateFramebufferExtReq,
   MapBufferExtReq,
@@ -201,6 +207,17 @@ enum class GpuTimerTier : uint32_t {
 /// Exposed as a free function for unit testing without a GL context.
 [[nodiscard]] GpuTimerTier classifyGpuTimerTier(const char* IGL_NULLABLE renderer,
                                                 const char* IGL_NULLABLE vendor);
+
+/// Returns true if the GPU with these raw GL_RENDERER / GL_VENDOR strings advertises
+/// GL_EXT_shader_framebuffer_fetch but its driver breaks it, as the Adreno 500 series does.
+/// Exposed as a free function for unit testing without a GL context.
+[[nodiscard]] bool hasBrokenFramebufferFetch(const char* IGL_NULLABLE renderer,
+                                             const char* IGL_NULLABLE vendor);
+
+/// Returns true if `extensions`, a space-separated GL_EXTENSIONS string, lists `extension` as a
+/// whole token. Unlike a substring search, GL_EXT_foo does not match GL_EXT_foo_bar.
+/// Exposed as a free function for unit testing without a GL context.
+[[nodiscard]] bool containsExtensionToken(std::string_view extensions, std::string_view extension);
 
 class DeviceFeatureSet final {
  public:
@@ -244,6 +261,8 @@ class DeviceFeatureSet final {
  private:
   ICapabilities::TextureFormatCapabilities getCompressedTextureCapabilities() const;
   bool isExtensionSupported(Extensions extension) const;
+  // Unlike isSupported(), never matches an extension whose name only starts with `extensionName`.
+  bool isSupportedExact(const std::string& extensionName) const;
   bool isFeatureSupported(DeviceFeatures feature) const;
   bool isFeatureSupportedTextureGroup(DeviceFeatures feature) const;
   bool isFeatureSupportedMiscGroup(DeviceFeatures feature) const;

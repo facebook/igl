@@ -26,6 +26,7 @@ class IRenderPipelineState;
 
 namespace opengl {
 class Buffer;
+class RenderPipelineState;
 class VertexArrayObject;
 
 class RenderCommandAdapter final : public WithContext {
@@ -37,6 +38,7 @@ class RenderCommandAdapter final : public WithContext {
     DepthStencil = 1 << 2,
     CullMode = 1 << 3,
     FrontFaceWinding = 1 << 4,
+    SubpassColorAttachments = 1 << 5,
   };
 
  private:
@@ -105,6 +107,14 @@ class RenderCommandAdapter final : public WithContext {
   void setPipelineState(const std::shared_ptr<IRenderPipelineState>& newValue,
                         Result* IGL_NULLABLE outResult = nullptr);
 
+  /// Starts a render pass with subpasses that has `numColorAttachments` color attachments, whose
+  /// first subpass writes the ones in `colorAttachmentMask`
+  void beginSubpasses(uint32_t numColorAttachments, uint8_t colorAttachmentMask);
+
+  /// Masks the writes of subsequent draws to the color attachments in `colorAttachmentMask`, the
+  /// ones that the current subpass writes
+  void setSubpassColorAttachmentMask(uint8_t colorAttachmentMask);
+
   void drawArrays(GLenum mode, GLint first, GLsizei count);
   void drawArraysIndirect(GLenum mode,
                           Buffer& indirectBuffer,
@@ -154,6 +164,7 @@ class RenderCommandAdapter final : public WithContext {
   void willDraw();
   void didDraw();
   void unbindVertexAttributes();
+  void applySubpassColorAttachments(const RenderPipelineState& pipelineState);
 
   void bindBufferWithShaderStorageBufferOverride(Buffer& buffer,
                                                  GLenum overrideTargetForShaderStorageBuffer);
@@ -190,6 +201,12 @@ class RenderCommandAdapter final : public WithContext {
   uint32_t backStencilReferenceValue_ = 0xFF;
   CullMode cullMode_ = CullMode::Disabled;
   WindingMode windingMode_ = WindingMode::CounterClockwise;
+  // Number of color attachments of a render pass with subpasses, 0 for a pass without them
+  uint32_t numSubpassColorAttachments_ = 0;
+  uint8_t subpassColorAttachmentMask_ = 0;
+  // Whether the color masks and the blending of single draw buffers are set, which endEncoding()
+  // has to reset
+  bool subpassColorAttachmentsApplied_ = false;
 
   bool useVAO_ = false;
 };

@@ -72,6 +72,11 @@ class Framebuffer : public WithContext, public IFramebuffer {
 
   [[nodiscard]] bool isSwapchainBound() const override;
 
+  /// Whether the color attachments are textures that IGL attached to a framebuffer object that it
+  /// created. False for the framebuffer of the window system and for CurrentFramebuffer, whose
+  /// color attachment is a placeholder.
+  [[nodiscard]] virtual bool hasTextureAttachments() const = 0;
+
  protected:
   void attachAsColor(ITexture& texture,
                      uint32_t index,
@@ -148,6 +153,9 @@ class CustomFramebuffer final : public Framebuffer {
   void bind(const RenderPassDesc& renderPass) const override;
   void unbind() const override;
 
+  // opengl::Framebuffer
+  [[nodiscard]] bool hasTextureAttachments() const override;
+
  private:
   void prepareResource(const std::string& debugName, Result* outResult);
   void updateDrawableInternal(SurfaceTextures surfaceTextures, bool updateDepthStencil);
@@ -182,6 +190,7 @@ class CurrentFramebuffer final : public Framebuffer {
   Viewport getViewport() const override;
   void bind(const RenderPassDesc& renderPass) const override;
   void unbind() const override;
+  [[nodiscard]] bool hasTextureAttachments() const override;
 
  private:
   Viewport viewport_;

@@ -126,6 +126,9 @@ struct RenderPassDesc {
    *  - 2 to IGL_SUBPASSES_MAX entries
    *  - a Mono framebuffer with single-sampled attachments, no resolve attachments, and color
    *    attachments contiguous from index 0
+   *  - on OpenGL, color attachments that are textures: for a framebuffer without them, such as
+   *    the window system's (CurrentFramebuffer), createRenderCommandEncoder() returns
+   *    Result::Code::Unsupported
    *  - every color attachment is written by some subpass
    *  - every input attachment is written by an earlier subpass, is not written by the subpass that
    *    reads it, and has TextureDesc::TextureUsageBits::InputAttachment

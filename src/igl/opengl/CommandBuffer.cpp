@@ -11,6 +11,7 @@
 #include <igl/RenderPass.h>
 #include <igl/opengl/Buffer.h>
 #include <igl/opengl/ComputeCommandEncoder.h>
+#include <igl/opengl/Framebuffer.h>
 #include <igl/opengl/IContext.h>
 #include <igl/opengl/RenderCommandEncoder.h>
 
@@ -27,12 +28,32 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
     const Dependencies& dependencies,
     Result* outResult) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
-  if (!renderPass.subpasses.empty()) {
-    Result::setResult(outResult, Result::Code::Unsupported, "Subpasses are not supported");
-    return nullptr;
+  const bool hasSubpasses = !renderPass.subpasses.empty();
+  if (hasSubpasses) {
+    if (!getContext().deviceFeatures().hasFeature(DeviceFeatures::Subpasses)) {
+      Result::setResult(outResult, Result::Code::Unsupported, "Subpasses are not supported");
+      return nullptr;
+    }
+    if (!framebuffer) {
+      Result::setResult(outResult, Result::Code::ArgumentNull, "The framebuffer is null");
+      return nullptr;
+    }
+    // The color attachment of CurrentFramebuffer is a placeholder that validate() cannot query,
+    // and the window system's framebuffer ignores every attachment after the first
+    if (!static_cast<const Framebuffer&>(*framebuffer).hasTextureAttachments()) {
+      Result::setResult(outResult,
+                        Result::Code::Unsupported,
+                        "Subpasses need a framebuffer whose color attachments are textures");
+      return nullptr;
+    }
+    const Result validation = renderPass.validate(*framebuffer);
+    if (!validation.isOk()) {
+      Result::setResult(outResult, validation);
+      return nullptr;
+    }
   }
 #if IGL_DEBUG_ABORT_ENABLED
-  if (framebuffer) {
+  if (!hasSubpasses && framebuffer) {
     const Result validation = renderPass.validate(*framebuffer);
     if (!validation.isOk()) {
       IGL_LOG_ERROR_ONCE("Invalid RenderPassDesc: %s\n", validation.message.c_str());

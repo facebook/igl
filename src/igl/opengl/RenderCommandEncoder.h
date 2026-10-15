@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <array>
 #include <igl/Common.h>
 #include <igl/RenderCommandEncoder.h>
 #include <igl/TimestampQueries.h>
@@ -42,6 +43,8 @@ class RenderCommandEncoder final : public IRenderCommandEncoder, public WithCont
 
  public:
   void endEncoding() override;
+
+  void nextSubpass() override;
 
   void pushDebugGroupLabel(const char* label, const Color& color) const override;
   void insertDebugEventLabel(const char* label, const Color& color) const override;
@@ -113,6 +116,11 @@ class RenderCommandEncoder final : public IRenderCommandEncoder, public WithCont
   void* indexBufferOffset_ = nullptr;
   std::shared_ptr<Framebuffer> resolveFramebuffer_;
   std::shared_ptr<Framebuffer> framebuffer_;
+
+  // A render pass without subpasses has 1 subpass, which writes every color attachment
+  std::array<uint8_t, IGL_SUBPASSES_MAX> subpassColorMasks_{}; // SubpassDesc::colorAttachmentMask
+  uint32_t numSubpasses_ = 1;
+  uint32_t currentSubpass_ = 0;
 
   /// GPU timing: descriptor-based elapsed query from RenderPassDesc.
   /// When set, GL_TIME_ELAPSED query is started in beginEncoding()

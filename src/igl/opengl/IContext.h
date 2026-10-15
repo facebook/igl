@@ -81,8 +81,14 @@ class IContext {
   void blendColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
   void blendEquation(GLenum mode);
   void blendEquationSeparate(GLenum modeRGB, GLenum modeAlpha);
+  void blendEquationSeparatei(GLuint buf, GLenum modeRGB, GLenum modeAlpha);
   virtual void blendFunc(GLenum sfactor, GLenum dfactor);
   void blendFuncSeparate(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha);
+  void blendFuncSeparatei(GLuint buf,
+                          GLenum srcRGB,
+                          GLenum dstRGB,
+                          GLenum srcAlpha,
+                          GLenum dstAlpha);
   void blitFramebuffer(GLint srcX0,
                        GLint srcY0,
                        GLint srcX1,
@@ -106,6 +112,7 @@ class IContext {
   void clearStencil(GLint s);
   GLenum clientWaitSync(GLsync IGL_NULLABLE sync, GLbitfield flags, GLuint64 timeoutNs);
   void colorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
+  void colorMaski(GLuint index, GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
   void compileShader(GLuint shader);
   void compressedTexImage2D(GLenum target,
                             GLint level,
@@ -183,6 +190,7 @@ class IContext {
   void depthRangef(GLfloat n, GLfloat f);
   void detachShader(GLuint program, GLuint shader);
   virtual void disable(GLenum cap);
+  void disablei(GLenum cap, GLuint index);
   void disableVertexAttribArray(GLuint index);
   void drawArrays(GLenum mode, GLint first, GLsizei count);
   void drawArraysIndirect(GLenum mode, const GLvoid* IGL_NULLABLE indirect);
@@ -205,6 +213,7 @@ class IContext {
                                  GLsizei drawcount,
                                  GLsizei stride);
   virtual void enable(GLenum cap);
+  void enablei(GLenum cap, GLuint index);
   void enableVertexAttribArray(GLuint index);
   GLsync IGL_NULLABLE fenceSync(GLenum condition, GLbitfield flags);
   void finish();
@@ -715,16 +724,21 @@ class IContext {
 
   PFNIGLBINDIMAGETEXTUREPROC IGL_NULLABLE bindImageTexturerProc_ = nullptr;
   PFNIGLBINDVERTEXARRAYPROC IGL_NULLABLE bindVertexArrayProc_ = nullptr;
+  PFNIGLBLENDEQUATIONSEPARATEIPROC IGL_NULLABLE blendEquationSeparateiProc_ = nullptr;
+  PFNIGLBLENDFUNCSEPARATEIPROC IGL_NULLABLE blendFuncSeparateiProc_ = nullptr;
   PFNIGLBLITFRAMEBUFFERPROC IGL_NULLABLE blitFramebufferProc_ = nullptr;
   PFNIGLCLEARDEPTHFPROC IGL_NULLABLE clearDepthfProc_ = nullptr;
   PFNIGLCLIENTWAITSYNCPROC IGL_NULLABLE clientWaitSyncProc_ = nullptr;
+  PFNIGLCOLORMASKIPROC IGL_NULLABLE colorMaskiProc_ = nullptr;
   PFNIGLCOMPRESSEDTEXIMAGE3DPROC IGL_NULLABLE compressedTexImage3DProc_ = nullptr;
   PFNIGLCOMPRESSEDTEXSUBIMAGE3DPROC IGL_NULLABLE compressedTexSubImage3DProc_ = nullptr;
   PFNIGLDEBUGMESSAGECALLBACKPROC IGL_NULLABLE debugMessageCallbackProc_ = nullptr;
   PFNIGLDEBUGMESSAGEINSERTPROC IGL_NULLABLE debugMessageInsertProc_ = nullptr;
   PFNIGLDELETESYNCPROC IGL_NULLABLE deleteSyncProc_ = nullptr;
   PFNIGLDELETEVERTEXARRAYSPROC IGL_NULLABLE deleteVertexArraysProc_ = nullptr;
+  PFNIGLDISABLEIPROC IGL_NULLABLE disableiProc_ = nullptr;
   PFNIGLDRAWBUFFERSPROC IGL_NULLABLE drawBuffersProc_ = nullptr;
+  PFNIGLENABLEIPROC IGL_NULLABLE enableiProc_ = nullptr;
   PFNIGLFENCESYNCPROC IGL_NULLABLE fenceSyncProc_ = nullptr;
   PFNIGLFRAMEBUFFERTEXTURE2DMULTISAMPLEPROC IGL_NULLABLE framebufferTexture2DMultisampleProc_ =
       nullptr;

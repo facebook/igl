@@ -184,25 +184,33 @@ Texture::AttachmentParams toReadAttachmentParams(const TextureRangeDesc& range,
   return params;
 }
 
+bool isNotLoaded(const std::shared_ptr<ITexture>& texture,
+                 const RenderPassDesc::AttachmentDesc& attachment) {
+  return texture != nullptr && attachment.loadAction == LoadAction::DontCare;
+}
+
 bool isMemorylessAndNotLoaded(const std::shared_ptr<ITexture>& texture,
                               const RenderPassDesc::AttachmentDesc& attachment) {
-  return texture != nullptr && texture->getStorage() == ResourceStorage::Memoryless &&
-         attachment.loadAction == LoadAction::DontCare;
+  return isNotLoaded(texture, attachment) && texture->getStorage() == ResourceStorage::Memoryless;
 }
 
 /// Fills `attachments` with the framebuffer attachments that are Memoryless and not loaded, and
-/// returns how many were written.
-GLsizei collectMemorylessNotLoadedAttachments(
+/// returns how many were written. A render pass with subpasses keeps its intermediate data in tile
+/// memory, so for it these are also the color attachments that are not loaded.
+GLsizei collectNotLoadedAttachments(
     const FramebufferDesc& target,
     const RenderPassDesc& renderPass,
     std::array<GLenum, IGL_COLOR_ATTACHMENTS_MAX + 2>& attachments) {
   GLsizei numAttachments = 0;
+  const bool hasSubpasses = !renderPass.subpasses.empty();
   const size_t numColorAttachments =
       std::min<size_t>(renderPass.colorAttachments.size(), IGL_COLOR_ATTACHMENTS_MAX);
   for (size_t i = 0; i != numColorAttachments; i++) {
     // NOLINTNEXTLINE(facebook-hte-ParameterUncheckedArrayBounds)
     const RenderPassDesc::AttachmentDesc& attachment = renderPass.colorAttachments[i];
-    if (isMemorylessAndNotLoaded(target.colorAttachments[i].texture, attachment)) {
+    const std::shared_ptr<ITexture>& texture = target.colorAttachments[i].texture;
+    if (hasSubpasses ? isNotLoaded(texture, attachment)
+                     : isMemorylessAndNotLoaded(texture, attachment)) {
       attachments[numAttachments++] = static_cast<GLenum>(GL_COLOR_ATTACHMENT0 + i);
     }
   }
@@ -866,14 +874,15 @@ void CustomFramebuffer::bind(const RenderPassDesc& renderPass) const {
     }
   }
 
-  // Memoryless attachments that are not loaded have no contents worth fetching into tile memory.
-  std::array<GLenum, IGL_COLOR_ATTACHMENTS_MAX + 2> memorylessAttachments{};
-  const GLsizei numMemorylessAttachments =
-      collectMemorylessNotLoadedAttachments(renderTarget_, renderPass, memorylessAttachments);
-  if (numMemorylessAttachments > 0 &&
+  // Memoryless attachments, and for a render pass with subpasses color attachments, that are not
+  // loaded have no contents worth fetching into tile memory.
+  std::array<GLenum, IGL_COLOR_ATTACHMENTS_MAX + 2> notLoadedAttachments{};
+  const GLsizei numNotLoadedAttachments =
+      collectNotLoadedAttachments(renderTarget_, renderPass, notLoadedAttachments);
+  if (numNotLoadedAttachments > 0 &&
       getContext().deviceFeatures().hasInternalFeature(InternalFeatures::InvalidateFramebuffer)) {
     getContext().invalidateFramebuffer(
-        GL_FRAMEBUFFER, numMemorylessAttachments, memorylessAttachments.data());
+        GL_FRAMEBUFFER, numNotLoadedAttachments, notLoadedAttachments.data());
   }
 
   applyClearMask(targetCount);
@@ -924,6 +933,10 @@ void CustomFramebuffer::unbind() const {
       getContext().invalidateFramebuffer(GL_FRAMEBUFFER, numAttachments, attachments);
     }
   }
+}
+
+bool CustomFramebuffer::hasTextureAttachments() const {
+  return !hasImplicitColorAttachment();
 }
 
 ///--------------------------------------
@@ -1031,6 +1044,10 @@ void CurrentFramebuffer::bind(const RenderPassDesc& renderPass) const {
 
 void CurrentFramebuffer::unbind() const {
   // no-op
+}
+
+bool CurrentFramebuffer::hasTextureAttachments() const {
+  return false;
 }
 
 FramebufferMode CurrentFramebuffer::getMode() const {

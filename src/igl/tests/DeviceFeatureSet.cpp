@@ -171,7 +171,22 @@ TEST_F(DeviceFeatureSetTest, hasFeatureForMacOSOrWinOrAndroidTest) {
 
     EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::PushConstants));
     EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::FillBuffer));
-    EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::Subpasses));
+
+    // From OpenGL (ES) 3.0, which Subpasses needs, isSupported() matches whole extension names, so
+    // GL_EXT_shader_framebuffer_fetch_non_coherent alone does not satisfy the fetch check
+    const bool drawBuffersIndexed =
+        usesOpenGLES ? (glVersion >= igl::opengl::GLVersion::v3_2_ES ||
+                        deviceFeatures.isSupported("GL_OES_draw_buffers_indexed") ||
+                        deviceFeatures.isSupported("GL_EXT_draw_buffers_indexed"))
+                     : glVersion >= igl::opengl::GLVersion::v4_0;
+    const auto* renderer = reinterpret_cast<const char*>(context.getString(GL_RENDERER));
+    const auto* vendor = reinterpret_cast<const char*>(context.getString(GL_VENDOR));
+    const bool subpasses = (usesOpenGLES ? glVersion >= igl::opengl::GLVersion::v3_0_ES
+                                         : glVersion >= igl::opengl::GLVersion::v4_0) &&
+                           deviceFeatures.isSupported("GL_EXT_shader_framebuffer_fetch") &&
+                           drawBuffersIndexed &&
+                           !igl::opengl::hasBrokenFramebufferFetch(renderer, vendor);
+    EXPECT_EQ(iglDev_->hasFeature(DeviceFeatures::Subpasses), subpasses);
     EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::MemorylessAttachments));
 
     EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::DynamicCullMode));
