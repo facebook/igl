@@ -81,8 +81,9 @@ class VulkanRenderPassBuilder final {
   /// subpass or stored at the end of the render pass.
   [[nodiscard]] uint32_t getPreserveMask(uint32_t subpass) const;
 
-  /// @brief The number of subpass dependencies of the render pass: the ones between subpasses and
-  /// the ones from the subpasses that are the last to use an attachment to VK_SUBPASS_EXTERNAL.
+  /// @brief The number of subpass dependencies of the render pass: the ones between subpasses, the
+  /// ones from the subpasses that are the last to use an attachment to VK_SUBPASS_EXTERNAL, and the
+  /// ones from VK_SUBPASS_EXTERNAL to the subpasses that are the first to use an attachment.
   [[nodiscard]] uint32_t getNumDependencies() const;
 
   /// @brief The `dependencyFlags` of the `index`-th dependency that build() creates, or 0 if there
@@ -110,13 +111,13 @@ class VulkanRenderPassBuilder final {
                               VkRenderPass* outRenderPass,
                               const char* debugName) const noexcept;
 
-  // at most one dependency for every pair of subpasses (src < dst), and one from every subpass to
-  // VK_SUBPASS_EXTERNAL
+  // at most one dependency for every pair of subpasses (src < dst), one from every subpass to
+  // VK_SUBPASS_EXTERNAL, and one from VK_SUBPASS_EXTERNAL to every subpass
   static constexpr uint32_t kMaxSubpassDependencies =
-      IGL_SUBPASSES_MAX * (IGL_SUBPASSES_MAX - 1) / 2 + IGL_SUBPASSES_MAX;
+      IGL_SUBPASSES_MAX * (IGL_SUBPASSES_MAX - 1) / 2 + 2 * IGL_SUBPASSES_MAX;
 
   struct SubpassDependencyPair {
-    uint32_t srcSubpass = 0;
+    uint32_t srcSubpass = 0; // VK_SUBPASS_EXTERNAL for the dependencies on earlier commands
     uint32_t dstSubpass = 0; // VK_SUBPASS_EXTERNAL for the dependencies of later commands
   };
 

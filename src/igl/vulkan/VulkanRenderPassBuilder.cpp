@@ -36,6 +36,17 @@ constexpr uint32_t lowBitsMask(uint32_t numBits) {
   return (1u << numBits) - 1u;
 }
 
+// The stages and the accesses of attachment load and store operations, resolves and layout
+// transitions
+constexpr VkPipelineStageFlags kAttachmentStages = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+                                                   VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT |
+                                                   VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+constexpr VkAccessFlags kAttachmentWrites =
+    VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+constexpr VkAccessFlags kAttachmentAccesses = kAttachmentWrites |
+                                              VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+                                              VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+
 // Whether the subpasses follow the rules of RenderPassDesc::validate(): a subpass does not read
 // what it writes, and only reads what an earlier subpass wrote.
 [[maybe_unused]] bool hasValidSubpassMasks(
@@ -81,14 +92,27 @@ VkResult VulkanRenderPassBuilder::build(const VulkanFunctionTable& vf,
       .pDepthStencilAttachment = hasDepthStencilAttachment ? &refDepth_ : nullptr,
   };
 
-  const VkSubpassDependency dep = {
-      .srcSubpass = 0,
-      .dstSubpass = VK_SUBPASS_EXTERNAL,
-      .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-      .dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-      .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-      .dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
-  };
+  // The dependency from VK_SUBPASS_EXTERNAL replaces the implicit one, whose source stage is
+  // VK_PIPELINE_STAGE_NONE: without it, the transitions away from the initial layouts would not
+  // wait for the attachment writes of earlier render passes
+  const std::array<VkSubpassDependency, 2> deps = {{
+      {
+          .srcSubpass = VK_SUBPASS_EXTERNAL,
+          .dstSubpass = 0,
+          .srcStageMask = kAttachmentStages,
+          .dstStageMask = kAttachmentStages,
+          .srcAccessMask = kAttachmentWrites,
+          .dstAccessMask = kAttachmentAccesses,
+      },
+      {
+          .srcSubpass = 0,
+          .dstSubpass = VK_SUBPASS_EXTERNAL,
+          .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+          .dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+          .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+          .dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
+      },
+  }};
 
   const VkRenderPassMultiviewCreateInfo renderPassMultiview = {
       .sType = VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO,
@@ -105,8 +129,8 @@ VkResult VulkanRenderPassBuilder::build(const VulkanFunctionTable& vf,
       .pAttachments = attachments_.data(),
       .subpassCount = 1,
       .pSubpasses = &subpass,
-      .dependencyCount = 1,
-      .pDependencies = &dep,
+      .dependencyCount = static_cast<uint32_t>(deps.size()),
+      .pDependencies = deps.data(),
   };
 #endif // IGL_VULKAN_HAS_LEGACY_RENDERPASS
 
@@ -132,17 +156,30 @@ VkResult VulkanRenderPassBuilder::build(const VulkanFunctionTable& vf,
       .pDepthStencilAttachment = hasDepthStencilAttachment ? &refDepth2_ : nullptr,
   };
 
-  const VkSubpassDependency2 dep2 = {
-      .sType = VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2,
-      .srcSubpass = 0,
-      .dstSubpass = VK_SUBPASS_EXTERNAL,
-      .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-      .dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-      .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-      .dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
-      .dependencyFlags = 0,
-      .viewOffset = 0,
-  };
+  const std::array<VkSubpassDependency2, 2> deps2 = {{
+      {
+          .sType = VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2,
+          .srcSubpass = VK_SUBPASS_EXTERNAL,
+          .dstSubpass = 0,
+          .srcStageMask = kAttachmentStages,
+          .dstStageMask = kAttachmentStages,
+          .srcAccessMask = kAttachmentWrites,
+          .dstAccessMask = kAttachmentAccesses,
+          .dependencyFlags = 0,
+          .viewOffset = 0,
+      },
+      {
+          .sType = VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2,
+          .srcSubpass = 0,
+          .dstSubpass = VK_SUBPASS_EXTERNAL,
+          .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+          .dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+          .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+          .dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
+          .dependencyFlags = 0,
+          .viewOffset = 0,
+      },
+  }};
 
   const VkRenderPassCreateInfo2 ci2 = {
       .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO_2,
@@ -151,8 +188,8 @@ VkResult VulkanRenderPassBuilder::build(const VulkanFunctionTable& vf,
       .pAttachments = attachments2_.data(),
       .subpassCount = 1,
       .pSubpasses = &subpass2,
-      .dependencyCount = 1,
-      .pDependencies = &dep2,
+      .dependencyCount = static_cast<uint32_t>(deps2.size()),
+      .pDependencies = deps2.data(),
       .correlatedViewMaskCount = viewMask_ ? 1u : 0u,
       .pCorrelatedViewMasks = viewMask_ ? &correlationMask_ : nullptr,
   };
@@ -251,7 +288,21 @@ VkResult VulkanRenderPassBuilder::buildWithSubpasses(const VulkanFunctionTable& 
   std::array<VkSubpassDependency2, kMaxSubpassDependencies> dependencies = {};
   for (uint32_t d = 0; d != subpassDependencies.count; ++d) {
     const SubpassDependencyPair& pair = subpassDependencies.pairs[d];
-    if (pair.dstSubpass != VK_SUBPASS_EXTERNAL) {
+    if (pair.srcSubpass == VK_SUBPASS_EXTERNAL) {
+      // Replaces the implicit dependency, whose source stage is VK_PIPELINE_STAGE_NONE, so that the
+      // transitions away from the initial layouts wait for the attachment writes of earlier passes
+      dependencies[d] = VkSubpassDependency2{
+          .sType = VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2,
+          .srcSubpass = VK_SUBPASS_EXTERNAL,
+          .dstSubpass = pair.dstSubpass,
+          .srcStageMask = kAttachmentStages,
+          .dstStageMask = kAttachmentStages,
+          .srcAccessMask = kAttachmentWrites,
+          .dstAccessMask = kAttachmentAccesses,
+          .dependencyFlags = getDependencyFlags(pair),
+          .viewOffset = 0,
+      };
+    } else if (pair.dstSubpass != VK_SUBPASS_EXTERNAL) {
       dependencies[d] = VkSubpassDependency2{
           .sType = VK_STRUCTURE_TYPE_SUBPASS_DEPENDENCY_2,
           .srcSubpass = pair.srcSubpass,
@@ -653,19 +704,38 @@ VulkanRenderPassBuilder::SubpassDependencies VulkanRenderPassBuilder::getSubpass
                                                   .dstSubpass = VK_SUBPASS_EXTERNAL};
     }
   }
+
+  // The transition of an attachment away from its initialLayout waits only for the dependencies
+  // from VK_SUBPASS_EXTERNAL to the first subpass that uses the attachment, so every such subpass
+  // gets one, and so does the first subpass if there is a depth attachment
+  uint32_t firstUserMask = refDepth2_.layout != VK_IMAGE_LAYOUT_UNDEFINED ? 1u : 0u;
+  for (uint32_t i = 0; i != numColorAttachments; ++i) {
+    for (uint32_t k = 0; k != numSubpasses_; ++k) {
+      if (hasBit(subpasses_[k].colorAttachmentMask | subpasses_[k].inputAttachmentMask, i)) {
+        firstUserMask |= 1u << k;
+        break;
+      }
+    }
+  }
+  for (uint32_t k = 0; k != numSubpasses_; ++k) {
+    if (hasBit(firstUserMask, k)) {
+      dependencies.pairs[dependencies.count++] = {.srcSubpass = VK_SUBPASS_EXTERNAL,
+                                                  .dstSubpass = k};
+    }
+  }
   return dependencies;
 }
 
 uint32_t VulkanRenderPassBuilder::getNumDependencies() const {
-  // a render pass without subpasses has a single dependency on VK_SUBPASS_EXTERNAL
-  return numSubpasses_ > 1 ? getSubpassDependencies().count : 1u;
+  // a render pass without subpasses has a dependency from and one to VK_SUBPASS_EXTERNAL
+  return numSubpasses_ > 1 ? getSubpassDependencies().count : 2u;
 }
 
 VkDependencyFlags VulkanRenderPassBuilder::getDependencyFlags(
     const SubpassDependencyPair& pair) const {
-  // A dependency on VK_SUBPASS_EXTERNAL cannot be view-local, and later passes can sample any texel
-  // of the attachments, so it is not by-region either
-  if (pair.dstSubpass == VK_SUBPASS_EXTERNAL) {
+  // A dependency from or on VK_SUBPASS_EXTERNAL cannot be view-local, and other passes can access
+  // any texel of the attachments, so it is not by-region either
+  if (pair.srcSubpass == VK_SUBPASS_EXTERNAL || pair.dstSubpass == VK_SUBPASS_EXTERNAL) {
     return 0;
   }
   // A view of a subpass only reads the same view of what an earlier subpass wrote

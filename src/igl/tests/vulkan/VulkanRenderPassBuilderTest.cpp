@@ -347,7 +347,9 @@ TEST_F(VulkanRenderPassBuilderTest, DeferredLayoutPreserveAndDependencies) {
 
   EXPECT_EQ(builder.getPreserveMask(0), 0u);
   EXPECT_EQ(builder.getPreserveMask(1), 0u);
-  EXPECT_EQ(builder.getNumDependencies(), 2u);
+  // 0 -> 1, 1 -> EXTERNAL, and EXTERNAL -> 0 and EXTERNAL -> 1 for the first uses of the
+  // attachments
+  EXPECT_EQ(builder.getNumDependencies(), 4u);
 
   const auto rp = ctx.findRenderPass(builder);
   EXPECT_NE(rp.pass, VK_NULL_HANDLE);
@@ -377,7 +379,8 @@ TEST_F(VulkanRenderPassBuilderTest, ThreeSubpassChainPreserveMasks) {
   EXPECT_EQ(builder.getPreserveMask(0), 0u);
   EXPECT_EQ(builder.getPreserveMask(1), 0b0010u);
   EXPECT_EQ(builder.getPreserveMask(2), 0b0001u);
-  EXPECT_EQ(builder.getNumDependencies(), 5u);
+  // 3 between subpasses, 2 to VK_SUBPASS_EXTERNAL and 3 from it
+  EXPECT_EQ(builder.getNumDependencies(), 8u);
 
   const auto rp = ctx.findRenderPass(builder);
   EXPECT_NE(rp.pass, VK_NULL_HANDLE);
@@ -407,7 +410,7 @@ TEST_F(VulkanRenderPassBuilderTest, ThreeSubpassChainWithoutStorePreserve) {
   EXPECT_EQ(builder.getPreserveMask(0), 0u);
   EXPECT_EQ(builder.getPreserveMask(1), 0b0010u);
   EXPECT_EQ(builder.getPreserveMask(2), 0u);
-  EXPECT_EQ(builder.getNumDependencies(), 5u);
+  EXPECT_EQ(builder.getNumDependencies(), 8u);
 
   const auto rp = ctx.findRenderPass(builder);
   EXPECT_NE(rp.pass, VK_NULL_HANDLE);
@@ -435,18 +438,22 @@ TEST_F(VulkanRenderPassBuilderTest, FourSubpassChainPreserveMask) {
   builder.setSubpasses(subpasses, 4);
 
   EXPECT_EQ(builder.getPreserveMask(2), 0b0001u);
-  EXPECT_EQ(builder.getNumDependencies(), 6u);
+  // Every subpass is the first to use one attachment, so each has a dependency from
+  // VK_SUBPASS_EXTERNAL
+  EXPECT_EQ(builder.getNumDependencies(), 10u);
 
   const auto rp = ctx.findRenderPass(builder);
   EXPECT_NE(rp.pass, VK_NULL_HANDLE);
   EXPECT_EQ(rp.numSubpasses, 4u);
 }
 
-TEST_F(VulkanRenderPassBuilderTest, LegacyBuilderHasOneDependency) {
+// The dependency from VK_SUBPASS_EXTERNAL orders the transition away from the initial layout after
+// the attachment writes of earlier render passes, and the one to it orders later reads
+TEST_F(VulkanRenderPassBuilderTest, LegacyBuilderHasDependenciesFromAndToExternal) {
   igl::vulkan::VulkanRenderPassBuilder builder;
   builder.addColor(
       VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
-  EXPECT_EQ(builder.getNumDependencies(), 1u);
+  EXPECT_EQ(builder.getNumDependencies(), 2u);
 }
 
 TEST_F(VulkanRenderPassBuilderTest, SubpassMasksAffectEqualityAndHash) {
@@ -680,14 +687,17 @@ TEST_F(VulkanRenderPassBuilderTest, StereoSubpassDependencyFlags) {
   EXPECT_NE(rp.pass, VK_NULL_HANDLE);
   EXPECT_EQ(rp.numSubpasses, 2u);
 
-  // build() creates the dependency 0 -> 1 first, and then the dependency of subpass 1, which is the
-  // last one to use both attachments, on VK_SUBPASS_EXTERNAL
-  ASSERT_EQ(builder.getNumDependencies(), 2u);
+  // build() creates the dependency 0 -> 1 first, then the dependency of subpass 1, which is the
+  // last one to use both attachments, on VK_SUBPASS_EXTERNAL, and then the dependencies from
+  // VK_SUBPASS_EXTERNAL of subpass 0 and subpass 1, the first ones to use attachment 1 and 0
+  ASSERT_EQ(builder.getNumDependencies(), 4u);
   EXPECT_EQ(builder.getDependencyFlags(0), kByRegionViewLocal);
-  // A dependency on VK_SUBPASS_EXTERNAL cannot be view-local
-  EXPECT_EQ(builder.getDependencyFlags(1), 0u);
-  // There is no third dependency
-  EXPECT_EQ(builder.getDependencyFlags(2), 0u);
+  // A dependency on or from VK_SUBPASS_EXTERNAL cannot be view-local
+  for (uint32_t i = 1; i != 4; ++i) {
+    EXPECT_EQ(builder.getDependencyFlags(i), 0u) << "dependency " << i;
+  }
+  // There is no fifth dependency
+  EXPECT_EQ(builder.getDependencyFlags(4), 0u);
 }
 
 TEST_F(VulkanRenderPassBuilderTest, MonoSubpassDependencyFlags) {
@@ -704,9 +714,11 @@ TEST_F(VulkanRenderPassBuilderTest, MonoSubpassDependencyFlags) {
   builder.setSubpasses(subpasses, 2);
 
   // The dependencies of StereoSubpassDependencyFlags, which are not view-local without a view mask
-  ASSERT_EQ(builder.getNumDependencies(), 2u);
+  ASSERT_EQ(builder.getNumDependencies(), 4u);
   EXPECT_EQ(builder.getDependencyFlags(0), kByRegion);
-  EXPECT_EQ(builder.getDependencyFlags(1), 0u);
+  for (uint32_t i = 1; i != 4; ++i) {
+    EXPECT_EQ(builder.getDependencyFlags(i), 0u) << "dependency " << i;
+  }
 }
 
 TEST_F(VulkanRenderPassBuilderTest, SubpassDependencyFlagsOfEveryDependency) {
@@ -732,15 +744,17 @@ TEST_F(VulkanRenderPassBuilderTest, SubpassDependencyFlagsOfEveryDependency) {
 
     // build() creates the dependencies of subpass 1 and 2 on the earlier subpasses first: 0 is
     // 0 -> 1 (consecutive), 1 is 0 -> 2 (subpass 2 reads attachment 1 of subpass 0), and 2 is
-    // 1 -> 2 (consecutive). The last two are the ones of subpass 1, which is the last to use
+    // 1 -> 2 (consecutive). 3 and 4 are the ones of subpass 1, which is the last to use
     // attachment 0, and of subpass 2, the last to use attachments 1, 2 and 3, on
-    // VK_SUBPASS_EXTERNAL.
-    ASSERT_EQ(builder.getNumDependencies(), 5u);
+    // VK_SUBPASS_EXTERNAL. 5, 6 and 7 are the ones from VK_SUBPASS_EXTERNAL of subpass 0, the
+    // first to use attachments 0 and 1, of subpass 1 (attachment 2) and of subpass 2 (attachment
+    // 3).
+    ASSERT_EQ(builder.getNumDependencies(), 8u);
     const VkDependencyFlags subpassFlags = viewMask != 0 ? kByRegionViewLocal : kByRegion;
     for (uint32_t i = 0; i != 3; ++i) {
       EXPECT_EQ(builder.getDependencyFlags(i), subpassFlags) << "dependency " << i;
     }
-    for (uint32_t i = 3; i != 5; ++i) {
+    for (uint32_t i = 3; i != 8; ++i) {
       EXPECT_EQ(builder.getDependencyFlags(i), 0u) << "dependency " << i;
     }
   }
