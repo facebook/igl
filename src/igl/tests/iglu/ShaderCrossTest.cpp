@@ -81,6 +81,16 @@ namespace {
                 data.values[index] = subgroupExclusiveAdd(data.values[index]);
               })";
 }
+
+[[nodiscard]] const char* getVulkanSubpassInputFragmentShaderSource() {
+  return R"(#version 450
+              layout(input_attachment_index = 1, set = 2, binding = 17) uniform subpassInput albedo;
+              layout(location = 0) out vec4 fragmentColor;
+
+              void main() {
+                fragmentColor = subpassLoad(albedo);
+              })";
+}
 } // namespace
 
 class ShaderCrossTest : public ::testing::Test {
@@ -179,6 +189,25 @@ TEST_F(ShaderCrossTest, ShaderCrossUniformBuffer) {
   // when the program keeps the block native (GLSL ES 3.x) instead of flattening it to the
   // "perFrame.myUniform" plain uniform above.
   EXPECT_EQ(buffer.uniformInfo.blockName, "perFrame");
+}
+
+TEST_F(ShaderCrossTest, CrossCompileRejectsSubpassInputs) {
+  const iglu::ShaderCross shaderCross(*iglDev_);
+  Result result;
+  const std::string out = shaderCross.crossCompileFromVulkanSource(
+      getVulkanSubpassInputFragmentShaderSource(), igl::ShaderStage::Fragment, &result);
+
+  if (iglDev_->getBackendType() == igl::BackendType::Vulkan) {
+    EXPECT_TRUE(result.isOk());
+    EXPECT_EQ(out, getVulkanSubpassInputFragmentShaderSource());
+  } else if (iglDev_->getBackendType() == igl::BackendType::Metal ||
+             iglDev_->getBackendType() == igl::BackendType::OpenGL) {
+    EXPECT_EQ(result.code, igl::Result::Code::Unsupported) << result.message;
+    EXPECT_TRUE(out.empty());
+    EXPECT_NE(result.message.find("subpass"), std::string::npos) << result.message;
+  } else {
+    GTEST_SKIP();
+  }
 }
 
 } // namespace igl::tests

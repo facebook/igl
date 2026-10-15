@@ -34,6 +34,8 @@ class ShaderCross final {
 
   [[nodiscard]] std::string entryPointName(igl::ShaderStage stage) const noexcept;
 
+  /// Shaders that read subpass inputs (subpassInput) are rejected with
+  /// igl::Result::Code::Unsupported for the Metal and OpenGL backends.
   [[nodiscard]] std::string crossCompileFromVulkanSource(const char* source,
                                                          igl::ShaderStage stage,
                                                          igl::Result* IGL_NULLABLE

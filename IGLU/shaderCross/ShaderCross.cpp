@@ -17,6 +17,20 @@
 
 namespace iglu {
 
+namespace {
+
+// May throw spirv_cross::CompilerError.
+bool hasSubpassInputs(const spirv_cross::Compiler& compiler) {
+  return !compiler.get_shader_resources().subpass_inputs.empty();
+}
+
+constexpr const char* kSubpassInputsUnsupported =
+    "Shaders that read subpass inputs cannot be cross-compiled; write the shader for this "
+    "backend: Metal reads input attachment i as [[color(i)]], OpenGL ES with "
+    "GL_EXT_shader_framebuffer_fetch as layout(location = i) inout";
+
+} // namespace
+
 ShaderCross::ShaderCross(igl::IDevice& device, ShaderCrossOptions options) noexcept :
   device_(device), options_(options) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
@@ -78,6 +92,12 @@ std::string ShaderCross::crossCompileFromVulkanSource(const char* source,
     options.enable_decoration_binding = true;
     mslCompiler.set_msl_options(options);
     try {
+      if (hasSubpassInputs(mslCompiler)) {
+        if (outResult) {
+          *outResult = igl::Result(igl::Result::Code::Unsupported, kSubpassInputsUnsupported);
+        }
+        return {};
+      }
       return mslCompiler.compile();
     } catch (const spirv_cross::CompilerError& e) {
       if (outResult) {
@@ -116,6 +136,12 @@ std::string ShaderCross::crossCompileFromVulkanSource(const char* source,
     glslCompiler.set_common_options(options);
 
     try {
+      if (hasSubpassInputs(glslCompiler)) {
+        if (outResult) {
+          *outResult = igl::Result(igl::Result::Code::Unsupported, kSubpassInputsUnsupported);
+        }
+        return {};
+      }
       return glslCompiler.compile();
     } catch (const spirv_cross::CompilerError& e) {
       if (outResult) {
