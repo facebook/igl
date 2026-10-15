@@ -212,9 +212,15 @@ class VulkanContext final {
   struct RenderPassHandle {
     VkRenderPass pass = VK_NULL_HANDLE;
     uint8_t index = 0;
+    // render passes that are compatible with each other (see
+    // VulkanRenderPassBuilder::compatibilityKey()) share a compatIndex
+    uint8_t compatIndex = 0;
+    uint8_t numSubpasses = 1;
   };
 
-  // render passes are owned and managed by the context
+  // render passes are owned and managed by the context. The returned handle has a null pass if the
+  // render pass cannot be created, or if there are already 256 render passes or 256 classes of
+  // compatible render passes.
   RenderPassHandle findRenderPass(const VulkanRenderPassBuilder& builder) const;
   RenderPassHandle getRenderPass(uint8_t index) const;
 
@@ -424,7 +430,11 @@ class VulkanContext final {
   mutable std::
       unordered_map<VulkanRenderPassBuilder, uint8_t, VulkanRenderPassBuilder::HashFunction>
           renderPassesHash_;
-  mutable std::vector<VkRenderPass> renderPasses_;
+  // maps VulkanRenderPassBuilder::compatibilityKey() to RenderPassHandle::compatIndex
+  mutable std::
+      unordered_map<VulkanRenderPassBuilder, uint8_t, VulkanRenderPassBuilder::HashFunction>
+          renderPassCompatHash_;
+  mutable std::vector<RenderPassHandle> renderPasses_;
 
   VulkanContextConfig config_;
 

@@ -227,6 +227,11 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
   const auto& fb = static_cast<Framebuffer&>(*framebuffer);
 
   const auto renderPassHandle = ctx_.findRenderPass(builder);
+  if (renderPassHandle.pass == VK_NULL_HANDLE) {
+    Result::setResult(
+        &outResult, Result::Code::RuntimeError, "Failed to create a Vulkan render pass");
+    return;
+  }
 
   dynamicState_.renderPassIndex = renderPassHandle.index;
   dynamicState_.depthBiasEnable = false;

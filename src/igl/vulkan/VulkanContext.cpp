@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <array>
 #include <cstring>
+#include <limits>
 #include <memory>
 #include <thread>
 #include <type_traits>
@@ -697,8 +698,8 @@ VulkanContext::~VulkanContext() {
   stagingDevice_.reset(nullptr);
 
   if (vkDevice_) {
-    for (VkRenderPass r : renderPasses_) {
-      vf_.vkDestroyRenderPass(vkDevice_, r, nullptr);
+    for (const RenderPassHandle& r : renderPasses_) {
+      vf_.vkDestroyRenderPass(vkDevice_, r.pass, nullptr);
     }
   }
 
@@ -2045,7 +2046,7 @@ VkFormat VulkanContext::getClosestDepthStencilFormat(TextureFormat desiredFormat
 }
 
 VulkanContext::RenderPassHandle VulkanContext::getRenderPass(uint8_t index) const {
-  return RenderPassHandle{.pass = renderPasses_[index], .index = index};
+  return renderPasses_[index];
 }
 
 VulkanContext::RenderPassHandle VulkanContext::findRenderPass(
@@ -2055,22 +2056,54 @@ VulkanContext::RenderPassHandle VulkanContext::findRenderPass(
   auto it = renderPassesHash_.find(builder);
 
   if (it != renderPassesHash_.end()) {
-    return RenderPassHandle{.pass = renderPasses_[it->second], .index = it->second};
+    return renderPasses_[it->second];
+  }
+
+  VulkanRenderPassBuilder compatibilityKey = builder.compatibilityKey();
+  const auto compatIt = renderPassCompatHash_.find(compatibilityKey);
+  const bool isNewCompatibilityClass = compatIt == renderPassCompatHash_.end();
+
+  // both indices have to fit into 8 bits
+  constexpr size_t kMaxIndex = std::numeric_limits<uint8_t>::max();
+  const size_t index = renderPasses_.size();
+  const size_t compatIndex = isNewCompatibilityClass ? renderPassCompatHash_.size()
+                                                     : compatIt->second;
+  // failures are not cached, so they would be logged for every render pass that is encoded
+  if (index > kMaxIndex || compatIndex > kMaxIndex) {
+    IGL_LOG_ERROR_ONCE(
+        "Cannot create a Vulkan render pass: there are already %zu render passes and %zu "
+        "classes of compatible render passes\n",
+        renderPasses_.size(),
+        renderPassCompatHash_.size());
+    return {};
   }
 
   VkRenderPass pass = VK_NULL_HANDLE;
-  builder.build(vf_, vkDevice_, &pass);
+  const VkResult result = builder.build(vf_, vkDevice_, &pass);
+  if (result != VK_SUCCESS || pass == VK_NULL_HANDLE) {
+    IGL_LOG_ERROR_ONCE("Failed to create a Vulkan render pass: %d\n", static_cast<int>(result));
+    if (pass != VK_NULL_HANDLE) {
+      vf_.vkDestroyRenderPass(vkDevice_, pass, nullptr);
+    }
+    return {};
+  }
 
-  const size_t index = renderPasses_.size();
+  const RenderPassHandle handle = {
+      .pass = pass,
+      .index = static_cast<uint8_t>(index),
+      .compatIndex = static_cast<uint8_t>(compatIndex),
+      .numSubpasses = static_cast<uint8_t>(builder.getNumSubpasses()),
+  };
 
-  IGL_DEBUG_ASSERT(index <= 255);
-
-  renderPassesHash_[builder] = static_cast<uint8_t>(index);
+  renderPassesHash_[builder] = handle.index;
+  if (isNewCompatibilityClass) {
+    renderPassCompatHash_[std::move(compatibilityKey)] = handle.compatIndex;
+  }
   // @fb-only
   // @lint-ignore CLANGTIDY
-  renderPasses_.push_back(pass);
+  renderPasses_.push_back(handle);
 
-  return RenderPassHandle{.pass = pass, .index = static_cast<uint8_t>(index)};
+  return handle;
 }
 
 std::vector<uint8_t> VulkanContext::getPipelineCacheData() const {

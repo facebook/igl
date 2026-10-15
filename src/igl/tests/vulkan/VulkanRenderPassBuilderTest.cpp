@@ -292,6 +292,366 @@ TEST_F(VulkanRenderPassBuilderTest, RenderPassCaching) {
   EXPECT_EQ(rp1.pass, rp2.pass);
 }
 
+// Multisubpass render pass tests
+
+TEST_F(VulkanRenderPassBuilderTest, NumSubpassesDefaultsToOne) {
+  igl::vulkan::VulkanRenderPassBuilder builder;
+  EXPECT_EQ(builder.getNumSubpasses(), 1u);
+}
+
+TEST_F(VulkanRenderPassBuilderTest, SetSubpassesReportsCount) {
+  igl::vulkan::VulkanRenderPassBuilder builder;
+  builder.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+
+  const igl::RenderPassDesc::SubpassDesc subpasses[] = {
+      {.colorAttachmentMask = 0b1110, .inputAttachmentMask = 0},
+      {.colorAttachmentMask = 0b0001, .inputAttachmentMask = 0b1110},
+  };
+  builder.setSubpasses(subpasses, 2);
+  EXPECT_EQ(builder.getNumSubpasses(), 2u);
+}
+
+TEST_F(VulkanRenderPassBuilderTest, DeferredLayoutPreserveAndDependencies) {
+  auto& ctx = getVulkanContext();
+
+  igl::vulkan::VulkanRenderPassBuilder builder;
+  builder.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE);
+  builder.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE);
+  builder.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE);
+
+  const igl::RenderPassDesc::SubpassDesc subpasses[] = {
+      {.colorAttachmentMask = 0b0001, .inputAttachmentMask = 0},
+      {.colorAttachmentMask = 0b1110, .inputAttachmentMask = 0b0001},
+  };
+  builder.setSubpasses(subpasses, 2);
+
+  EXPECT_EQ(builder.getPreserveMask(0), 0u);
+  EXPECT_EQ(builder.getPreserveMask(1), 0u);
+  EXPECT_EQ(builder.getNumDependencies(), 2u);
+
+  const auto rp = ctx.findRenderPass(builder);
+  EXPECT_NE(rp.pass, VK_NULL_HANDLE);
+  EXPECT_EQ(rp.numSubpasses, 2u);
+}
+
+TEST_F(VulkanRenderPassBuilderTest, ThreeSubpassChainPreserveMasks) {
+  auto& ctx = getVulkanContext();
+
+  igl::vulkan::VulkanRenderPassBuilder builder;
+  builder.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+
+  const igl::RenderPassDesc::SubpassDesc subpasses[] = {
+      {.colorAttachmentMask = 0b0011, .inputAttachmentMask = 0},
+      {.colorAttachmentMask = 0b0100, .inputAttachmentMask = 0b0001},
+      {.colorAttachmentMask = 0b1000, .inputAttachmentMask = 0b0110},
+  };
+  builder.setSubpasses(subpasses, 3);
+
+  EXPECT_EQ(builder.getPreserveMask(0), 0u);
+  EXPECT_EQ(builder.getPreserveMask(1), 0b0010u);
+  EXPECT_EQ(builder.getPreserveMask(2), 0b0001u);
+  EXPECT_EQ(builder.getNumDependencies(), 5u);
+
+  const auto rp = ctx.findRenderPass(builder);
+  EXPECT_NE(rp.pass, VK_NULL_HANDLE);
+  EXPECT_EQ(rp.numSubpasses, 3u);
+}
+
+TEST_F(VulkanRenderPassBuilderTest, ThreeSubpassChainWithoutStorePreserve) {
+  auto& ctx = getVulkanContext();
+
+  igl::vulkan::VulkanRenderPassBuilder builder;
+  builder.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE);
+  builder.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE);
+  builder.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE);
+  builder.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE);
+
+  const igl::RenderPassDesc::SubpassDesc subpasses[] = {
+      {.colorAttachmentMask = 0b0011, .inputAttachmentMask = 0},
+      {.colorAttachmentMask = 0b0100, .inputAttachmentMask = 0b0001},
+      {.colorAttachmentMask = 0b1000, .inputAttachmentMask = 0b0110},
+  };
+  builder.setSubpasses(subpasses, 3);
+
+  EXPECT_EQ(builder.getPreserveMask(0), 0u);
+  EXPECT_EQ(builder.getPreserveMask(1), 0b0010u);
+  EXPECT_EQ(builder.getPreserveMask(2), 0u);
+  EXPECT_EQ(builder.getNumDependencies(), 5u);
+
+  const auto rp = ctx.findRenderPass(builder);
+  EXPECT_NE(rp.pass, VK_NULL_HANDLE);
+}
+
+TEST_F(VulkanRenderPassBuilderTest, FourSubpassChainPreserveMask) {
+  auto& ctx = getVulkanContext();
+
+  igl::vulkan::VulkanRenderPassBuilder builder;
+  builder.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE);
+  builder.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE);
+  builder.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE);
+  builder.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+
+  const igl::RenderPassDesc::SubpassDesc subpasses[] = {
+      {.colorAttachmentMask = 0b0001, .inputAttachmentMask = 0},
+      {.colorAttachmentMask = 0b0010, .inputAttachmentMask = 0b0001},
+      {.colorAttachmentMask = 0b0100, .inputAttachmentMask = 0b0010},
+      {.colorAttachmentMask = 0b1000, .inputAttachmentMask = 0b0101},
+  };
+  builder.setSubpasses(subpasses, 4);
+
+  EXPECT_EQ(builder.getPreserveMask(2), 0b0001u);
+  EXPECT_EQ(builder.getNumDependencies(), 6u);
+
+  const auto rp = ctx.findRenderPass(builder);
+  EXPECT_NE(rp.pass, VK_NULL_HANDLE);
+  EXPECT_EQ(rp.numSubpasses, 4u);
+}
+
+TEST_F(VulkanRenderPassBuilderTest, LegacyBuilderHasOneDependency) {
+  igl::vulkan::VulkanRenderPassBuilder builder;
+  builder.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  EXPECT_EQ(builder.getNumDependencies(), 1u);
+}
+
+TEST_F(VulkanRenderPassBuilderTest, SubpassMasksAffectEqualityAndHash) {
+  igl::vulkan::VulkanRenderPassBuilder builder1;
+  builder1.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder1.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder1.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder1.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+
+  const igl::RenderPassDesc::SubpassDesc subpasses1[] = {
+      {.colorAttachmentMask = 0b0110, .inputAttachmentMask = 0},
+      {.colorAttachmentMask = 0b1001, .inputAttachmentMask = 0b0110},
+  };
+  builder1.setSubpasses(subpasses1, 2);
+
+  igl::vulkan::VulkanRenderPassBuilder builder2;
+  builder2.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder2.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder2.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder2.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+
+  const igl::RenderPassDesc::SubpassDesc subpasses2[] = {
+      {.colorAttachmentMask = 0b0110, .inputAttachmentMask = 0},
+      {.colorAttachmentMask = 0b1001, .inputAttachmentMask = 0b0001},
+  };
+  builder2.setSubpasses(subpasses2, 2);
+
+  EXPECT_FALSE(builder1 == builder2);
+  igl::vulkan::VulkanRenderPassBuilder::HashFunction hasher;
+  EXPECT_NE(hasher(builder1), hasher(builder2));
+}
+
+TEST_F(VulkanRenderPassBuilderTest, SubpassMasksIdenticalAffectEqualityAndHash) {
+  igl::vulkan::VulkanRenderPassBuilder builder1;
+  builder1.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder1.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+
+  const igl::RenderPassDesc::SubpassDesc subpasses[] = {
+      {.colorAttachmentMask = 0b01, .inputAttachmentMask = 0},
+      {.colorAttachmentMask = 0b10, .inputAttachmentMask = 0b01},
+  };
+  builder1.setSubpasses(subpasses, 2);
+
+  igl::vulkan::VulkanRenderPassBuilder builder2;
+  builder2.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder2.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder2.setSubpasses(subpasses, 2);
+
+  EXPECT_TRUE(builder1 == builder2);
+  igl::vulkan::VulkanRenderPassBuilder::HashFunction hasher;
+  EXPECT_EQ(hasher(builder1), hasher(builder2));
+}
+
+TEST_F(VulkanRenderPassBuilderTest, CompatibilityKeyIgnoresLoadOpsAndInitialLayout) {
+  igl::vulkan::VulkanRenderPassBuilder builder1;
+  builder1.addColor(VK_FORMAT_R8G8B8A8_UNORM,
+                    VK_ATTACHMENT_LOAD_OP_CLEAR,
+                    VK_ATTACHMENT_STORE_OP_STORE,
+                    VK_IMAGE_LAYOUT_UNDEFINED,
+                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+  igl::vulkan::VulkanRenderPassBuilder builder2;
+  builder2.addColor(VK_FORMAT_R8G8B8A8_UNORM,
+                    VK_ATTACHMENT_LOAD_OP_LOAD,
+                    VK_ATTACHMENT_STORE_OP_STORE,
+                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+  const auto key1 = builder1.compatibilityKey();
+  const auto key2 = builder2.compatibilityKey();
+
+  EXPECT_TRUE(key1 == key2);
+}
+
+TEST_F(VulkanRenderPassBuilderTest, CompatibilityKeyIgnoresStoreOpsForSingleSubpass) {
+  igl::vulkan::VulkanRenderPassBuilder builder1;
+  builder1.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+
+  igl::vulkan::VulkanRenderPassBuilder builder2;
+  builder2.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE);
+
+  const auto key1 = builder1.compatibilityKey();
+  const auto key2 = builder2.compatibilityKey();
+
+  EXPECT_TRUE(key1 == key2);
+}
+
+TEST_F(VulkanRenderPassBuilderTest, CompatibilityKeyIncludesPreserveMasks) {
+  igl::vulkan::VulkanRenderPassBuilder builder1;
+  builder1.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder1.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder1.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder1.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+
+  const igl::RenderPassDesc::SubpassDesc subpasses1[] = {
+      {.colorAttachmentMask = 0b0011, .inputAttachmentMask = 0},
+      {.colorAttachmentMask = 0b0100, .inputAttachmentMask = 0b0001},
+      {.colorAttachmentMask = 0b1000, .inputAttachmentMask = 0b0110},
+  };
+  builder1.setSubpasses(subpasses1, 3);
+
+  igl::vulkan::VulkanRenderPassBuilder builder2;
+  builder2.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE);
+  builder2.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE);
+  builder2.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE);
+  builder2.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE);
+
+  const igl::RenderPassDesc::SubpassDesc subpasses2[] = {
+      {.colorAttachmentMask = 0b0011, .inputAttachmentMask = 0},
+      {.colorAttachmentMask = 0b0100, .inputAttachmentMask = 0b0001},
+      {.colorAttachmentMask = 0b1000, .inputAttachmentMask = 0b0110},
+  };
+  builder2.setSubpasses(subpasses2, 3);
+
+  const auto key1 = builder1.compatibilityKey();
+  const auto key2 = builder2.compatibilityKey();
+
+  EXPECT_FALSE(key1 == key2);
+}
+
+TEST_F(VulkanRenderPassBuilderTest, FindRenderPassMultiSubpassCreatesPass) {
+  auto& ctx = getVulkanContext();
+
+  igl::vulkan::VulkanRenderPassBuilder builder;
+  builder.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE);
+
+  const igl::RenderPassDesc::SubpassDesc subpasses[] = {
+      {.colorAttachmentMask = 0b01, .inputAttachmentMask = 0},
+      {.colorAttachmentMask = 0b10, .inputAttachmentMask = 0b01},
+  };
+  builder.setSubpasses(subpasses, 2);
+
+  const auto rp = ctx.findRenderPass(builder);
+  EXPECT_NE(rp.pass, VK_NULL_HANDLE);
+  EXPECT_EQ(rp.numSubpasses, 2u);
+}
+
+TEST_F(VulkanRenderPassBuilderTest, FindRenderPassSharesCompatIndexAcrossLoadOps) {
+  auto& ctx = getVulkanContext();
+
+  igl::vulkan::VulkanRenderPassBuilder builder1;
+  builder1.addColor(VK_FORMAT_R8G8B8A8_UNORM,
+                    VK_ATTACHMENT_LOAD_OP_CLEAR,
+                    VK_ATTACHMENT_STORE_OP_STORE,
+                    VK_IMAGE_LAYOUT_UNDEFINED,
+                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+  igl::vulkan::VulkanRenderPassBuilder builder2;
+  builder2.addColor(VK_FORMAT_R8G8B8A8_UNORM,
+                    VK_ATTACHMENT_LOAD_OP_LOAD,
+                    VK_ATTACHMENT_STORE_OP_STORE,
+                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                    VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+  const auto rp1 = ctx.findRenderPass(builder1);
+  const auto rp2 = ctx.findRenderPass(builder2);
+
+  EXPECT_NE(rp1.index, rp2.index);
+  EXPECT_EQ(rp1.compatIndex, rp2.compatIndex);
+}
+
+TEST_F(VulkanRenderPassBuilderTest, FindRenderPassSeparatesSingleAndMultiSubpass) {
+  auto& ctx = getVulkanContext();
+
+  igl::vulkan::VulkanRenderPassBuilder builder1;
+  builder1.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder1.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+
+  igl::vulkan::VulkanRenderPassBuilder builder2;
+  builder2.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder2.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+
+  const igl::RenderPassDesc::SubpassDesc subpasses[] = {
+      {.colorAttachmentMask = 0b01, .inputAttachmentMask = 0},
+      {.colorAttachmentMask = 0b10, .inputAttachmentMask = 0b01},
+  };
+  builder2.setSubpasses(subpasses, 2);
+
+  const auto rp1 = ctx.findRenderPass(builder1);
+  const auto rp2 = ctx.findRenderPass(builder2);
+
+  EXPECT_NE(rp1.compatIndex, rp2.compatIndex);
+}
+
 } // namespace igl::tests
 
 #endif // IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOSX || IGL_PLATFORM_LINUX
