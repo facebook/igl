@@ -1,0 +1,67 @@
+/*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ */
+
+// IGL Slang ABI v1: declares shader resources at IGL binding indices so that one Slang source binds
+// identically on Vulkan, Metal, OpenGL, D3D12 and WebGPU. generate_slang.py compiles each target with
+// exactly one IGL_TARGET_* defined and -matrix-layout-row-major: with glm (column-major) uniforms a
+// matrix reads as its transpose, so transform with mul(v, M).
+#pragma once
+
+#if !defined(IGL_TARGET_SPIRV) && !defined(IGL_TARGET_METAL) && !defined(IGL_TARGET_HLSL) && \
+    !defined(IGL_TARGET_WGSL)
+#error "Compile through generate_slang.py, which defines one IGL_TARGET_*"
+#endif
+
+#define IGL_CONCAT_IMPL(a, b) a##b
+#define IGL_CONCAT(a, b) IGL_CONCAT_IMPL(a, b)
+
+// The buffer at IGL index i (bindBuffer(i)): Vulkan set 1 binding i, WebGPU group 1 binding i,
+// Metal buffer(i), D3D12 b(i) or u(i). Metal shares this index space with vertex buffers.
+#define IGL_UNIFORM_BUFFER(Type, name, index) \
+  [[vk::binding(index, 1)]] ConstantBuffer<Type> name : register(IGL_CONCAT(b, index))
+#define IGL_STORAGE_BUFFER(Type, name, index) \
+  [[vk::binding(index, 1)]] RWStructuredBuffer<Type> name : register(IGL_CONCAT(u, index))
+// Read-only, so Vulkan can read it in vertex shaders without vertexPipelineStoresAndAtomics. On
+// D3D12 it would share t registers with textures, so portable programs use IGL_STORAGE_BUFFER.
+#define IGL_READONLY_STORAGE_BUFFER(Type, name, index) \
+  [[vk::binding(index, 1)]] StructuredBuffer<Type> name : register(IGL_CONCAT(t, index))
+
+// Texture unit u (bindTexture(u) and bindSamplerState(u)): a combined sampler at Vulkan set 0
+// binding u; texture 2u and sampler 2u + 1 in WebGPU group 0; Metal texture(u)/sampler(u); D3D12
+// t(u)/s(u).
+#if defined(IGL_TARGET_SPIRV)
+#define IGL_TEXTURE2D(name, unit) [[vk::binding(unit, 0)]] Sampler2D name
+#define IGL_SAMPLE2D(name, uv) name.Sample(uv)
+#define IGL_SAMPLE2D_LEVEL(name, uv, lod) name.SampleLevel(uv, lod)
+#define IGL_LOAD2D(name, texel, lod) name.Load(int3(texel, lod))
+#elif defined(IGL_TARGET_WGSL)
+#define IGL_TEXTURE2D(name, unit)                                     \
+  [[vk::binding((unit) * 2, 0)]] Texture2D IGL_CONCAT(name, Texture); \
+  [[vk::binding((unit) * 2 + 1, 0)]] SamplerState IGL_CONCAT(name, Sampler)
+#else
+#define IGL_TEXTURE2D(name, unit)                                     \
+  Texture2D IGL_CONCAT(name, Texture) : register(IGL_CONCAT(t, unit)); \
+  SamplerState IGL_CONCAT(name, Sampler) : register(IGL_CONCAT(s, unit))
+#endif
+#if !defined(IGL_TARGET_SPIRV)
+#define IGL_SAMPLE2D(name, uv) IGL_CONCAT(name, Texture).Sample(IGL_CONCAT(name, Sampler), uv)
+#define IGL_SAMPLE2D_LEVEL(name, uv, lod) \
+  IGL_CONCAT(name, Texture).SampleLevel(IGL_CONCAT(name, Sampler), uv, lod)
+#define IGL_LOAD2D(name, texel, lod) IGL_CONCAT(name, Texture).Load(int3(texel, lod))
+#endif
+
+// The vertex and instance index including the draw's base vertex and base instance, as Vulkan, Metal
+// and WebGPU count them. D3D12 excludes both bases and OpenGL excludes the base instance, so portable
+// programs draw with base vertex and base instance 0. SV_VertexID/SV_InstanceID would subtract the
+// bases on SPIR-V and Metal, and on SPIR-V that needs builtins OpenGL 4.1 and OpenGL ES 3.0 lack.
+#if defined(IGL_TARGET_HLSL)
+#define IGL_SV_VERTEX_ID SV_VertexID
+#define IGL_SV_INSTANCE_ID SV_InstanceID
+#else
+#define IGL_SV_VERTEX_ID SV_VulkanVertexID
+#define IGL_SV_INSTANCE_ID SV_VulkanInstanceID
+#endif
