@@ -333,6 +333,21 @@ class Parser {
       return error("expected a type");
     }
     out.name = std::string(next().text);
+    // An array's element count is a const-expression; generators such as Slang write it as an
+    // integer conversion, e.g. array<f32, i32(64)>.
+    if (isPunct("(") && (out.name == "i32" || out.name == "u32")) {
+      next();
+      if (peek().kind != TokenKind::Number) {
+        return error("expected an integer in an array element count");
+      }
+      out.name = std::string(next().text);
+      out.isNumber = true;
+      if (!isPunct(")")) {
+        return error("expected ')' after an array element count");
+      }
+      next();
+      return Result();
+    }
     if (!isPunct("<")) {
       return Result();
     }

@@ -281,6 +281,23 @@ TEST(WebGPUWgslReflectionTest, Errors) {
   EXPECT_TRUE(reflection.bindings.empty());
 }
 
+TEST(WebGPUWgslReflectionTest, ArrayCountMayBeAnIntegerConversion) {
+  webgpu::WgslReflection reflection;
+  Result ret = webgpu::parseWgslReflection(
+      "struct S { m : array<vec4<f32>, i32(4)>, };\n"
+      "@group(1) @binding(0) var<uniform> u : S;\n"
+      "var<workgroup> partial : array<f32, u32(64)>;\n",
+      reflection);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  ASSERT_NE(reflection.findStruct("S"), nullptr);
+  EXPECT_EQ(reflection.findStruct("S")->size, 64u);
+
+  ret = webgpu::parseWgslReflection("var<workgroup> partial : array<f32, i32(kCount)>;\n",
+                                    reflection);
+  EXPECT_EQ(ret.code, Result::Code::ArgumentInvalid);
+  EXPECT_NE(ret.message.find("expected an integer"), std::string::npos) << ret.message;
+}
+
 TEST(WebGPUWgslReflectionTest, PipelineReflectionFollowsBindConvention) {
   webgpu::WgslReflection reflection;
   ASSERT_TRUE(webgpu::parseWgslReflection(kModule, reflection).isOk());
