@@ -1198,6 +1198,11 @@ std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc
 std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
                                                 Result* IGL_NULLABLE outResult) const noexcept {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  const Result validation = validateTextureDesc(desc);
+  if (!validation.isOk()) {
+    Result::setResult(outResult, validation);
+    return nullptr;
+  }
   auto* device = ctx_->getDevice();
 
   // Check for exportability - D3D12 doesn't support exportable textures

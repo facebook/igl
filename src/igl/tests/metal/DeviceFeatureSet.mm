@@ -73,7 +73,6 @@ TEST_F(DeviceFeatureSetMTLTest, HasFeatureTest) {
   ASSERT_EQ(mtlDeviceFeatureSet.hasFeature(DeviceFeatures::ValidationLayersEnabled), false);
   ASSERT_EQ(mtlDeviceFeatureSet.hasFeature(DeviceFeatures::ExternalMemoryObjects), false);
   ASSERT_EQ(mtlDeviceFeatureSet.hasFeature(DeviceFeatures::Subpasses), false);
-  ASSERT_EQ(mtlDeviceFeatureSet.hasFeature(DeviceFeatures::MemorylessAttachments), false);
 }
 
 TEST_F(DeviceFeatureSetMTLTest, HasRequirementTest) {

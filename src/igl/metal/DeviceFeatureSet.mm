@@ -147,6 +147,11 @@ DeviceFeatureSet::DeviceFeatureSet(id<MTLDevice> device) {
   if (@available(macOS 14.0, iOS 17.0, *)) {
     supportsDynamicVertexBufferStride_ = (gpuFamily_ >= 4);
   }
+#if !TARGET_OS_SIMULATOR
+  if (@available(macOS 11.0, iOS 13.0, tvOS 13.0, *)) {
+    supportsMemorylessAndProgrammableBlending_ = [device supportsFamily:MTLGPUFamilyApple1];
+  }
+#endif
 }
 
 /**
@@ -273,8 +278,9 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::DynamicVertexBufferStride:
     return supportsDynamicVertexBufferStride_;
   case DeviceFeatures::Subpasses:
-  case DeviceFeatures::MemorylessAttachments:
     return false;
+  case DeviceFeatures::MemorylessAttachments:
+    return supportsMemorylessAndProgrammableBlending_;
   default:
     IGL_DEBUG_ABORT("unhandled DeviceFeatures value");
     break;

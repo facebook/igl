@@ -27,13 +27,14 @@ class Texture final : public ITexture {
   friend class PlatformDevice;
 
  public:
-  /// `usage` is the TextureDesc::usage, or 0 for wrapped native textures, where getUsage() derives
-  /// it from the MTLTextureUsage.
+  /// `usage` and `storage` are the requested TextureDesc values. Wrapped native textures have a 0
+  /// `usage` (getUsage() derives it from the MTLTextureUsage) and an Invalid `storage`.
   Texture(id<MTLTexture> texture,
           const ICapabilities& capabilities,
           TextureDesc::TextureMipmapGeneration mipmapGeneration =
               TextureDesc::TextureMipmapGeneration::Manual,
-          TextureDesc::TextureUsage usage = 0);
+          TextureDesc::TextureUsage usage = 0,
+          ResourceStorage storage = ResourceStorage::Invalid);
   Texture(id<CAMetalDrawable> drawable,
           const ICapabilities& capabilities,
           TextureDesc::TextureMipmapGeneration mipmapGeneration =
@@ -51,6 +52,7 @@ class Texture final : public ITexture {
   [[nodiscard]] uint32_t getNumLayers() const override;
   [[nodiscard]] TextureType getType() const override;
   [[nodiscard]] TextureDesc::TextureUsage getUsage() const override;
+  [[nodiscard]] ResourceStorage getStorage() const override;
   [[nodiscard]] uint32_t getSamples() const override;
   [[nodiscard]] uint32_t getNumMipLevels() const override;
   void generateMipmap(ICommandQueue& cmdQueue,
@@ -105,6 +107,7 @@ class Texture final : public ITexture {
   TextureDesc::TextureMipmapGeneration mipmapGeneration_ =
       TextureDesc::TextureMipmapGeneration::Manual;
   TextureDesc::TextureUsage usage_ = 0;
+  ResourceStorage storage_ = ResourceStorage::Invalid;
 
   /// @brief To record whether mipmaps are available and uploaded to the GPU. This is used by the
   /// `isRequiredGenerateMipmap()` function

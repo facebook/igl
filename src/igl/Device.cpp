@@ -48,6 +48,49 @@ TextureDesc IDevice::sanitize(const TextureDesc& desc) const {
   return sanitized;
 }
 
+Result IDevice::validateTextureDesc(const TextureDesc& desc) const {
+  const bool isAttachment = (desc.usage & TextureDesc::TextureUsageBits::Attachment) != 0;
+  const bool isInputAttachment = (desc.usage & TextureDesc::TextureUsageBits::InputAttachment) != 0;
+  if (isInputAttachment && !isAttachment) {
+    return Result(Result::Code::ArgumentInvalid,
+                  "TextureUsageBits::InputAttachment requires TextureUsageBits::Attachment");
+  }
+
+  if (desc.storage != ResourceStorage::Memoryless) {
+    return Result();
+  }
+
+  constexpr TextureDesc::TextureUsage kMemorylessUsageMask =
+      TextureDesc::TextureUsageBits::Attachment | TextureDesc::TextureUsageBits::InputAttachment;
+  if (!isAttachment) {
+    return Result(Result::Code::ArgumentInvalid,
+                  "ResourceStorage::Memoryless textures require TextureUsageBits::Attachment");
+  }
+  if ((desc.usage & ~kMemorylessUsageMask) != 0) {
+    return Result(Result::Code::ArgumentInvalid,
+                  "ResourceStorage::Memoryless textures only support TextureUsageBits::Attachment "
+                  "and TextureUsageBits::InputAttachment");
+  }
+  if (desc.numMipLevels > 1) {
+    return Result(Result::Code::ArgumentInvalid,
+                  "ResourceStorage::Memoryless textures must have a single mip level");
+  }
+  if (desc.type != TextureType::TwoD && desc.type != TextureType::TwoDArray) {
+    return Result(Result::Code::ArgumentInvalid,
+                  "ResourceStorage::Memoryless textures must be TextureType::TwoD or "
+                  "TextureType::TwoDArray");
+  }
+  if (desc.exportability != TextureDesc::TextureExportability::NoExport) {
+    return Result(Result::Code::ArgumentInvalid,
+                  "ResourceStorage::Memoryless textures cannot be exportable");
+  }
+  if (desc.tiling != TextureDesc::TextureTiling::Optimal) {
+    return Result(Result::Code::ArgumentInvalid,
+                  "ResourceStorage::Memoryless textures require TextureTiling::Optimal");
+  }
+  return Result();
+}
+
 Color IDevice::backendDebugColor() const noexcept {
   switch (getBackendType()) {
   case BackendType::Invalid:

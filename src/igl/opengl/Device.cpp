@@ -181,6 +181,12 @@ std::shared_ptr<ITexture> Device::createTexture( // NOLINT(bugprone-exception-es
     const TextureDesc& desc,
     Result* outResult) const noexcept {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  const Result validation = validateTextureDesc(desc);
+  if (!validation.isOk()) {
+    Result::setResult(outResult, validation);
+    return nullptr;
+  }
+
   const auto sanitized = sanitize(desc);
 
   std::unique_ptr<Texture> texture;

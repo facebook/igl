@@ -60,6 +60,7 @@ class Texture final : public ITexture {
   [[nodiscard]] uint32_t getNumLayers() const override;
   [[nodiscard]] TextureType getType() const override;
   [[nodiscard]] TextureDesc::TextureUsage getUsage() const override;
+  [[nodiscard]] ResourceStorage getStorage() const override;
   [[nodiscard]] uint32_t getSamples() const override;
   [[nodiscard]] uint32_t getNumMipLevels() const override;
   void generateMipmap(ICommandQueue& cmdQueue,

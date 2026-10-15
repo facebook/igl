@@ -17,6 +17,7 @@
 #include <igl/webgpu/DeviceFeatureSet.h>
 #include <igl/webgpu/MipmapGenerator.h>
 #include <igl/webgpu/Readback.h>
+#include <igl/webgpu/WebGPUCompat.h>
 #include <igl/webgpu/WebGPUContext.h>
 
 namespace igl::webgpu {
@@ -211,6 +212,14 @@ std::shared_ptr<Texture> Texture::create(WebGPUContext& ctx,
   if (renderable && desc.numMipLevels > 1) {
     usage |= WGPUTextureUsage_TextureBinding;
   }
+  const bool transient = desc.storage == ResourceStorage::Memoryless &&
+                         features.hasFeature(DeviceFeatures::MemorylessAttachments);
+#if !IGL_WEBGPU_HEADER_V2
+  if (transient) {
+    // Dawn allows no other usage on a transient attachment.
+    usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TransientAttachment;
+  }
+#endif
 
   WGPUTextureDescriptor textureDesc = WGPU_TEXTURE_DESCRIPTOR_INIT;
   textureDesc.label = toWGPUStringView(desc.debugName);
@@ -250,10 +259,12 @@ std::shared_ptr<Texture> Texture::create(WebGPUContext& ctx,
 
   auto result = std::shared_ptr<Texture>(new Texture(
       std::make_shared<Storage>(ctx, std::move(texture), *format, caps), desc, *format, 0, 0));
-  Result ret = result->createSampledView();
-  if (!ret.isOk()) {
-    Result::setResult(outResult, std::move(ret));
-    return nullptr;
+  if (!transient) {
+    Result ret = result->createSampledView();
+    if (!ret.isOk()) {
+      Result::setResult(outResult, std::move(ret));
+      return nullptr;
+    }
   }
   Result::setOk(outResult);
   return result;
@@ -487,6 +498,10 @@ TextureType Texture::getType() const {
 
 TextureDesc::TextureUsage Texture::getUsage() const {
   return desc_.usage;
+}
+
+ResourceStorage Texture::getStorage() const {
+  return desc_.storage;
 }
 
 uint32_t Texture::getSamples() const {
@@ -787,6 +802,9 @@ Result Texture::getBytes(const TextureRangeDesc& range,
                          void* IGL_NONNULL outData,
                          size_t bytesPerRow,
                          bool flipVertically) const {
+  if (desc_.storage == ResourceStorage::Memoryless) {
+    return Result(Result::Code::Unsupported, "Can't retrieve the data from a memoryless texture");
+  }
   const uint32_t bytesPerTexel = getCopyBytesPerTexel(wgpuFormat_, aspect);
   if (bytesPerTexel == 0) {
     return Result(Result::Code::Unsupported, "This texture aspect cannot be read back on WebGPU");

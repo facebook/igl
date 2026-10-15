@@ -19,8 +19,10 @@ namespace {
 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-cstyle-cast)
 class FakeTexture final : public ITexture {
  public:
-  FakeTexture(TextureDesc::TextureUsage usage, uint32_t samples = 1) :
-    ITexture(TextureFormat::RGBA_UNorm8), usage_(usage), samples_(samples) {}
+  FakeTexture(TextureDesc::TextureUsage usage,
+              uint32_t samples = 1,
+              ResourceStorage storage = ResourceStorage::Private) :
+    ITexture(TextureFormat::RGBA_UNorm8), usage_(usage), samples_(samples), storage_(storage) {}
 
   [[nodiscard]] Dimensions getDimensions() const override {
     return Dimensions{1, 1, 1};
@@ -72,9 +74,14 @@ class FakeTexture final : public ITexture {
     return desc_;
   }
 
+  [[nodiscard]] ResourceStorage getStorage() const override {
+    return storage_;
+  }
+
  private:
   TextureDesc::TextureUsage usage_;
   uint32_t samples_;
+  ResourceStorage storage_;
   base::AttachmentInteropDesc desc_{};
 };
 
@@ -85,11 +92,13 @@ class FakeFramebuffer final : public IFramebuffer {
                   const std::vector<std::shared_ptr<ITexture>>& resolveColorAttachments,
                   const std::shared_ptr<ITexture>& depthAttachment,
                   const std::shared_ptr<ITexture>& resolveDepthAttachment,
-                  FramebufferMode mode = FramebufferMode::Mono) :
+                  FramebufferMode mode = FramebufferMode::Mono,
+                  const std::shared_ptr<ITexture>& stencilAttachment = nullptr) :
     colorAttachments_(colorAttachments),
     resolveColorAttachments_(resolveColorAttachments),
     depthAttachment_(depthAttachment),
     resolveDepthAttachment_(resolveDepthAttachment),
+    stencilAttachment_(stencilAttachment),
     mode_(mode) {}
 
   [[nodiscard]] std::vector<size_t> getColorAttachmentIndices() const override {
@@ -127,7 +136,7 @@ class FakeFramebuffer final : public IFramebuffer {
   }
 
   [[nodiscard]] std::shared_ptr<ITexture> getStencilAttachment() const override {
-    return nullptr;
+    return stencilAttachment_;
   }
 
   [[nodiscard]] FramebufferMode getMode() const override {
@@ -170,6 +179,7 @@ class FakeFramebuffer final : public IFramebuffer {
   std::vector<std::shared_ptr<ITexture>> resolveColorAttachments_;
   std::shared_ptr<ITexture> depthAttachment_;
   std::shared_ptr<ITexture> resolveDepthAttachment_;
+  std::shared_ptr<ITexture> stencilAttachment_;
   FramebufferMode mode_;
 };
 
@@ -434,6 +444,268 @@ TEST(RenderPassValidateTest, RejectsInputWithoutUsageBit) {
   const RenderPassDesc rp = makeRenderPass(
       2,
       {{.colorAttachmentMask = 0b01}, {.colorAttachmentMask = 0b10, .inputAttachmentMask = 0b01}});
+
+  const Result ret = rp.validate(*fb);
+  EXPECT_EQ(ret.code, Result::Code::ArgumentInvalid);
+}
+
+// Memoryless Attachment Validation Tests
+
+TEST(RenderPassValidateTest, ValidMemorylessClearDontCare) {
+  const auto att0 = std::make_shared<FakeTexture>(
+      TextureDesc::TextureUsageBits::Attachment, 1, ResourceStorage::Memoryless);
+  const auto fb = makeFramebuffer({att0});
+
+  const RenderPassDesc rp{.colorAttachments = {{.loadAction = LoadAction::Clear,
+                                                .storeAction = StoreAction::DontCare,
+                                                .clearColor = {0.0f, 0.0f, 0.0f, 1.0f}}}};
+  const Result ret = rp.validate(*fb);
+  EXPECT_TRUE(ret.isOk()) << ret.message;
+}
+
+TEST(RenderPassValidateTest, ValidMemorylessMsaaResolve) {
+  const auto att0 = std::make_shared<FakeTexture>(
+      TextureDesc::TextureUsageBits::Attachment, 4, ResourceStorage::Memoryless);
+  const auto resolve = std::make_shared<FakeTexture>(
+      TextureDesc::TextureUsageBits::Attachment, 1, ResourceStorage::Private);
+  const auto fb =
+      std::make_shared<FakeFramebuffer>(textures({att0}), textures({resolve}), nullptr, nullptr);
+
+  const RenderPassDesc rp{.colorAttachments = {{.loadAction = LoadAction::Clear,
+                                                .storeAction = StoreAction::MsaaResolve,
+                                                .clearColor = {0.0f, 0.0f, 0.0f, 1.0f}}}};
+  const Result ret = rp.validate(*fb);
+  EXPECT_TRUE(ret.isOk()) << ret.message;
+}
+
+TEST(RenderPassValidateTest, RejectsMemorylessLoad) {
+  const auto att0 = std::make_shared<FakeTexture>(
+      TextureDesc::TextureUsageBits::Attachment, 1, ResourceStorage::Memoryless);
+  const auto fb = makeFramebuffer({att0});
+
+  const RenderPassDesc rp{.colorAttachments = {{.loadAction = LoadAction::Load,
+                                                .storeAction = StoreAction::DontCare,
+                                                .clearColor = {0.0f, 0.0f, 0.0f, 1.0f}}}};
+  const Result ret = rp.validate(*fb);
+  EXPECT_EQ(ret.code, Result::Code::ArgumentInvalid);
+}
+
+TEST(RenderPassValidateTest, RejectsMemorylessStore) {
+  const auto att0 = std::make_shared<FakeTexture>(
+      TextureDesc::TextureUsageBits::Attachment, 1, ResourceStorage::Memoryless);
+  const auto fb = makeFramebuffer({att0});
+
+  const RenderPassDesc rp{.colorAttachments = {{.loadAction = LoadAction::Clear,
+                                                .storeAction = StoreAction::Store,
+                                                .clearColor = {0.0f, 0.0f, 0.0f, 1.0f}}}};
+  const Result ret = rp.validate(*fb);
+  EXPECT_EQ(ret.code, Result::Code::ArgumentInvalid);
+}
+
+TEST(RenderPassValidateTest, RejectsMemorylessMissingDescDefaultsToStore) {
+  const auto att0 = std::make_shared<FakeTexture>(
+      TextureDesc::TextureUsageBits::Attachment, 1, ResourceStorage::Private);
+  const auto att1 = std::make_shared<FakeTexture>(
+      TextureDesc::TextureUsageBits::Attachment, 1, ResourceStorage::Memoryless);
+  const auto fb = makeFramebuffer({att0, att1});
+
+  const RenderPassDesc rp = makeRenderPass(1, {});
+  const Result ret = rp.validate(*fb);
+  EXPECT_EQ(ret.code, Result::Code::ArgumentInvalid);
+}
+
+TEST(RenderPassValidateTest, RejectsMemorylessMsaaResolveSingleSampled) {
+  const auto att0 = std::make_shared<FakeTexture>(
+      TextureDesc::TextureUsageBits::Attachment, 1, ResourceStorage::Memoryless);
+  const auto resolve = std::make_shared<FakeTexture>(
+      TextureDesc::TextureUsageBits::Attachment, 1, ResourceStorage::Private);
+  const auto fb =
+      std::make_shared<FakeFramebuffer>(textures({att0}), textures({resolve}), nullptr, nullptr);
+
+  const RenderPassDesc rp{.colorAttachments = {{.loadAction = LoadAction::Clear,
+                                                .storeAction = StoreAction::MsaaResolve,
+                                                .clearColor = {0.0f, 0.0f, 0.0f, 1.0f}}}};
+  const Result ret = rp.validate(*fb);
+  EXPECT_EQ(ret.code, Result::Code::ArgumentInvalid);
+}
+
+TEST(RenderPassValidateTest, RejectsMemorylessMsaaResolveWithoutResolveTexture) {
+  const auto att0 = std::make_shared<FakeTexture>(
+      TextureDesc::TextureUsageBits::Attachment, 4, ResourceStorage::Memoryless);
+  const auto fb = makeFramebuffer({att0});
+
+  const RenderPassDesc rp{.colorAttachments = {{.loadAction = LoadAction::Clear,
+                                                .storeAction = StoreAction::MsaaResolve,
+                                                .clearColor = {0.0f, 0.0f, 0.0f, 1.0f}}}};
+  const Result ret = rp.validate(*fb);
+  EXPECT_EQ(ret.code, Result::Code::ArgumentInvalid);
+}
+
+TEST(RenderPassValidateTest, RejectsMemorylessResolveTexture) {
+  const auto att0 = std::make_shared<FakeTexture>(
+      TextureDesc::TextureUsageBits::Attachment, 4, ResourceStorage::Memoryless);
+  const auto resolve = std::make_shared<FakeTexture>(
+      TextureDesc::TextureUsageBits::Attachment, 1, ResourceStorage::Memoryless);
+  const auto fb =
+      std::make_shared<FakeFramebuffer>(textures({att0}), textures({resolve}), nullptr, nullptr);
+
+  const RenderPassDesc rp{.colorAttachments = {{.loadAction = LoadAction::Clear,
+                                                .storeAction = StoreAction::MsaaResolve,
+                                                .clearColor = {0.0f, 0.0f, 0.0f, 1.0f}}}};
+  const Result ret = rp.validate(*fb);
+  EXPECT_EQ(ret.code, Result::Code::ArgumentInvalid);
+}
+
+TEST(RenderPassValidateTest, RejectsMemorylessDepthStore) {
+  std::shared_ptr<ITexture> att0 =
+      std::make_shared<FakeTexture>(TextureDesc::TextureUsageBits::Attachment);
+  std::shared_ptr<ITexture> depth = std::make_shared<FakeTexture>(
+      TextureDesc::TextureUsageBits::Attachment, 1, ResourceStorage::Memoryless);
+  auto fb = std::make_shared<FakeFramebuffer>(
+      textures({att0}), textures({}), depth, nullptr, FramebufferMode::Mono);
+
+  RenderPassDesc rp = makeRenderPass(1, {});
+  rp.depthAttachment.storeAction = StoreAction::Store;
+
+  const Result ret = rp.validate(*fb);
+  EXPECT_EQ(ret.code, Result::Code::ArgumentInvalid);
+}
+
+TEST(RenderPassValidateTest, AcceptsNonMemorylessStore) {
+  const auto att0 = std::make_shared<FakeTexture>(
+      TextureDesc::TextureUsageBits::Attachment, 1, ResourceStorage::Private);
+  const auto fb = makeFramebuffer({att0});
+
+  const RenderPassDesc rp{.colorAttachments = {{.loadAction = LoadAction::Clear,
+                                                .storeAction = StoreAction::Store,
+                                                .clearColor = {0.0f, 0.0f, 0.0f, 1.0f}}}};
+  const Result ret = rp.validate(*fb);
+  EXPECT_TRUE(ret.isOk());
+}
+
+TEST(RenderPassValidateTest, RejectsPrivateMsaaResolvingIntoMemoryless) {
+  const auto att0 = std::make_shared<FakeTexture>(
+      TextureDesc::TextureUsageBits::Attachment, 4, ResourceStorage::Private);
+  const auto resolve = std::make_shared<FakeTexture>(
+      TextureDesc::TextureUsageBits::Attachment, 1, ResourceStorage::Memoryless);
+  const auto fb =
+      std::make_shared<FakeFramebuffer>(textures({att0}), textures({resolve}), nullptr, nullptr);
+
+  const RenderPassDesc rp{.colorAttachments = {{.loadAction = LoadAction::Clear,
+                                                .storeAction = StoreAction::MsaaResolve,
+                                                .clearColor = {0.0f, 0.0f, 0.0f, 1.0f}}}};
+  const Result ret = rp.validate(*fb);
+  EXPECT_EQ(ret.code, Result::Code::ArgumentInvalid);
+}
+
+TEST(RenderPassValidateTest, AcceptsMemorylessDepthMsaaResolveWithResolveTexture) {
+  std::shared_ptr<ITexture> att0 =
+      std::make_shared<FakeTexture>(TextureDesc::TextureUsageBits::Attachment);
+  std::shared_ptr<ITexture> depth = std::make_shared<FakeTexture>(
+      TextureDesc::TextureUsageBits::Attachment, 4, ResourceStorage::Memoryless);
+  std::shared_ptr<ITexture> depthResolve = std::make_shared<FakeTexture>(
+      TextureDesc::TextureUsageBits::Attachment, 1, ResourceStorage::Private);
+  auto fb = std::make_shared<FakeFramebuffer>(
+      textures({att0}), textures({}), depth, depthResolve, FramebufferMode::Mono);
+
+  RenderPassDesc rp = makeRenderPass(1, {});
+  rp.depthAttachment.loadAction = LoadAction::Clear;
+  rp.depthAttachment.storeAction = StoreAction::MsaaResolve;
+
+  const Result ret = rp.validate(*fb);
+  EXPECT_TRUE(ret.isOk());
+}
+
+TEST(RenderPassValidateTest, RejectsMemorylessDepthMsaaResolveWithoutResolveTexture) {
+  std::shared_ptr<ITexture> att0 =
+      std::make_shared<FakeTexture>(TextureDesc::TextureUsageBits::Attachment);
+  std::shared_ptr<ITexture> depth = std::make_shared<FakeTexture>(
+      TextureDesc::TextureUsageBits::Attachment, 4, ResourceStorage::Memoryless);
+  auto fb = std::make_shared<FakeFramebuffer>(
+      textures({att0}), textures({}), depth, nullptr, FramebufferMode::Mono);
+
+  RenderPassDesc rp = makeRenderPass(1, {});
+  rp.depthAttachment.loadAction = LoadAction::Clear;
+  rp.depthAttachment.storeAction = StoreAction::MsaaResolve;
+
+  const Result ret = rp.validate(*fb);
+  EXPECT_EQ(ret.code, Result::Code::ArgumentInvalid);
+}
+
+TEST(RenderPassValidateTest, RejectsMemorylessDepthLoad) {
+  std::shared_ptr<ITexture> att0 =
+      std::make_shared<FakeTexture>(TextureDesc::TextureUsageBits::Attachment);
+  std::shared_ptr<ITexture> depth = std::make_shared<FakeTexture>(
+      TextureDesc::TextureUsageBits::Attachment, 1, ResourceStorage::Memoryless);
+  auto fb = std::make_shared<FakeFramebuffer>(
+      textures({att0}), textures({}), depth, nullptr, FramebufferMode::Mono);
+
+  RenderPassDesc rp = makeRenderPass(1, {});
+  rp.depthAttachment.loadAction = LoadAction::Load;
+  rp.depthAttachment.storeAction = StoreAction::DontCare;
+
+  const Result ret = rp.validate(*fb);
+  EXPECT_EQ(ret.code, Result::Code::ArgumentInvalid);
+}
+
+TEST(RenderPassValidateTest, RejectsMemorylessMsaaResolveIntoItself) {
+  const auto att0 = std::make_shared<FakeTexture>(
+      TextureDesc::TextureUsageBits::Attachment, 4, ResourceStorage::Memoryless);
+  const auto fb =
+      std::make_shared<FakeFramebuffer>(textures({att0}), textures({att0}), nullptr, nullptr);
+
+  const RenderPassDesc rp{.colorAttachments = {{.loadAction = LoadAction::Clear,
+                                                .storeAction = StoreAction::MsaaResolve,
+                                                .clearColor = {0.0f, 0.0f, 0.0f, 1.0f}}}};
+  const Result ret = rp.validate(*fb);
+  EXPECT_EQ(ret.code, Result::Code::ArgumentInvalid);
+}
+
+TEST(RenderPassValidateTest, AcceptsMemorylessDontCareDontCare) {
+  const auto att0 = std::make_shared<FakeTexture>(
+      TextureDesc::TextureUsageBits::Attachment, 1, ResourceStorage::Memoryless);
+  const auto fb = makeFramebuffer({att0});
+
+  const RenderPassDesc rp{.colorAttachments = {{.loadAction = LoadAction::DontCare,
+                                                .storeAction = StoreAction::DontCare,
+                                                .clearColor = {0.0f, 0.0f, 0.0f, 1.0f}}}};
+  const Result ret = rp.validate(*fb);
+  EXPECT_TRUE(ret.isOk());
+}
+
+TEST(RenderPassValidateTest, AcceptsMemorylessGBufferInSubpassLayout) {
+  const auto att0 = std::make_shared<FakeTexture>(TextureDesc::TextureUsageBits::Attachment);
+  const auto att1 = std::make_shared<FakeTexture>(
+      TextureDesc::TextureUsageBits::Attachment | TextureDesc::TextureUsageBits::InputAttachment,
+      1,
+      ResourceStorage::Memoryless);
+  const auto att2 = std::make_shared<FakeTexture>(
+      TextureDesc::TextureUsageBits::Attachment | TextureDesc::TextureUsageBits::InputAttachment,
+      1,
+      ResourceStorage::Memoryless);
+  const auto fb = makeFramebuffer({att0, att1, att2});
+
+  RenderPassDesc rp =
+      makeRenderPass(3,
+                     {{.colorAttachmentMask = 0b110},
+                      {.colorAttachmentMask = 0b001, .inputAttachmentMask = 0b110}});
+  rp.colorAttachments[1].storeAction = StoreAction::DontCare;
+  rp.colorAttachments[2].storeAction = StoreAction::DontCare;
+
+  const Result ret = rp.validate(*fb);
+  EXPECT_TRUE(ret.isOk());
+}
+
+TEST(RenderPassValidateTest, RejectsMemorylessStencilStore) {
+  std::shared_ptr<ITexture> att0 =
+      std::make_shared<FakeTexture>(TextureDesc::TextureUsageBits::Attachment);
+  std::shared_ptr<ITexture> stencil = std::make_shared<FakeTexture>(
+      TextureDesc::TextureUsageBits::Attachment, 1, ResourceStorage::Memoryless);
+  auto fb = std::make_shared<FakeFramebuffer>(
+      textures({att0}), textures({}), nullptr, nullptr, FramebufferMode::Mono, stencil);
+
+  RenderPassDesc rp = makeRenderPass(1, {});
+  rp.stencilAttachment.storeAction = StoreAction::Store;
 
   const Result ret = rp.validate(*fb);
   EXPECT_EQ(ret.code, Result::Code::ArgumentInvalid);

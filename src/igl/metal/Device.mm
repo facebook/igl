@@ -71,6 +71,14 @@ id<MTLBuffer> createMetalBuffer(id<MTLDevice> device,
   metalObject.label = [NSString stringWithUTF8String:desc.debugName.c_str()];
   return metalObject;
 }
+
+// A buffer can't be memoryless, and Buffer::upload() writes through [buffer contents], which is nil
+// for private storage. A Memoryless buffer gets Managed storage, which is Shared on iOS and tvOS.
+MTLResourceOptions toBufferResourceStorageMode(ResourceStorage storage) {
+  const ResourceStorage bufferStorage =
+      storage == ResourceStorage::Memoryless ? ResourceStorage::Managed : storage;
+  return Device::toMTLResourceStorageMode(bufferStorage, /*supportsMemoryless=*/false);
+}
 } // namespace
 
 std::unique_ptr<IBuffer> Device::createBuffer( // NOLINT(bugprone-exception-escape)
@@ -83,7 +91,7 @@ std::unique_ptr<IBuffer> Device::createBuffer( // NOLINT(bugprone-exception-esca
   if (desc.hint & BufferDesc::BufferAPIHintBits::NoCopy) {
     return createBufferNoCopy(desc, outResult);
   }
-  const MTLResourceOptions storage = toMTLResourceStorageMode(desc.storage);
+  const MTLResourceOptions storage = toBufferResourceStorageMode(desc.storage);
   const MTLResourceOptions options = MTLResourceCPUCacheModeDefaultCache | storage;
 
   id<MTLBuffer> metalObject = createMetalBuffer(device_, desc, options);
@@ -100,7 +108,7 @@ std::unique_ptr<IBuffer> Device::createRingBuffer( // NOLINT(bugprone-exception-
     const BufferDesc& desc,
     Result* outResult) const noexcept {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
-  const MTLResourceOptions storage = toMTLResourceStorageMode(desc.storage);
+  const MTLResourceOptions storage = toBufferResourceStorageMode(desc.storage);
   const MTLResourceOptions options = MTLResourceCPUCacheModeDefaultCache | storage;
 
   // Create a ring of buffers
@@ -122,7 +130,7 @@ std::unique_ptr<IBuffer> Device::createRingBuffer( // NOLINT(bugprone-exception-
 std::unique_ptr<IBuffer> Device::createBufferNoCopy(const BufferDesc& desc,
                                                     Result* outResult) const {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
-  const MTLResourceOptions storage = toMTLResourceStorageMode(desc.storage);
+  const MTLResourceOptions storage = toBufferResourceStorageMode(desc.storage);
 
   using Deallocator = void (^)(void*, NSUInteger);
   const Deallocator deallocator = nil;
@@ -159,15 +167,22 @@ std::shared_ptr<ISamplerState> Device::createSamplerState(const SamplerStateDesc
  * @param[in] desc Texture descriptor specifying format,
  *        dimensions, usage, storage, and other properties.
  * @param[out] outResult Optional error reporting. Set to
- *        Unsupported for invalid format or array type
- *        mismatch, Unimplemented for exportable textures,
- *        or RuntimeError if Metal texture allocation fails.
+ *        ArgumentInvalid for usage and storage combinations
+ *        rejected by validateTextureDesc(), Unsupported for
+ *        invalid format or array type mismatch, Unimplemented
+ *        for exportable textures, or RuntimeError if Metal
+ *        texture allocation fails.
  * @return The created texture, or nullptr on failure.
  */
 std::shared_ptr<ITexture> Device::createTexture( // NOLINT(bugprone-exception-escape)
     const TextureDesc& desc,
     Result* outResult) const noexcept {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  const Result validation = validateTextureDesc(desc);
+  if (!validation.isOk()) {
+    Result::setResult(outResult, validation);
+    return nullptr;
+  }
   const auto sanitized = sanitize(desc);
   if (desc.numLayers > 1 && desc.type != TextureType::TwoDArray) {
     Result::setResult(outResult,
@@ -221,11 +236,12 @@ std::shared_ptr<ITexture> Device::createTexture( // NOLINT(bugprone-exception-es
     }
   }
 #endif
+  const bool supportsMemoryless = deviceFeatureSet_.supportsMemorylessTextures();
   metalDesc.usage = Texture::toMTLTextureUsage(sanitized.usage);
-  metalDesc.storageMode = toMTLStorageMode(sanitized.storage);
+  metalDesc.storageMode = toMTLStorageMode(sanitized.storage, supportsMemoryless);
 
-  metalDesc.resourceOptions =
-      MTLResourceCPUCacheModeDefaultCache | toMTLResourceStorageMode(sanitized.storage);
+  metalDesc.resourceOptions = MTLResourceCPUCacheModeDefaultCache |
+                              toMTLResourceStorageMode(sanitized.storage, supportsMemoryless);
 
   id<MTLTexture> metalObject = [device_ newTextureWithDescriptor:metalDesc];
   if (!metalObject) {
@@ -234,8 +250,8 @@ std::shared_ptr<ITexture> Device::createTexture( // NOLINT(bugprone-exception-es
     return nullptr;
   }
   metalObject.label = [NSString stringWithUTF8String:desc.debugName.c_str()];
-  auto iglObject =
-      std::make_shared<Texture>(metalObject, *this, desc.mipmapGeneration, sanitized.usage);
+  auto iglObject = std::make_shared<Texture>(
+      metalObject, *this, desc.mipmapGeneration, sanitized.usage, desc.storage);
   if (hasResourceTracker()) {
     iglObject->initResourceTracker(getResourceTracker(), desc.debugName);
   }
@@ -1082,21 +1098,20 @@ size_t Device::getGPUMemoryUsage() const {
   return [device_ currentAllocatedSize];
 }
 
-MTLStorageMode Device::toMTLStorageMode(ResourceStorage storage) {
+MTLStorageMode Device::toMTLStorageMode(ResourceStorage storage, bool supportsMemoryless) {
   switch (storage) {
   case ResourceStorage::Private:
     return MTLStorageModePrivate;
   case ResourceStorage::Shared:
     return MTLStorageModeShared;
+  case ResourceStorage::Memoryless:
+    return supportsMemoryless ? MTLStorageModeMemoryless : MTLStorageModePrivate;
 #if IGL_PLATFORM_MACOSX || IGL_PLATFORM_MACCATALYST
   case ResourceStorage::Managed:
-  case ResourceStorage::Memoryless:
   case ResourceStorage::Invalid:
   default:
     return MTLStorageModeManaged;
 #else
-  case ResourceStorage::Memoryless:
-    return MTLStorageModeMemoryless;
   case ResourceStorage::Managed:
   case ResourceStorage::Invalid:
   default:
@@ -1105,21 +1120,21 @@ MTLStorageMode Device::toMTLStorageMode(ResourceStorage storage) {
   }
 }
 
-MTLResourceOptions Device::toMTLResourceStorageMode(ResourceStorage storage) {
+MTLResourceOptions Device::toMTLResourceStorageMode(ResourceStorage storage,
+                                                    bool supportsMemoryless) {
   switch (storage) {
   case ResourceStorage::Private:
     return MTLResourceStorageModePrivate;
   case ResourceStorage::Shared:
     return MTLResourceStorageModeShared;
+  case ResourceStorage::Memoryless:
+    return supportsMemoryless ? MTLResourceStorageModeMemoryless : MTLResourceStorageModePrivate;
 #if IGL_PLATFORM_MACOSX || IGL_PLATFORM_MACCATALYST
   case ResourceStorage::Managed:
-  case ResourceStorage::Memoryless:
   case ResourceStorage::Invalid:
   default:
     return MTLResourceStorageModeManaged;
 #else
-  case ResourceStorage::Memoryless:
-    return MTLResourceStorageModeMemoryless;
   case ResourceStorage::Managed:
   case ResourceStorage::Invalid:
   default:

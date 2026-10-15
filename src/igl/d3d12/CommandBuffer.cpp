@@ -533,6 +533,14 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
     Result::setResult(outResult, Result::Code::Unsupported, "Subpasses are not supported");
     return nullptr;
   }
+#if IGL_DEBUG_ABORT_ENABLED
+  if (framebuffer) {
+    const Result validation = renderPass.validate(*framebuffer);
+    if (!validation.isOk()) {
+      IGL_LOG_ERROR_ONCE("Invalid RenderPassDesc: %s\n", validation.message.c_str());
+    }
+  }
+#endif
   // Begin command buffer if not already begun
   Result beginResult = begin();
   if (!beginResult.isOk()) {

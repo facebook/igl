@@ -75,6 +75,9 @@ class VulkanImage final {
    *
    * If the image is host-visible (`memFlags` contains `VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT`), then
    * it is memory mapped until the object's destruction.
+   *
+   * If `memFlags` contains `VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT` and no lazily allocated memory
+   * can back the image, the image is allocated without that flag instead.
    */
   VulkanImage(const VulkanContext& ctx,
               VkExtent3D extent,

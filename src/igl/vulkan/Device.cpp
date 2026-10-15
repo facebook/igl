@@ -181,6 +181,12 @@ std::shared_ptr<ITexture> Device::createTextureInternal( // NOLINT(bugprone-exce
 
   IGL_ENSURE_VULKAN_CONTEXT_THREAD(ctx_);
 
+  const Result validation = validateTextureDesc(desc);
+  if (!validation.isOk()) {
+    Result::setResult(outResult, validation);
+    return nullptr;
+  }
+
   const auto sanitized = sanitize(desc);
 
   auto texture = std::make_shared<Texture>(const_cast<Device&>(*this), desc.format);
@@ -815,8 +821,9 @@ bool Device::hasFeatureInternal(DeviceFeatures feature) const {
     return deviceProperties.limits.timestampPeriod > 0.0f &&
            (deviceProperties.limits.timestampComputeAndGraphics == VK_TRUE);
   case DeviceFeatures::Subpasses:
-  case DeviceFeatures::MemorylessAttachments:
     return false;
+  case DeviceFeatures::MemorylessAttachments:
+    return ctx_->supportsLazilyAllocatedMemory();
   }
 
   IGL_DEBUG_ABORT("DeviceFeatures value not handled: %d", static_cast<int>(feature));

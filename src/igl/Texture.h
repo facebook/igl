@@ -490,7 +490,12 @@ struct TextureViewDesc {
  *  numMipLevels       - Number of mipmaps to generate
  *  type               - The type of texture (2D, 3D, Cube, etc.)
  *  format             - Internal texture format type
- *  storage            - Internal resource storage type
+ *  storage            - Internal resource storage type. ResourceStorage::Memoryless textures must
+ *                       be single-mip 2D or 2D array attachments (optionally also InputAttachment)
+ *                       that are not exportable and use optimal tiling. Their contents exist only
+ *                       during a render pass: load actions must be Clear or DontCare and store
+ *                       actions DontCare or MsaaResolve. Uploading or reading back the contents is
+ *                       invalid. Backends without tile memory fall back to private memory.
  *  tiling             - Image layout for texture storage (Optimal or Linear)
  *  exportability      - Whether the texture can be exported (NoExport or Exportable)
  *  mipmapGeneration   - Specifies when and how mipmaps should be generated (Manual,

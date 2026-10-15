@@ -497,6 +497,10 @@ class IDevice : public ICapabilities, public base::IDeviceBase {
     --scopeDepth_;
   }
   [[nodiscard]] TextureDesc sanitize(const TextureDesc& desc) const;
+  /// @brief Checks the usage and storage combinations that every backend rejects: InputAttachment
+  /// requires Attachment, and ResourceStorage::Memoryless textures must be single-mip, optimally
+  /// tiled, non-exportable 2D or 2D array attachments with no other usage.
+  [[nodiscard]] Result validateTextureDesc(const TextureDesc& desc) const;
   IDevice() = default;
 
   /// @brief Helper to create framebuffer from base descriptor

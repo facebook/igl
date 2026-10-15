@@ -202,7 +202,6 @@ TEST_F(DeviceFeatureSetTest, hasFeatureForMacOSOrWinOrAndroidTest) {
     EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::ExplicitBindingExt));
     EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::ExternalMemoryObjects));
     EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::Subpasses));
-    EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::MemorylessAttachments));
     EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::DynamicCullMode));
     EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::DynamicFrontFacingWinding));
   } else {
@@ -246,7 +245,6 @@ TEST_F(DeviceFeatureSetTest, hasFeatureForMacOSOrWinOrAndroidTest) {
       EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::PushConstants));
       EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::FillBuffer));
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::Subpasses));
-      EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::MemorylessAttachments));
       // vkCmdSetCullMode and vkCmdSetFrontFace are provided together (core in
       // Vulkan 1.3 / VK_EXT_extended_dynamic_state), so both dynamic-state
       // features must report the same availability.
@@ -279,7 +277,6 @@ TEST_F(DeviceFeatureSetTest, hasFeatureForMacOSOrWinOrAndroidTest) {
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::PushConstants));
       EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::FillBuffer));
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::Subpasses));
-      EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::MemorylessAttachments));
       EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::DynamicCullMode));
       EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::DynamicFrontFacingWinding));
     } else if (iglDev_->getBackendType() == igl::BackendType::D3D12) {

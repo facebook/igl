@@ -31,6 +31,7 @@ class Texture : public WithContext, public ITexture {
   // Accessors
   [[nodiscard]] Dimensions getDimensions() const override;
   [[nodiscard]] uint32_t getNumLayers() const override;
+  [[nodiscard]] ResourceStorage getStorage() const override;
   [[nodiscard]] uint32_t getSamples() const override;
   void generateMipmap(ICommandQueue& cmdQueue,
                       const TextureRangeDesc* IGL_NULLABLE range = nullptr) const override;
@@ -154,6 +155,7 @@ class Texture : public WithContext, public ITexture {
   GLsizei depth_ = 1;
   GLsizei numLayers_ = 1;
   uint32_t numSamples_ = 1;
+  ResourceStorage storage_ = ResourceStorage::Invalid;
   bool isCreated_ = false;
   mutable base::AttachmentInteropDesc attachmentDesc_; // Cached for IAttachmentInterop::getDesc()
 };

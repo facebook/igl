@@ -34,6 +34,7 @@ class Texture : public ITexture {
   Texture(Device& device, std::shared_ptr<VulkanTexture> vkTexture, TextureDesc desc) :
     Texture(device, desc.format) {
     texture_ = std::move(vkTexture);
+    requestedStorage_ = desc.storage;
     desc_ = std::move(desc);
   }
 
@@ -42,6 +43,7 @@ class Texture : public ITexture {
   uint32_t getNumLayers() const override;
   TextureType getType() const override;
   TextureDesc::TextureUsage getUsage() const override;
+  [[nodiscard]] ResourceStorage getStorage() const override;
   uint32_t getSamples() const override;
   uint32_t getNumMipLevels() const override;
   void generateMipmap(ICommandQueue& cmdQueue,
@@ -92,6 +94,8 @@ class Texture : public ITexture {
 
   Device& device_;
   TextureDesc desc_;
+  // desc_.storage is rewritten by create(); this is what the caller asked for.
+  ResourceStorage requestedStorage_ = ResourceStorage::Invalid;
   mutable base::AttachmentInteropDesc attachmentDesc_; // Cached for IAttachmentInterop::getDesc()
 
   std::shared_ptr<VulkanTexture> texture_;

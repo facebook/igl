@@ -40,7 +40,9 @@ namespace igl {
  * ExplicitBindingExt,        Supports uniforms block explicit binding in shaders via an extension
  * ExternalMemoryObjects,     Supports accessing external memory objects, including by POSIX file descriptor
  * MapBufferRange             Supports mapping buffer data into client address space
- * MemorylessAttachments      ResourceStorage::Memoryless attachments live only in tile memory (performance hint)
+ * MemorylessAttachments      Performance hint: Memoryless attachments use transient tile memory
+ *                            (Vulkan lazily allocated memory, Metal Apple GPUs, WebGPU transient
+ *                            attachments). ResourceStorage::Memoryless is always accepted
  * MeshShaders                Supports task/mesh shaders
  * MinMaxBlend                Supports Min and Max blend operations
  * MultipleRenderTargets      Supports MRT - Multiple Render Targets

@@ -269,6 +269,11 @@ class VulkanContext final {
 
   const VulkanFeatures& features() const noexcept;
 
+  /// @brief Returns true if images can be backed by lazily allocated (tile) memory: the device has
+  /// a lazily allocated memory type and VK_KHR_portability_subset is not enabled, because
+  /// MoltenVK may split render passes, which defeats tile memory.
+  [[nodiscard]] bool supportsLazilyAllocatedMemory() const;
+
   [[nodiscard]] const VkSurfaceCapabilitiesKHR& getSurfaceCapabilities() const noexcept {
     return deviceSurfaceCaps_;
   }

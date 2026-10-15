@@ -127,8 +127,11 @@ class Device : public IDevice {
     return NormalizedZRange::ZeroToOne;
   }
 
-  static MTLStorageMode toMTLStorageMode(ResourceStorage storage);
-  static MTLResourceOptions toMTLResourceStorageMode(ResourceStorage storage);
+  /// ResourceStorage::Memoryless maps to memoryless storage if `supportsMemoryless` and to private
+  /// storage otherwise. Only textures can be memoryless.
+  static MTLStorageMode toMTLStorageMode(ResourceStorage storage, bool supportsMemoryless);
+  static MTLResourceOptions toMTLResourceStorageMode(ResourceStorage storage,
+                                                     bool supportsMemoryless);
 
   std::shared_ptr<ICommandQueue> getMostRecentCommandQueue() const noexcept;
 

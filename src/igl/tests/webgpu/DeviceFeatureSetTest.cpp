@@ -85,10 +85,23 @@ TEST_F(WebGPUDeviceFeatureSetTest, Features) {
   EXPECT_FALSE(device_->hasFeature(DeviceFeatures::ReadWriteFramebuffer));
   EXPECT_FALSE(device_->hasFeature(DeviceFeatures::TextureFormatRGB));
   EXPECT_FALSE(device_->hasFeature(DeviceFeatures::Subpasses));
-  EXPECT_FALSE(device_->hasFeature(DeviceFeatures::MemorylessAttachments));
 
   EXPECT_FALSE(device_->hasRequirement(DeviceRequirement::ExplicitBindingExtReq));
   EXPECT_FALSE(device_->hasRequirement(DeviceRequirement::TextureFormatRGExtReq));
+}
+
+TEST_F(WebGPUDeviceFeatureSetTest, MemorylessAttachmentsFollowsTransientFeature) {
+  // MemorylessAttachments should equal whether the device has WGPUFeatureName_TransientAttachments
+  const bool hasTransientFeature =
+      platformDevice_->hasWGPUFeature(WGPUFeatureName_TransientAttachments);
+  EXPECT_EQ(device_->hasFeature(DeviceFeatures::MemorylessAttachments), hasTransientFeature);
+}
+
+TEST_F(WebGPUDeviceFeatureSetTest, MemorylessAttachmentsDisabledWhenOptionalFeaturesDisabled) {
+  // When optional features are disabled, MemorylessAttachments should be false
+  auto device = util::device::webgpu::createTestDevice({.requestOptionalFeatures = false});
+  ASSERT_NE(device, nullptr);
+  EXPECT_FALSE(device->hasFeature(DeviceFeatures::MemorylessAttachments));
 }
 
 TEST_F(WebGPUDeviceFeatureSetTest, LimitsDefaultToSpec) {

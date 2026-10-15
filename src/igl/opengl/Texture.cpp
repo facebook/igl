@@ -22,6 +22,10 @@ uint32_t Texture::getNumLayers() const {
   return numLayers_;
 }
 
+ResourceStorage Texture::getStorage() const {
+  return storage_;
+}
+
 uint32_t Texture::getSamples() const {
   return numSamples_;
 }
@@ -96,6 +100,7 @@ Result Texture::create(const TextureDesc& desc, bool hasStorageAlready) {
     type_ = desc.type;
     numLayers_ = desc.numLayers;
     numSamples_ = desc.numSamples;
+    storage_ = desc.storage;
     numMipLevels_ = desc.numMipLevels;
     mipmapGeneration_ = desc.mipmapGeneration;
     if (!getContext().deviceFeatures().hasFeature(DeviceFeatures::TexturePartialMipChain)) {

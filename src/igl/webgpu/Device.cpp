@@ -135,6 +135,11 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
   if (failIfLost(outResult)) {
     return nullptr;
   }
+  const Result validation = validateTextureDesc(desc);
+  if (!validation.isOk()) {
+    Result::setResult(outResult, validation);
+    return nullptr;
+  }
   const TextureDesc sanitized = sanitize(desc);
   auto texture = Texture::create(*ctx_, deviceFeatureSet_, sanitized, outResult);
   if (texture && getResourceTracker()) {

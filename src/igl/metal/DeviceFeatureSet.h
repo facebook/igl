@@ -26,6 +26,10 @@ class DeviceFeatureSet final {
   [[nodiscard]] ICapabilities::TextureFormatCapabilities getTextureFormatCapabilities(
       TextureFormat format) const;
 
+  [[nodiscard]] bool supportsMemorylessTextures() const {
+    return supportsMemorylessAndProgrammableBlending_;
+  }
+
  private:
   // Apple GPU family as defined by MTLGPUFamily and the docs:
   //   https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
@@ -48,6 +52,9 @@ class DeviceFeatureSet final {
   bool supports32BitFloatFiltering_ = false;
   bool supportsTimestampQueries_ = false;
   bool supportsDynamicVertexBufferStride_ = false;
+  // Apple GPU family 1+ outside of the simulator: tile memory, i.e. MTLStorageModeMemoryless
+  // textures and programmable blending.
+  bool supportsMemorylessAndProgrammableBlending_ = false;
 };
 
 } // namespace igl::metal

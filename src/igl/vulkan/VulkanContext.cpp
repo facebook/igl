@@ -3160,6 +3160,12 @@ const VulkanFeatures& VulkanContext::features() const noexcept {
   return features_;
 }
 
+bool VulkanContext::supportsLazilyAllocatedMemory() const {
+  return (resourceStorageToVkMemoryPropertyFlags(ResourceStorage::Memoryless, &memoryProperties) &
+          VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) != 0 &&
+         !features_.enabled("VK_KHR_portability_subset");
+}
+
 void VulkanContext::syncAcquireNext() noexcept {
   IGL_PROFILER_FUNCTION();
 

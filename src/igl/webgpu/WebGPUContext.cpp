@@ -74,6 +74,9 @@ constexpr WGPUFeatureName kOptionalFeatures[] = {
     WGPUFeatureName_TextureCompressionETC2,
     WGPUFeatureName_TextureCompressionASTC,
     compat::kUnorm16TextureFormatsFeature,
+#if !IGL_WEBGPU_HEADER_V2
+    WGPUFeatureName_TransientAttachments,
+#endif
 };
 
 // Packs rows `paddedBytesPerRow` apart into tight rows. Bytes of the last word past `totalBytes`

@@ -55,6 +55,7 @@ std::shared_ptr<Texture> Texture::createFromResource(ID3D12Resource* resource,
   texture->numMipLevels_ = desc.numMipLevels;
   texture->samples_ = desc.numSamples;
   texture->usage_ = desc.usage;
+  texture->storage_ = desc.storage;
 
   texture->initializeStateTracking(initialState);
 
@@ -131,6 +132,7 @@ std::shared_ptr<Texture> Texture::createTextureView(std::shared_ptr<Texture> par
   view->format_ = viewFormat;
   view->type_ = desc.type;
   view->usage_ = parent->usage_;
+  view->storage_ = parent->storage_;
   view->samples_ = parent->samples_;
 
   // Calculate view dimensions based on mip level
@@ -618,6 +620,10 @@ TextureType Texture::getType() const {
 
 TextureDesc::TextureUsage Texture::getUsage() const {
   return usage_;
+}
+
+ResourceStorage Texture::getStorage() const {
+  return storage_;
 }
 
 uint32_t Texture::getSamples() const {

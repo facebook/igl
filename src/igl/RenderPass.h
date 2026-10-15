@@ -134,9 +134,15 @@ struct RenderPassDesc {
    */
   std::vector<SubpassDesc> subpasses;
 
-  /// Validates `subpasses` against the framebuffer. Does not check DeviceFeatures;
-  /// createRenderCommandEncoder() returns Result::Code::Unsupported when the device lacks
-  /// DeviceFeatures::Subpasses.
+  /// Validates the framebuffer's ResourceStorage::Memoryless attachments and `subpasses` against
+  /// the framebuffer. A Memoryless attachment must load with LoadAction::Clear or
+  /// LoadAction::DontCare and store with StoreAction::DontCare or StoreAction::MsaaResolve;
+  /// MsaaResolve needs a multisampled attachment and a separate resolve texture. No attachment can
+  /// resolve into a Memoryless texture. A framebuffer color attachment without a `colorAttachments`
+  /// entry is checked as a default AttachmentDesc, which stores with StoreAction::Store. Stencil
+  /// resolve targets are not checked. Does not check DeviceFeatures; createRenderCommandEncoder()
+  /// returns Result::Code::Unsupported when the device lacks DeviceFeatures::Subpasses. For a pass
+  /// without `subpasses`, backends run this check in debug builds only and only log a failure.
   [[nodiscard]] Result validate(const IFramebuffer& framebuffer) const noexcept;
 };
 

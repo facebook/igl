@@ -11,6 +11,7 @@
 #include <optional>
 #include <igl/webgpu/Common.h>
 #include <igl/webgpu/UniformArena.h>
+#include <igl/webgpu/WebGPUCompat.h>
 
 namespace igl::webgpu {
 
@@ -145,7 +146,6 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::ExplicitBindingExt:
   case DeviceFeatures::ExternalMemoryObjects:
   case DeviceFeatures::Indices8Bit:
-  case DeviceFeatures::MemorylessAttachments:
   case DeviceFeatures::MeshShaders:
   case DeviceFeatures::Multiview:
   case DeviceFeatures::MultiViewMultisample:
@@ -160,6 +160,12 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::TextureExternalImage:
   case DeviceFeatures::TextureFormatRGB:
     return false;
+  case DeviceFeatures::MemorylessAttachments:
+#if IGL_WEBGPU_HEADER_V2
+    return false;
+#else
+    return hasWGPUFeature(WGPUFeatureName_TransientAttachments);
+#endif
   case DeviceFeatures::TimestampQueries:
   case DeviceFeatures::Timers:
     return hasWGPUFeature(WGPUFeatureName_TimestampQuery);

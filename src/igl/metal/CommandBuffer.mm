@@ -19,7 +19,21 @@
 namespace igl::metal {
 
 CommandBuffer::CommandBuffer(Device& device, id<MTLCommandBuffer> value, CommandBufferDesc desc) :
-  ICommandBuffer(std::move(desc)), device_(device), value_(value) {}
+  ICommandBuffer(std::move(desc)), device_(device), value_(value) {
+#if IGL_LOGGING_ENABLED
+  [value_ addCompletedHandler:^(id<MTLCommandBuffer> commandBuffer) {
+    if (@available(macOS 11.0, iOS 10.0, *)) {
+      NSError* error = commandBuffer.error;
+      if ([error.domain isEqualToString:MTLCommandBufferErrorDomain] &&
+          static_cast<MTLCommandBufferError>(error.code) == MTLCommandBufferErrorMemoryless) {
+        IGL_LOG_ERROR(
+            "Command buffer failed with MTLCommandBufferErrorMemoryless: the memoryless "
+            "attachments don't fit in tile memory.\n");
+      }
+    }
+  }];
+#endif
+}
 
 std::unique_ptr<IComputeCommandEncoder> CommandBuffer::createComputeCommandEncoder() {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
@@ -42,6 +56,14 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
     Result::setResult(outResult, Result::Code::Unsupported, "Subpasses are not supported");
     return nullptr;
   }
+#if IGL_DEBUG_ABORT_ENABLED
+  if (framebuffer) {
+    const Result validation = renderPass.validate(*framebuffer);
+    if (!validation.isOk()) {
+      IGL_LOG_ERROR_ONCE("Invalid RenderPassDesc: %s\n", validation.message.c_str());
+    }
+  }
+#endif
   return RenderCommandEncoder::create(shared_from_this(), renderPass, framebuffer, outResult);
 }
 

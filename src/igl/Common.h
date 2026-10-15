@@ -75,8 +75,12 @@ enum class ResourceStorage {
   Private, /// Memory private to GPU access (fastest)
   Shared, /// Memory shared between CPU and GPU
   Managed, /// Memory pair synchronized between CPU and GPU
-  Memoryless /// Memory can be accessed only by the GPU and only exist temporarily during a render
-             /// pass
+  Memoryless /// Memory that only the GPU can access and that exists only during a render pass.
+             /// Memoryless textures must be single-mip 2D or 2D array attachments (optionally also
+             /// InputAttachment) that are not exportable and use optimal tiling. Load actions must
+             /// be Clear or DontCare and store actions DontCare or MsaaResolve. Uploading or
+             /// reading back the contents is invalid. Backends without tile memory fall back to
+             /// private memory.
 };
 
 enum class CullMode : uint8_t { Disabled, Front, Back };

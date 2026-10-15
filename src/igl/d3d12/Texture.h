@@ -46,6 +46,7 @@ class Texture final : public ITexture {
   uint32_t getNumLayers() const override;
   TextureType getType() const override;
   TextureDesc::TextureUsage getUsage() const override;
+  [[nodiscard]] ResourceStorage getStorage() const override;
   uint32_t getSamples() const override;
   uint32_t getNumMipLevels() const override;
   uint64_t getTextureId() const override;
@@ -115,6 +116,7 @@ class Texture final : public ITexture {
   size_t numMipLevels_ = 1;
   size_t samples_ = 1;
   TextureDesc::TextureUsage usage_ = 0;
+  ResourceStorage storage_ = ResourceStorage::Invalid;
   void initializeStateTracking(D3D12_RESOURCE_STATES initialState);
 
   // Simplified per-subresource state tracking.

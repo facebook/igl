@@ -39,6 +39,7 @@ Result Texture::create(const TextureDesc& desc) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
 
   desc_ = desc;
+  requestedStorage_ = desc.storage;
 
   const VulkanContext& ctx = device_.getVulkanContext();
 
@@ -124,6 +125,9 @@ Result Texture::create(const TextureDesc& desc) {
       usageFlags |= VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT;
     }
   }
+  if ((desc_.usage & TextureDesc::TextureUsageBits::InputAttachment) != 0) {
+    usageFlags |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+  }
 
   // For now, always set this flag so we can read it back
   if (desc_.storage != igl::ResourceStorage::Memoryless) {
@@ -133,8 +137,13 @@ Result Texture::create(const TextureDesc& desc) {
 
   IGL_DEBUG_ASSERT(usageFlags != 0, "Invalid usage flags");
 
-  const VkMemoryPropertyFlags memFlags =
+  VkMemoryPropertyFlags memFlags =
       resourceStorageToVkMemoryPropertyFlags(desc_.storage, &ctx.memoryProperties);
+  if (desc_.storage == ResourceStorage::Memoryless && !ctx.supportsLazilyAllocatedMemory()) {
+    // Under the portability subset (MoltenVK), render passes may be split, which defeats tile
+    // memory, so Memoryless images use device-local memory instead of lazily allocated memory.
+    memFlags &= ~VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
+  }
 
   const std::string debugNameImage =
       !desc_.debugName.empty() ? IGL_FORMAT("Image: {}", desc_.debugName.c_str()) : "";
@@ -281,6 +290,7 @@ Result Texture::createView(const Texture& baseTexture, const TextureViewDesc& de
   const VulkanTexture& vulkanTexture = *baseTexture.texture_;
 
   desc_ = baseTexture.desc_;
+  requestedStorage_ = baseTexture.requestedStorage_;
   desc_.numLayers = desc.numLayers;
   desc_.numMipLevels = desc.numMipLevels;
 
@@ -467,6 +477,10 @@ TextureType Texture::getType() const {
 
 TextureDesc::TextureUsage Texture::getUsage() const {
   return desc_.usage;
+}
+
+ResourceStorage Texture::getStorage() const {
+  return requestedStorage_;
 }
 
 uint32_t Texture::getSamples() const {

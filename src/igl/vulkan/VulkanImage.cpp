@@ -53,6 +53,27 @@ uint32_t ivkGetMemoryTypeIndex(const VkPhysicalDeviceMemoryProperties& memProps,
   return 0;
 }
 
+// Returns true if one of the memory types allowed by `typeBits` has all of `requiredProperties`.
+bool hasMemoryType(const VkPhysicalDeviceMemoryProperties& memProps,
+                   const uint32_t typeBits,
+                   const VkMemoryPropertyFlags requiredProperties) {
+  for (uint32_t type = 0; type < memProps.memoryTypeCount; type++) {
+    if ((typeBits & (1u << type)) != 0 &&
+        (memProps.memoryTypes[type].propertyFlags & requiredProperties) == requiredProperties) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void logLazilyAllocatedFallback(VkFormat format, VkSampleCountFlagBits samples) {
+  IGL_LOG_INFO_ONCE(
+      "Lazily allocated memory is not available for a Memoryless image (format %d, %u samples). "
+      "Using device-local memory instead.\n",
+      static_cast<int>(format),
+      static_cast<uint32_t>(samples));
+}
+
 // VkImage export and import is only implemented on Windows, Linux and Android platforms.
 #if IGL_PLATFORM_WINDOWS
 constexpr auto kHandleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_KMT_BIT;
@@ -121,6 +142,21 @@ bool tryAllocateImageVma(const VulkanContext& ctx,
       memFlags,
       imageFormat);
   return true;
+}
+
+VmaAllocationCreateInfo makeImageAllocationInfo(VkMemoryPropertyFlags memFlags) {
+  const bool isHostVisible = (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0;
+  const bool isLazilyAllocated = (memFlags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) != 0;
+  return {
+      .flags = 0,
+      .usage = isHostVisible ? VMA_MEMORY_USAGE_CPU_TO_GPU : VMA_MEMORY_USAGE_AUTO,
+      // For lazily allocated (memoryless) images, require the flag so VMA picks GMEM-backed
+      // memory on TBDR GPUs. For other non-host-visible cases, pass memFlags as a preference
+      // to guide VMA without causing hard allocation failures.
+      .requiredFlags = isLazilyAllocated ? memFlags : static_cast<VkMemoryPropertyFlags>(0),
+      .preferredFlags =
+          (!isHostVisible && !isLazilyAllocated) ? memFlags : static_cast<VkMemoryPropertyFlags>(0),
+  };
 }
 
 } // namespace
@@ -263,21 +299,28 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
   };
 
   if (IGL_VULKAN_USE_VMA && !isDisjoint) {
-    const bool isHostVisible = (memFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0;
-    const bool isLazilyAllocated = (memFlags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) != 0;
-    const VmaAllocationCreateInfo ciAlloc = {
-        .flags = 0,
-        .usage = isHostVisible ? VMA_MEMORY_USAGE_CPU_TO_GPU : VMA_MEMORY_USAGE_AUTO,
-        // For lazily allocated (memoryless) images, require the flag so VMA picks GMEM-backed
-        // memory on TBDR GPUs. For other non-host-visible cases, pass memFlags as a preference
-        // to guide VMA without causing hard allocation failures.
-        .requiredFlags = isLazilyAllocated ? memFlags : static_cast<VkMemoryPropertyFlags>(0),
-        .preferredFlags = (!isHostVisible && !isLazilyAllocated)
-                              ? memFlags
-                              : static_cast<VkMemoryPropertyFlags>(0),
-    };
-
-    tryAllocateImageVma(*ctx_, ci, ciAlloc, &vkImage_, &vmaAllocation_, imageFormat_, memFlags);
+    bool isAllocated = false;
+    VkMemoryPropertyFlags allocFlags = memFlags;
+    if ((allocFlags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) != 0) {
+      // A single attempt, because draining deferred tasks does not help when no lazily allocated
+      // memory type can back this image.
+      const VmaAllocationCreateInfo ciAlloc = makeImageAllocationInfo(allocFlags);
+      isAllocated = vmaCreateImage(static_cast<VmaAllocator>(ctx_->getVmaAllocator()),
+                                   &ci,
+                                   &ciAlloc,
+                                   &vkImage_,
+                                   &vmaAllocation_,
+                                   nullptr) == VK_SUCCESS &&
+                    vmaAllocation_ != nullptr;
+      if (!isAllocated) {
+        logLazilyAllocatedFallback(imageFormat_, samples);
+        allocFlags &= ~VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
+      }
+    }
+    if (!isAllocated) {
+      const VmaAllocationCreateInfo ciAlloc = makeImageAllocationInfo(allocFlags);
+      tryAllocateImageVma(*ctx_, ci, ciAlloc, &vkImage_, &vmaAllocation_, imageFormat_, allocFlags);
+    }
 
     if (vmaAllocation_) {
       VkMemoryRequirements memRequirements{};
@@ -338,11 +381,19 @@ VulkanImage::VulkanImage(const VulkanContext& ctx,
       };
       for (uint32_t p = 0; p != numPlanes; p++) {
         ctx_->vf_.vkGetImageMemoryRequirements2(device_, &imgRequirements[p], &memRequirements[p]);
+        VkMemoryPropertyFlags planeMemFlags = memFlags;
+        if ((planeMemFlags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT) != 0 &&
+            !hasMemoryType(ctx_->memoryProperties,
+                           memRequirements[p].memoryRequirements.memoryTypeBits,
+                           planeMemFlags)) {
+          logLazilyAllocatedFallback(imageFormat_, samples);
+          planeMemFlags &= ~VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT;
+        }
         VK_ASSERT(ivkAllocateMemory2(&ctx_->vf_,
                                      physicalDevice_,
                                      device_,
                                      &memRequirements[p],
-                                     memFlags,
+                                     planeMemFlags,
                                      false,
                                      &vkMemory_[p]));
 

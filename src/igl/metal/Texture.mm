@@ -29,13 +29,15 @@ namespace igl::metal {
 Texture::Texture(id<MTLTexture> texture,
                  const ICapabilities& capabilities,
                  TextureDesc::TextureMipmapGeneration mipmapGeneration,
-                 TextureDesc::TextureUsage usage) :
+                 TextureDesc::TextureUsage usage,
+                 ResourceStorage storage) :
   ITexture(mtlPixelFormatToTextureFormat([texture pixelFormat])),
   value_(texture),
   drawable_(nullptr),
   capabilities_(capabilities),
   mipmapGeneration_(mipmapGeneration),
-  usage_(usage) {}
+  usage_(usage),
+  storage_(storage) {}
 
 Texture::Texture(id<CAMetalDrawable> drawable,
                  const ICapabilities& capabilities,
@@ -158,6 +160,9 @@ Result Texture::getBytes(const TextureRangeDesc& range, void* outData, size_t by
   if (!outData) {
     return Result(Result::Code::ArgumentNull, "Need a valid output buffer");
   }
+  if (storage_ == ResourceStorage::Memoryless) {
+    return Result(Result::Code::Unsupported, "Can't retrieve the data from a memoryless texture");
+  }
   if (get().storageMode == MTLStorageModePrivate) {
     return Result(
         Result::Code::Unsupported,
@@ -229,6 +234,10 @@ TextureType Texture::getType() const {
 
 TextureDesc::TextureUsage Texture::getUsage() const {
   return usage_ != 0 ? usage_ : toTextureUsage([get() usage]);
+}
+
+ResourceStorage Texture::getStorage() const {
+  return storage_;
 }
 
 uint32_t Texture::getSamples() const {

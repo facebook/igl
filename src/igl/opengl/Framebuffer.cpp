@@ -8,6 +8,7 @@
 #include <igl/opengl/Framebuffer.h>
 
 #include <algorithm>
+#include <array>
 #include <cstdlib>
 #include <string>
 #include <igl/Macros.h>
@@ -181,6 +182,37 @@ Texture::AttachmentParams toReadAttachmentParams(const TextureRangeDesc& range,
   params.read = true;
   params.stereo = mode == FramebufferMode::Stereo;
   return params;
+}
+
+bool isMemorylessAndNotLoaded(const std::shared_ptr<ITexture>& texture,
+                              const RenderPassDesc::AttachmentDesc& attachment) {
+  return texture != nullptr && texture->getStorage() == ResourceStorage::Memoryless &&
+         attachment.loadAction == LoadAction::DontCare;
+}
+
+/// Fills `attachments` with the framebuffer attachments that are Memoryless and not loaded, and
+/// returns how many were written.
+GLsizei collectMemorylessNotLoadedAttachments(
+    const FramebufferDesc& target,
+    const RenderPassDesc& renderPass,
+    std::array<GLenum, IGL_COLOR_ATTACHMENTS_MAX + 2>& attachments) {
+  GLsizei numAttachments = 0;
+  const size_t numColorAttachments =
+      std::min<size_t>(renderPass.colorAttachments.size(), IGL_COLOR_ATTACHMENTS_MAX);
+  for (size_t i = 0; i != numColorAttachments; i++) {
+    // NOLINTNEXTLINE(facebook-hte-ParameterUncheckedArrayBounds)
+    const RenderPassDesc::AttachmentDesc& attachment = renderPass.colorAttachments[i];
+    if (isMemorylessAndNotLoaded(target.colorAttachments[i].texture, attachment)) {
+      attachments[numAttachments++] = static_cast<GLenum>(GL_COLOR_ATTACHMENT0 + i);
+    }
+  }
+  if (isMemorylessAndNotLoaded(target.depthAttachment.texture, renderPass.depthAttachment)) {
+    attachments[numAttachments++] = GL_DEPTH_ATTACHMENT;
+  }
+  if (isMemorylessAndNotLoaded(target.stencilAttachment.texture, renderPass.stencilAttachment)) {
+    attachments[numAttachments++] = GL_STENCIL_ATTACHMENT;
+  }
+  return numAttachments;
 }
 } // namespace
 
@@ -833,6 +865,17 @@ void CustomFramebuffer::bind(const RenderPassDesc& renderPass) const {
                       toAttachmentParams(renderPassAttachment, renderTarget_.mode));
     }
   }
+
+  // Memoryless attachments that are not loaded have no contents worth fetching into tile memory.
+  std::array<GLenum, IGL_COLOR_ATTACHMENTS_MAX + 2> memorylessAttachments{};
+  const GLsizei numMemorylessAttachments =
+      collectMemorylessNotLoadedAttachments(renderTarget_, renderPass, memorylessAttachments);
+  if (numMemorylessAttachments > 0 &&
+      getContext().deviceFeatures().hasInternalFeature(InternalFeatures::InvalidateFramebuffer)) {
+    getContext().invalidateFramebuffer(
+        GL_FRAMEBUFFER, numMemorylessAttachments, memorylessAttachments.data());
+  }
+
   applyClearMask(targetCount);
 }
 

@@ -8,6 +8,7 @@
 #include <igl/RenderPass.h>
 
 #include <memory>
+#include <string>
 #include <vector>
 #include <igl/Framebuffer.h>
 #include <igl/Texture.h>
@@ -16,8 +17,94 @@ namespace igl {
 
 namespace {
 
+bool isMemoryless(const std::shared_ptr<ITexture>& texture) noexcept {
+  return texture != nullptr && texture->getStorage() == ResourceStorage::Memoryless;
+}
+
+// Returns why `desc` is invalid for `texture`, or nullptr if it is valid. Only calls getSamples()
+// on Memoryless textures, because some backends' placeholder textures (e.g. the OpenGL default
+// framebuffer's) do not support it. `resolve` is only read when the store action is MsaaResolve.
+// It is empty for stencil attachments, which have no resolve accessor.
+const char* IGL_NULLABLE findMemorylessViolation(const std::shared_ptr<ITexture>& texture,
+                                                 const std::shared_ptr<ITexture>& resolve,
+                                                 const RenderPassDesc::AttachmentDesc& desc,
+                                                 bool canCheckResolve) noexcept {
+  const bool resolves = desc.storeAction == StoreAction::MsaaResolve;
+  if (isMemoryless(texture)) {
+    if (desc.loadAction != LoadAction::Clear && desc.loadAction != LoadAction::DontCare) {
+      return "a Memoryless attachment must use LoadAction::Clear or LoadAction::DontCare";
+    }
+    if (desc.storeAction != StoreAction::DontCare && !resolves) {
+      return "a Memoryless attachment must use StoreAction::DontCare or StoreAction::MsaaResolve";
+    }
+    if (resolves) {
+      if (texture->getSamples() <= 1) {
+        return "a Memoryless attachment can only use StoreAction::MsaaResolve when it is "
+               "multisampled";
+      }
+      if (canCheckResolve && (resolve == nullptr || resolve == texture)) {
+        return "StoreAction::MsaaResolve on a Memoryless attachment needs a separate resolve "
+               "texture";
+      }
+    }
+  }
+  if (resolves && isMemoryless(resolve)) {
+    return "StoreAction::MsaaResolve cannot resolve into a Memoryless texture";
+  }
+  return nullptr;
+}
+
+Result makeMemorylessError(const std::string& attachment, const char* violation) {
+  return Result(Result::Code::ArgumentInvalid, attachment + ": " + violation);
+}
+
+Result validateMemoryless(const RenderPassDesc& renderPass,
+                          const IFramebuffer& framebuffer,
+                          const std::vector<size_t>& colorIndices) noexcept {
+  const RenderPassDesc::AttachmentDesc defaultDesc{};
+  for (const size_t i : colorIndices) {
+    const RenderPassDesc::AttachmentDesc* desc = &defaultDesc;
+    if (i < renderPass.colorAttachments.size()) {
+      // NOLINTNEXTLINE(facebook-hte-ParameterUncheckedArrayBounds)
+      desc = &renderPass.colorAttachments[i];
+    }
+    const std::shared_ptr<ITexture> color = framebuffer.getColorAttachment(i);
+    const bool resolves = desc->storeAction == StoreAction::MsaaResolve;
+    if (!resolves && !isMemoryless(color)) {
+      continue;
+    }
+    const char* violation = findMemorylessViolation(
+        color, resolves ? framebuffer.getResolveColorAttachment(i) : nullptr, *desc, true);
+    if (violation != nullptr) {
+      return makeMemorylessError("Color attachment " + std::to_string(i), violation);
+    }
+  }
+
+  const std::shared_ptr<ITexture> depth = framebuffer.getDepthAttachment();
+  if (depth != nullptr) {
+    const RenderPassDesc::AttachmentDesc& desc = renderPass.depthAttachment;
+    const bool resolves = desc.storeAction == StoreAction::MsaaResolve;
+    const char* violation = findMemorylessViolation(
+        depth, resolves ? framebuffer.getResolveDepthAttachment() : nullptr, desc, true);
+    if (violation != nullptr) {
+      return makeMemorylessError("Depth attachment", violation);
+    }
+  }
+
+  const std::shared_ptr<ITexture> stencil = framebuffer.getStencilAttachment();
+  if (stencil != nullptr) {
+    const char* violation =
+        findMemorylessViolation(stencil, nullptr, renderPass.stencilAttachment, false);
+    if (violation != nullptr) {
+      return makeMemorylessError("Stencil attachment", violation);
+    }
+  }
+  return Result();
+}
+
 Result validateSubpasses(const RenderPassDesc& renderPass,
-                         const IFramebuffer& framebuffer) noexcept {
+                         const IFramebuffer& framebuffer,
+                         const std::vector<size_t>& colorIndices) noexcept {
   const size_t numSubpasses = renderPass.subpasses.size();
   if (numSubpasses < 2 || numSubpasses > IGL_SUBPASSES_MAX) {
     return Result(Result::Code::ArgumentOutOfRange,
@@ -27,7 +114,6 @@ Result validateSubpasses(const RenderPassDesc& renderPass,
     return Result(Result::Code::Unsupported, "Subpasses support only mono framebuffers");
   }
 
-  const std::vector<size_t> colorIndices = framebuffer.getColorAttachmentIndices();
   const size_t numColorAttachments = colorIndices.size();
   if (numColorAttachments == 0) {
     return Result(Result::Code::ArgumentInvalid, "Subpasses require at least one color attachment");
@@ -107,10 +193,12 @@ Result validateSubpasses(const RenderPassDesc& renderPass,
 } // namespace
 
 Result RenderPassDesc::validate(const IFramebuffer& framebuffer) const noexcept {
-  if (subpasses.empty()) {
-    return Result();
+  const std::vector<size_t> colorIndices = framebuffer.getColorAttachmentIndices();
+  Result result = validateMemoryless(*this, framebuffer, colorIndices);
+  if (!result.isOk() || subpasses.empty()) {
+    return result;
   }
-  return validateSubpasses(*this, framebuffer);
+  return validateSubpasses(*this, framebuffer, colorIndices);
 }
 
 } // namespace igl

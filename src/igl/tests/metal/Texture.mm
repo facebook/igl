@@ -12,6 +12,7 @@
 #import <CoreVideo/CVPixelBuffer.h>
 #include <algorithm>
 #include <utility>
+#include <igl/metal/Buffer.h>
 #include <igl/metal/CommandBuffer.h>
 #include <igl/metal/PlatformDevice.h>
 #include <igl/metal/Texture.h>
@@ -596,6 +597,52 @@ TEST_F(TextureMTLTest, ToTextureUsage) {
                                           MTLTextureUsageRenderTarget),
       TextureDesc::TextureUsageBits::Sampled | TextureDesc::TextureUsageBits::Storage |
           TextureDesc::TextureUsageBits::Attachment);
+}
+
+// Test memoryless attachment texture storage mode
+TEST_F(TextureMTLTest, MemorylessTextureStorageMode) {
+  Result ret;
+
+  // Create a memoryless attachment texture
+  TextureDesc memorylessDesc = TextureDesc::new2D(
+      TextureFormat::RGBA_UNorm8, 4, 4, TextureDesc::TextureUsageBits::Attachment);
+  memorylessDesc.storage = ResourceStorage::Memoryless;
+
+  auto memorylessTexture = device_->createTexture(memorylessDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(memorylessTexture, nullptr);
+
+  auto* mtlMemorylessTexture = static_cast<metal::Texture*>(memorylessTexture.get());
+  ASSERT_NE(mtlMemorylessTexture, nullptr);
+
+  // Check the storage mode
+  if (device_->hasFeature(DeviceFeatures::MemorylessAttachments)) {
+    EXPECT_EQ(mtlMemorylessTexture->get().storageMode, MTLStorageModeMemoryless);
+  } else {
+    EXPECT_EQ(mtlMemorylessTexture->get().storageMode, MTLStorageModePrivate);
+  }
+}
+
+// Test memoryless buffer storage mode
+TEST_F(TextureMTLTest, MemorylessBufferStorageMode) {
+  Result ret;
+
+  const auto memorylessBuffer =
+      device_->createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Uniform,
+                                       .length = 256,
+                                       .storage = ResourceStorage::Memoryless},
+                            &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(memorylessBuffer, nullptr);
+
+  auto* mtlBuffer = static_cast<metal::Buffer*>(memorylessBuffer.get());
+
+  // Check the storage mode
+#if IGL_PLATFORM_MACOSX
+  EXPECT_EQ(mtlBuffer->get().storageMode, MTLStorageModeManaged);
+#else
+  EXPECT_EQ(mtlBuffer->get().storageMode, MTLStorageModeShared);
+#endif
 }
 
 } // namespace igl::tests
