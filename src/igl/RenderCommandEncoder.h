@@ -89,6 +89,15 @@ class IRenderCommandEncoder : public ICommandEncoder {
                              uint32_t numDynamicOffsets = 0,
                              const uint32_t* dynamicOffsets = nullptr) = 0;
 
+  /**
+   * @brief Advances to the next subpass declared in RenderPassDesc::subpasses. Call it exactly
+   * subpasses.size() - 1 times before endEncoding(). Requires DeviceFeatures::Subpasses. Bound
+   * state (pipeline, resources, viewport, scissor) persists across the call.
+   */
+  virtual void nextSubpass() {
+    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+  }
+
   virtual void draw(size_t vertexCount,
                     uint32_t instanceCount = 1,
                     uint32_t firstVertex = 0,

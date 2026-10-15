@@ -28,12 +28,14 @@ namespace igl::metal {
 
 Texture::Texture(id<MTLTexture> texture,
                  const ICapabilities& capabilities,
-                 TextureDesc::TextureMipmapGeneration mipmapGeneration) :
+                 TextureDesc::TextureMipmapGeneration mipmapGeneration,
+                 TextureDesc::TextureUsage usage) :
   ITexture(mtlPixelFormatToTextureFormat([texture pixelFormat])),
   value_(texture),
   drawable_(nullptr),
   capabilities_(capabilities),
-  mipmapGeneration_(mipmapGeneration) {}
+  mipmapGeneration_(mipmapGeneration),
+  usage_(usage) {}
 
 Texture::Texture(id<CAMetalDrawable> drawable,
                  const ICapabilities& capabilities,
@@ -226,7 +228,7 @@ TextureType Texture::getType() const {
 }
 
 TextureDesc::TextureUsage Texture::getUsage() const {
-  return toTextureUsage([get() usage]);
+  return usage_ != 0 ? usage_ : toTextureUsage([get() usage]);
 }
 
 uint32_t Texture::getSamples() const {

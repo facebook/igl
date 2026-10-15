@@ -14,6 +14,7 @@
 #include <vector>
 #include <igl/ComputeCommandEncoder.h>
 #include <igl/RenderCommandEncoder.h>
+#include <igl/RenderPass.h>
 #include <igl/webgpu/Buffer.h>
 #include <igl/webgpu/ComputeCommandEncoder.h>
 #include <igl/webgpu/Device.h>
@@ -61,6 +62,10 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
   if (submitted_) {
     Result::setResult(
         outResult, Result::Code::InvalidOperation, "The command buffer was already submitted");
+    return nullptr;
+  }
+  if (!renderPass.subpasses.empty()) {
+    Result::setResult(outResult, Result::Code::Unsupported, "Subpasses are not supported");
     return nullptr;
   }
   return RenderCommandEncoder::create(shared_from_this(), renderPass, framebuffer, outResult);

@@ -60,6 +60,8 @@ TEST(RenderPassDescTest, DefaultConstruction) {
 
   EXPECT_EQ(desc.timestampQuery.queries, nullptr);
   EXPECT_EQ(desc.timestampQuery.slotIndex, 0u);
+
+  EXPECT_TRUE(desc.subpasses.empty());
 }
 
 TEST(TimestampQueryDescTest, DefaultConstruction) {
@@ -197,6 +199,37 @@ TEST(TimestampQueryDescTest, CustomSlotIndex) {
   tqd.slotIndex = 42;
   EXPECT_EQ(tqd.slotIndex, 42u);
   EXPECT_EQ(tqd.queries, nullptr);
+}
+
+// ---------------------------------------------------------------------------
+// SubpassDesc
+// ---------------------------------------------------------------------------
+
+TEST(SubpassDescTest, DefaultConstruction) {
+  const RenderPassDesc::SubpassDesc desc;
+  EXPECT_EQ(desc.colorAttachmentMask, 0u);
+  EXPECT_EQ(desc.inputAttachmentMask, 0u);
+}
+
+TEST(SubpassDescTest, EqualityWithEqualValues) {
+  const RenderPassDesc::SubpassDesc a{.colorAttachmentMask = 0x03, .inputAttachmentMask = 0x0C};
+  const RenderPassDesc::SubpassDesc b{.colorAttachmentMask = 0x03, .inputAttachmentMask = 0x0C};
+  EXPECT_TRUE(a == b);
+  EXPECT_FALSE(a != b);
+}
+
+TEST(SubpassDescTest, InequalityColorAttachmentMask) {
+  const RenderPassDesc::SubpassDesc a{.colorAttachmentMask = 0x03, .inputAttachmentMask = 0x0C};
+  const RenderPassDesc::SubpassDesc b{.colorAttachmentMask = 0x01, .inputAttachmentMask = 0x0C};
+  EXPECT_TRUE(a != b);
+  EXPECT_FALSE(a == b);
+}
+
+TEST(SubpassDescTest, InequalityInputAttachmentMask) {
+  const RenderPassDesc::SubpassDesc a{.colorAttachmentMask = 0x03, .inputAttachmentMask = 0x0C};
+  const RenderPassDesc::SubpassDesc b{.colorAttachmentMask = 0x03, .inputAttachmentMask = 0x04};
+  EXPECT_TRUE(a != b);
+  EXPECT_FALSE(a == b);
 }
 
 } // namespace igl::tests

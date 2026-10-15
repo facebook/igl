@@ -8,6 +8,7 @@
 #include <igl/opengl/CommandBuffer.h>
 
 #include <igl/Macros.h>
+#include <igl/RenderPass.h>
 #include <igl/opengl/Buffer.h>
 #include <igl/opengl/ComputeCommandEncoder.h>
 #include <igl/opengl/IContext.h>
@@ -26,6 +27,10 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
     const Dependencies& dependencies,
     Result* outResult) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  if (!renderPass.subpasses.empty()) {
+    Result::setResult(outResult, Result::Code::Unsupported, "Subpasses are not supported");
+    return nullptr;
+  }
   return RenderCommandEncoder::create(
       shared_from_this(), renderPass, framebuffer, dependencies, outResult);
 }

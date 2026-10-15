@@ -54,6 +54,7 @@ TEST(TextureUsageBitsTest, BitValues) {
   EXPECT_EQ(TextureDesc::TextureUsageBits::Sampled, 1u);
   EXPECT_EQ(TextureDesc::TextureUsageBits::Storage, 2u);
   EXPECT_EQ(TextureDesc::TextureUsageBits::Attachment, 4u);
+  EXPECT_EQ(TextureDesc::TextureUsageBits::InputAttachment, 8u);
 }
 
 TEST(TextureUsageBitsTest, BitsAreCombineable) {

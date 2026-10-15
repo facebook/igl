@@ -14,6 +14,7 @@
 
 namespace igl {
 
+class IFramebuffer;
 class ITimestampQueries;
 
 /**
@@ -95,6 +96,48 @@ struct RenderPassDesc {
   };
   /// Optional per-render-pass GPU timing. Null queries pointer means disabled.
   TimestampQueryDesc timestampQuery;
+
+  /**
+   * @brief Describes one subpass of a render pass.
+   *
+   * On tiled GPUs, data written by a subpass stays in tile memory and later subpasses read it at
+   * the same pixel through input attachments. Bit i of each mask refers to colorAttachments[i].
+   * A fragment shader reads input attachment i as:
+   *  - Vulkan: layout(input_attachment_index = i, set = 2, binding = IGL_STORAGE_IMAGES_MAX + i)
+   *            uniform subpassInput
+   *  - Metal: a fragment input with the [[color(i)]] attribute
+   *  - OpenGL: layout(location = i) inout with GL_EXT_shader_framebuffer_fetch; the backend masks
+   *            writes outside colorAttachmentMask
+   */
+  struct SubpassDesc {
+    uint8_t colorAttachmentMask = 0; ///< Color attachments written by this subpass
+    uint8_t inputAttachmentMask = 0; ///< Color attachments read by this subpass
+    bool operator==(const SubpassDesc& other) const = default;
+    bool operator!=(const SubpassDesc& other) const = default;
+  };
+  // NOLINTNEXTLINE(readability-identifier-naming)
+  static_assert(IGL_COLOR_ATTACHMENTS_MAX <= 8, "SubpassDesc masks are 8 bits wide");
+
+  /**
+   * @brief The subpasses of this render pass; IRenderCommandEncoder::nextSubpass() advances
+   * between them. Empty means a single subpass that writes every color attachment. Otherwise
+   * requires DeviceFeatures::Subpasses and:
+   *  - 2 to IGL_SUBPASSES_MAX entries
+   *  - a Mono framebuffer with single-sampled attachments, no resolve attachments, and color
+   *    attachments contiguous from index 0
+   *  - every color attachment is written by some subpass
+   *  - every input attachment is written by an earlier subpass, is not written by the subpass that
+   *    reads it, and has TextureDesc::TextureUsageBits::InputAttachment
+   *  - pipelines used in a subpass declare every color attachment format
+   *  - shaders write only the attachments in colorAttachmentMask and read only those in
+   *    inputAttachmentMask
+   */
+  std::vector<SubpassDesc> subpasses;
+
+  /// Validates `subpasses` against the framebuffer. Does not check DeviceFeatures;
+  /// createRenderCommandEncoder() returns Result::Code::Unsupported when the device lacks
+  /// DeviceFeatures::Subpasses.
+  [[nodiscard]] Result validate(const IFramebuffer& framebuffer) const noexcept;
 };
 
 } // namespace igl

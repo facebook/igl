@@ -61,6 +61,10 @@ constexpr uint32_t IGL_UNIFORM_BLOCKS_BINDING_MAX = 16;
 // https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
 constexpr uint32_t IGL_COLOR_ATTACHMENTS_MAX = 4;
 
+// maximum number of subpasses in RenderPassDesc::subpasses
+// NOLINTNEXTLINE(readability-identifier-naming)
+constexpr uint32_t IGL_SUBPASSES_MAX = 4;
+
 // See https://www.khronos.org/registry/OpenGL-Refpages/es3.1/html/glDrawElementsIndirect.xhtml,
 // https://www.khronos.org/registry/vulkan/specs/1.3-extensions/man/html/VkDrawIndexedIndirectCommand.html,
 // or https://developer.apple.com/documentation/metal/mtldrawindexedprimitivesindirectarguments.

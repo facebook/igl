@@ -145,6 +145,7 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::ExplicitBindingExt:
   case DeviceFeatures::ExternalMemoryObjects:
   case DeviceFeatures::Indices8Bit:
+  case DeviceFeatures::MemorylessAttachments:
   case DeviceFeatures::MeshShaders:
   case DeviceFeatures::Multiview:
   case DeviceFeatures::MultiViewMultisample:
@@ -153,6 +154,7 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::SRGBSwapchain:
   case DeviceFeatures::SRGBWriteControl:
   case DeviceFeatures::StandardDerivativeExt:
+  case DeviceFeatures::Subpasses:
   case DeviceFeatures::TextureArrayExt:
   case DeviceFeatures::TextureBindless:
   case DeviceFeatures::TextureExternalImage:

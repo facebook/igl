@@ -23,7 +23,7 @@ TextureType TextureTarget::getType() const {
 }
 
 TextureDesc::TextureUsage TextureTarget::getUsage() const {
-  return TextureDesc::TextureUsageBits::Attachment;
+  return usage_;
 }
 
 bool TextureTarget::canPresent() const noexcept {
@@ -36,6 +36,7 @@ Result TextureTarget::create(const TextureDesc& desc, bool hasStorageAlready) {
   Result result = Super::create(desc, hasStorageAlready);
   if (result.isOk()) {
     if (desc.usage & TextureDesc::TextureUsageBits::Attachment) {
+      usage_ = desc.usage;
       result = createRenderBuffer(desc, hasStorageAlready);
     } else {
       result = Result(Result::Code::Unsupported, "invalid usage!");

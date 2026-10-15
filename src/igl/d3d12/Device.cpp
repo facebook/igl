@@ -3576,6 +3576,8 @@ bool Device::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::ValidationLayersEnabled:
   case DeviceFeatures::ExternalMemoryObjects:
   case DeviceFeatures::FillBuffer:
+  case DeviceFeatures::Subpasses:
+  case DeviceFeatures::MemorylessAttachments:
     return false;
   default:
     return false;

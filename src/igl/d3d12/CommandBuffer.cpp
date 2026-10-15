@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <cstring>
 #include <igl/Macros.h>
+#include <igl/RenderPass.h>
 #include <igl/d3d12/Buffer.h>
 #include <igl/d3d12/Common.h>
 #include <igl/d3d12/ComputeCommandEncoder.h>
@@ -528,6 +529,10 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
     const Dependencies& /*dependencies*/,
     Result* IGL_NULLABLE outResult) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  if (!renderPass.subpasses.empty()) {
+    Result::setResult(outResult, Result::Code::Unsupported, "Subpasses are not supported");
+    return nullptr;
+  }
   // Begin command buffer if not already begun
   Result beginResult = begin();
   if (!beginResult.isOk()) {

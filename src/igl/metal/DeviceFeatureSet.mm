@@ -272,6 +272,9 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
     return true;
   case DeviceFeatures::DynamicVertexBufferStride:
     return supportsDynamicVertexBufferStride_;
+  case DeviceFeatures::Subpasses:
+  case DeviceFeatures::MemorylessAttachments:
+    return false;
   default:
     IGL_DEBUG_ABORT("unhandled DeviceFeatures value");
     break;

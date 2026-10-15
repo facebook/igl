@@ -615,6 +615,8 @@ bool DeviceFeatureSet::isFeatureSupported(DeviceFeatures feature) const {
   case DeviceFeatures::ShaderLibrary:
   case DeviceFeatures::BindBytes:
   case DeviceFeatures::ValidationLayersEnabled:
+  case DeviceFeatures::Subpasses:
+  case DeviceFeatures::MemorylessAttachments:
     return false;
 
   case DeviceFeatures::BindUniform:

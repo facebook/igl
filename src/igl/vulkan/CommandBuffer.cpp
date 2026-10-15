@@ -8,6 +8,7 @@
 #include <igl/vulkan/CommandBuffer.h>
 
 #include <igl/Framebuffer.h>
+#include <igl/RenderPass.h>
 #include <igl/vulkan/Buffer.h>
 #include <igl/vulkan/ComputeCommandEncoder.h>
 #include <igl/vulkan/RenderCommandEncoder.h>
@@ -35,6 +36,10 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
     const Dependencies& dependencies,
     Result* outResult) {
   IGL_PROFILER_FUNCTION();
+  if (!renderPass.subpasses.empty()) {
+    Result::setResult(outResult, Result::Code::Unsupported, "Subpasses are not supported");
+    return nullptr;
+  }
   IGL_DEBUG_ASSERT(framebuffer);
 
   framebuffer_ = framebuffer;

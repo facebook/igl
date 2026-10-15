@@ -59,6 +59,7 @@ class TextureTarget final : public Texture {
   Result createRenderBuffer(const TextureDesc& desc, bool hasStorageAlready);
 
   GLuint renderBufferID_ = 0;
+  TextureDesc::TextureUsage usage_ = TextureDesc::TextureUsageBits::Attachment;
 #if IGL_PLATFORM_IOS
   bool canPresent_ = false;
 #else

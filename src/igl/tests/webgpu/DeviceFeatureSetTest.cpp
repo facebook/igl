@@ -84,6 +84,8 @@ TEST_F(WebGPUDeviceFeatureSetTest, Features) {
   EXPECT_TRUE(device_->hasFeature(DeviceFeatures::PushConstants));
   EXPECT_FALSE(device_->hasFeature(DeviceFeatures::ReadWriteFramebuffer));
   EXPECT_FALSE(device_->hasFeature(DeviceFeatures::TextureFormatRGB));
+  EXPECT_FALSE(device_->hasFeature(DeviceFeatures::Subpasses));
+  EXPECT_FALSE(device_->hasFeature(DeviceFeatures::MemorylessAttachments));
 
   EXPECT_FALSE(device_->hasRequirement(DeviceRequirement::ExplicitBindingExtReq));
   EXPECT_FALSE(device_->hasRequirement(DeviceRequirement::TextureFormatRGExtReq));

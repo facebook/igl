@@ -40,6 +40,7 @@ namespace igl {
  * ExplicitBindingExt,        Supports uniforms block explicit binding in shaders via an extension
  * ExternalMemoryObjects,     Supports accessing external memory objects, including by POSIX file descriptor
  * MapBufferRange             Supports mapping buffer data into client address space
+ * MemorylessAttachments      ResourceStorage::Memoryless attachments live only in tile memory (performance hint)
  * MeshShaders                Supports task/mesh shaders
  * MinMaxBlend                Supports Min and Max blend operations
  * MultipleRenderTargets      Supports MRT - Multiple Render Targets
@@ -58,6 +59,7 @@ namespace igl {
  * StandardDerivative         Supports Standard Derivative function in shader
  * StandardDerivativeExt      Supports Standard Derivative function in shader via an extension
  * StorageBuffers             Supports SSBO
+ * Subpasses                  Supports RenderPassDesc::subpasses with tile-local input attachment reads
  * Texture2DArray             Supports 2D array textures
  * Texture3D                  Supports 3D textures
  * TextureArrayExt            Supports array textures via an extension
@@ -135,6 +137,8 @@ enum class DeviceFeatures {
   UniformBlocks,
   ValidationLayersEnabled,
   FillBuffer,
+  Subpasses,
+  MemorylessAttachments,
 };
 // clang-format on
 

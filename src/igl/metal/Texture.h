@@ -27,10 +27,13 @@ class Texture final : public ITexture {
   friend class PlatformDevice;
 
  public:
+  /// `usage` is the TextureDesc::usage, or 0 for wrapped native textures, where getUsage() derives
+  /// it from the MTLTextureUsage.
   Texture(id<MTLTexture> texture,
           const ICapabilities& capabilities,
           TextureDesc::TextureMipmapGeneration mipmapGeneration =
-              TextureDesc::TextureMipmapGeneration::Manual);
+              TextureDesc::TextureMipmapGeneration::Manual,
+          TextureDesc::TextureUsage usage = 0);
   Texture(id<CAMetalDrawable> drawable,
           const ICapabilities& capabilities,
           TextureDesc::TextureMipmapGeneration mipmapGeneration =
@@ -101,6 +104,7 @@ class Texture final : public ITexture {
   const ICapabilities& capabilities_;
   TextureDesc::TextureMipmapGeneration mipmapGeneration_ =
       TextureDesc::TextureMipmapGeneration::Manual;
+  TextureDesc::TextureUsage usage_ = 0;
 
   /// @brief To record whether mipmaps are available and uploaded to the GPU. This is used by the
   /// `isRequiredGenerateMipmap()` function

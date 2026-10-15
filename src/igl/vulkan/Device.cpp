@@ -814,6 +814,9 @@ bool Device::hasFeatureInternal(DeviceFeatures feature) const {
   case DeviceFeatures::TimestampQueries:
     return deviceProperties.limits.timestampPeriod > 0.0f &&
            (deviceProperties.limits.timestampComputeAndGraphics == VK_TRUE);
+  case DeviceFeatures::Subpasses:
+  case DeviceFeatures::MemorylessAttachments:
+    return false;
   }
 
   IGL_DEBUG_ABORT("DeviceFeatures value not handled: %d", static_cast<int>(feature));

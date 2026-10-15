@@ -255,6 +255,8 @@ TEST(DeviceFeaturesEnumTest, EnumValues) {
   EXPECT_EQ(static_cast<int>(DeviceFeatures::UniformBlocks), 54);
   EXPECT_EQ(static_cast<int>(DeviceFeatures::ValidationLayersEnabled), 55);
   EXPECT_EQ(static_cast<int>(DeviceFeatures::FillBuffer), 56);
+  EXPECT_EQ(static_cast<int>(DeviceFeatures::Subpasses), 57);
+  EXPECT_EQ(static_cast<int>(DeviceFeatures::MemorylessAttachments), 58);
 }
 
 // ---------------------------------------------------------------------------

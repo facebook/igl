@@ -1116,4 +1116,19 @@ TEST(TextureDescTest, EqualityReflexive) {
   EXPECT_EQ(desc, desc);
 }
 
+TEST_F(TextureTest, GetUsagePreservesInputAttachmentBit) {
+  const TextureDesc desc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                              4,
+                                              4,
+                                              TextureDesc::TextureUsageBits::Attachment |
+                                                  TextureDesc::TextureUsageBits::InputAttachment);
+
+  Result ret;
+  const auto tex = iglDev_->createTexture(desc, &ret);
+  ASSERT_TRUE(ret.isOk());
+  ASSERT_NE(tex, nullptr);
+
+  EXPECT_EQ(tex->getUsage(), desc.usage);
+}
+
 } // namespace igl::tests

@@ -504,11 +504,14 @@ struct TextureDesc {
    *  Sampled - Can be used as read-only texture in vertex/fragment shaders
    *  Storage - Can be used as read/write storage texture in vertex/fragment/compute shaders
    *  Attachment - Can be bound for render target
+   *  InputAttachment - Can be read as an input attachment by a later subpass of the same render
+   *                    pass (requires Attachment)
    */
   enum TextureUsageBits : uint8_t {
     Sampled = 1 << 0,
     Storage = 1 << 1,
     Attachment = 1 << 2,
+    InputAttachment = 1 << 3, // NOLINT(readability-identifier-naming)
   };
 
   using TextureUsage = uint8_t;
@@ -861,6 +864,15 @@ class ITexture : public ITrackedResource<ITexture>, public base::IAttachmentInte
    * @return unsigned bitwise flag
    */
   [[nodiscard]] virtual TextureDesc::TextureUsage getUsage() const = 0;
+  /**
+   * @brief Returns the storage requested in TextureDesc::storage, not necessarily the storage the
+   * backend uses. Invalid for textures not created from a TextureDesc.
+   *
+   * @return ResourceStorage
+   */
+  [[nodiscard]] virtual ResourceStorage getStorage() const {
+    return ResourceStorage::Invalid;
+  }
   /**
    * @brief Returns number of samples
    *
