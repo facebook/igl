@@ -434,4 +434,105 @@ TEST_F(UpdateGlslangResourceTest, NullArgumentsAreNoop) {
   EXPECT_EQ(res.max_vertex_attribs, 7);
 }
 
+// ivkCreateDevice *******************************
+namespace {
+VkPhysicalDeviceFeatures gCapturedFeatures;
+bool gFeaturesCaptured = false;
+const void* gCapturedPNext = nullptr;
+
+VKAPI_ATTR VkResult VKAPI_CALL fakeCreateDevice(VkPhysicalDevice /*physicalDevice*/,
+                                                const VkDeviceCreateInfo* createInfo,
+                                                const VkAllocationCallbacks* /*allocator*/,
+                                                VkDevice* device) {
+  if (createInfo && createInfo->pEnabledFeatures) {
+    gCapturedFeatures = *createInfo->pEnabledFeatures;
+    gFeaturesCaptured = true;
+  } else {
+    gFeaturesCaptured = false;
+  }
+  gCapturedPNext = createInfo ? createInfo->pNext : nullptr;
+  *device = VK_NULL_HANDLE;
+  return VK_SUCCESS;
+}
+} // namespace
+
+class IvkCreateDeviceTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    gCapturedFeatures = {};
+    gFeaturesCaptured = false;
+    gCapturedPNext = nullptr;
+  }
+};
+
+TEST_F(IvkCreateDeviceTest, EnablesIndependentBlendWhenSupported) {
+  const VkDeviceQueueCreateInfo queueCreateInfo = {
+      .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+      .queueFamilyIndex = 0,
+      .queueCount = 1,
+      .pQueuePriorities = nullptr,
+  };
+
+  const VkPhysicalDeviceFeatures2 supported = {.sType =
+                                                   VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
+                                               .features = {.independentBlend = VK_TRUE}};
+
+  const VulkanFunctionTable vt = {.vkCreateDevice = &fakeCreateDevice};
+  VkDevice device = VK_NULL_HANDLE;
+
+  const VkResult result =
+      ivkCreateDevice(&vt, VK_NULL_HANDLE, 1, &queueCreateInfo, 0, nullptr, &supported, &device);
+
+  EXPECT_EQ(result, VK_SUCCESS);
+  EXPECT_TRUE(gFeaturesCaptured);
+  EXPECT_EQ(gCapturedFeatures.independentBlend, VK_TRUE);
+}
+
+TEST_F(IvkCreateDeviceTest, DoesNotEnableIndependentBlendWhenUnsupported) {
+  const VkDeviceQueueCreateInfo queueCreateInfo = {
+      .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+      .queueFamilyIndex = 0,
+      .queueCount = 1,
+      .pQueuePriorities = nullptr,
+  };
+
+  const VkPhysicalDeviceFeatures2 supported = {.sType =
+                                                   VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2,
+                                               .features = {.independentBlend = VK_FALSE}};
+
+  const VulkanFunctionTable vt = {.vkCreateDevice = &fakeCreateDevice};
+  VkDevice device = VK_NULL_HANDLE;
+
+  const VkResult result =
+      ivkCreateDevice(&vt, VK_NULL_HANDLE, 1, &queueCreateInfo, 0, nullptr, &supported, &device);
+
+  EXPECT_EQ(result, VK_SUCCESS);
+  EXPECT_TRUE(gFeaturesCaptured);
+  EXPECT_EQ(gCapturedFeatures.independentBlend, VK_FALSE);
+}
+
+TEST_F(IvkCreateDeviceTest, PassesTheFeatureChain) {
+  const VkDeviceQueueCreateInfo queueCreateInfo = {
+      .sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+      .queueFamilyIndex = 0,
+      .queueCount = 1,
+      .pQueuePriorities = nullptr,
+  };
+
+  VkPhysicalDeviceMultiviewFeatures multiviewFeatures = {
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MULTIVIEW_FEATURES};
+
+  const VkPhysicalDeviceFeatures2 supported = {
+      .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2, .pNext = &multiviewFeatures};
+
+  const VulkanFunctionTable vt = {.vkCreateDevice = &fakeCreateDevice};
+  VkDevice device = VK_NULL_HANDLE;
+
+  const VkResult result =
+      ivkCreateDevice(&vt, VK_NULL_HANDLE, 1, &queueCreateInfo, 0, nullptr, &supported, &device);
+
+  EXPECT_EQ(result, VK_SUCCESS);
+  EXPECT_EQ(gCapturedPNext, &multiviewFeatures);
+}
+
 } // namespace igl::tests

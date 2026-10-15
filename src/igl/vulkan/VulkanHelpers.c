@@ -253,6 +253,7 @@ VkResult ivkCreateDevice(const struct VulkanFunctionTable* vt,
                          VkDevice* outDevice) {
   assert(numQueueCreateInfos >= 1);
   const VkPhysicalDeviceFeatures deviceFeatures10 = {
+      .independentBlend = supported ? supported->features.independentBlend : VK_TRUE,
       .dualSrcBlend = supported ? supported->features.dualSrcBlend : VK_TRUE,
       .multiDrawIndirect = supported ? supported->features.multiDrawIndirect : VK_TRUE,
       .drawIndirectFirstInstance = supported ? supported->features.drawIndirectFirstInstance
