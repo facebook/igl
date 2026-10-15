@@ -38,6 +38,7 @@ struct SpirvId {
   bool isStorageImage = false;
   bool isInputAttachment = false;
   bool isMultisampled = false;
+  bool isBufferBlock = false;
   uint32_t imageFormat = SpvImageFormatUnknown;
 };
 
@@ -147,6 +148,10 @@ SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes) {
         if (IGL_DEBUG_VERIFY(hasOperand, "OpDecorate out of bounds")) {
           ids[targetId].inputAttachmentIndex = words[kOpDecorateOperandIds];
         }
+        break;
+      }
+      case SpvDecorationBufferBlock: {
+        ids[targetId].isBufferBlock = true;
         break;
       }
       default:
@@ -280,10 +285,14 @@ SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes) {
 
       // NOLINTNEXTLINE(clang-diagnostic-switch-enum)
       switch (SpvOp(opCode)) {
-      case SpvOpTypeStruct:
-        info.buffers.push_back(
-            {.bindingLocation = id.binding, .descriptorSet = id.dset, .isStorage = isStorage});
+      case SpvOpTypeStruct: {
+        // SPIR-V before 1.4 may declare a storage buffer as a Uniform struct decorated BufferBlock.
+        const bool isBufferBlock = ids[ids[id.typeId].typeId].isBufferBlock;
+        info.buffers.push_back({.bindingLocation = id.binding,
+                                .descriptorSet = id.dset,
+                                .isStorage = isStorage || isBufferBlock});
         break;
+      }
       case SpvOpTypeImage: {
         const SpirvId& image = ids[ids[id.typeId].typeId];
         if (image.isInputAttachment) {

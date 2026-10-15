@@ -982,4 +982,81 @@ const std::vector<uint32_t>& getTinyMeshFragmentShaderSpvWords() {
       0x00000039, 0x00010038};
   return kTinyMeshFragmentShader;
 }
+const std::vector<uint32_t>& getStorageBufferSpvWords() {
+  /**
+                 OpCapability Shader
+                 OpMemoryModel Logical GLSL450
+                 OpEntryPoint GLCompute %main "main"
+                 OpExecutionMode %main LocalSize 1 1 1
+                 OpDecorate %runtimeArray ArrayStride 4
+                 OpDecorate %Legacy BufferBlock
+                 OpMemberDecorate %Legacy 0 Offset 0
+                 OpDecorate %legacy DescriptorSet 1
+                 OpDecorate %legacy Binding 2
+                 OpDecorate %UBO Block
+                 OpMemberDecorate %UBO 0 Offset 0
+                 OpDecorate %ubo DescriptorSet 1
+                 OpDecorate %ubo Binding 3
+                 OpDecorate %SSBO Block
+                 OpMemberDecorate %SSBO 0 Offset 0
+                 OpDecorate %ssbo DescriptorSet 1
+                 OpDecorate %ssbo Binding 4
+         %void = OpTypeVoid
+         %func = OpTypeFunction %void
+         %uint = OpTypeInt 32 0
+       %uint_0 = OpConstant %uint 0
+  %runtimeArray = OpTypeRuntimeArray %uint
+       %Legacy = OpTypeStruct %runtimeArray
+  %ptr_Uniform_Legacy = OpTypePointer Uniform %Legacy
+       %legacy = OpVariable %ptr_Uniform_Legacy Uniform
+          %UBO = OpTypeStruct %uint
+  %ptr_Uniform_UBO = OpTypePointer Uniform %UBO
+          %ubo = OpVariable %ptr_Uniform_UBO Uniform
+         %SSBO = OpTypeStruct %runtimeArray
+  %ptr_StorageBuffer_SSBO = OpTypePointer StorageBuffer %SSBO
+         %ssbo = OpVariable %ptr_StorageBuffer_SSBO StorageBuffer
+  %ptr_Uniform_uint = OpTypePointer Uniform %uint
+  %ptr_StorageBuffer_uint = OpTypePointer StorageBuffer %uint
+         %main = OpFunction %void None %func
+        %entry = OpLabel
+        %value = OpAccessChain %ptr_Uniform_uint %ubo %uint_0
+       %loaded = OpLoad %uint %value
+     %legacyAt = OpAccessChain %ptr_Uniform_uint %legacy %uint_0 %uint_0
+                 OpStore %legacyAt %loaded
+       %ssboAt = OpAccessChain %ptr_StorageBuffer_uint %ssbo %uint_0 %uint_0
+                 OpStore %ssboAt %loaded
+                 OpReturn
+                 OpFunctionEnd
+  */
+
+  // NOLINTNEXTLINE(facebook-static-object-destructor-check)
+  static const std::vector<uint32_t> kStorageBufferSpvWords = {
+      0x07230203, 0x00010300, 0x00070000, 0x00000017, 0x00000000, 0x00020011, 0x00000001,
+      0x0003000e, 0x00000000, 0x00000001, 0x0005000f, 0x00000005, 0x00000001, 0x6e69616d,
+      0x00000000, 0x00060010, 0x00000001, 0x00000011, 0x00000001, 0x00000001, 0x00000001,
+      0x00040047, 0x00000002, 0x00000006, 0x00000004, 0x00030047, 0x00000003, 0x00000003,
+      0x00050048, 0x00000003, 0x00000000, 0x00000023, 0x00000000, 0x00040047, 0x00000004,
+      0x00000022, 0x00000001, 0x00040047, 0x00000004, 0x00000021, 0x00000002, 0x00030047,
+      0x00000005, 0x00000002, 0x00050048, 0x00000005, 0x00000000, 0x00000023, 0x00000000,
+      0x00040047, 0x00000006, 0x00000022, 0x00000001, 0x00040047, 0x00000006, 0x00000021,
+      0x00000003, 0x00030047, 0x00000007, 0x00000002, 0x00050048, 0x00000007, 0x00000000,
+      0x00000023, 0x00000000, 0x00040047, 0x00000008, 0x00000022, 0x00000001, 0x00040047,
+      0x00000008, 0x00000021, 0x00000004, 0x00020013, 0x00000009, 0x00030021, 0x0000000a,
+      0x00000009, 0x00040015, 0x0000000b, 0x00000020, 0x00000000, 0x0004002b, 0x0000000b,
+      0x0000000c, 0x00000000, 0x0003001d, 0x00000002, 0x0000000b, 0x0003001e, 0x00000003,
+      0x00000002, 0x00040020, 0x0000000d, 0x00000002, 0x00000003, 0x0004003b, 0x0000000d,
+      0x00000004, 0x00000002, 0x0003001e, 0x00000005, 0x0000000b, 0x00040020, 0x0000000e,
+      0x00000002, 0x00000005, 0x0004003b, 0x0000000e, 0x00000006, 0x00000002, 0x0003001e,
+      0x00000007, 0x00000002, 0x00040020, 0x0000000f, 0x0000000c, 0x00000007, 0x0004003b,
+      0x0000000f, 0x00000008, 0x0000000c, 0x00040020, 0x00000010, 0x00000002, 0x0000000b,
+      0x00040020, 0x00000011, 0x0000000c, 0x0000000b, 0x00050036, 0x00000009, 0x00000001,
+      0x00000000, 0x0000000a, 0x000200f8, 0x00000012, 0x00050041, 0x00000010, 0x00000013,
+      0x00000006, 0x0000000c, 0x0004003d, 0x0000000b, 0x00000014, 0x00000013, 0x00060041,
+      0x00000010, 0x00000015, 0x00000004, 0x0000000c, 0x0000000c, 0x0003003e, 0x00000015,
+      0x00000014, 0x00060041, 0x00000011, 0x00000016, 0x00000008, 0x0000000c, 0x0000000c,
+      0x0003003e, 0x00000016, 0x00000014, 0x000100fd, 0x00010038,
+  };
+  return kStorageBufferSpvWords;
+}
+
 } // namespace igl::tests

@@ -19,5 +19,6 @@ const std::vector<uint32_t>& getUniformBufferSpvWords();
 const std::vector<uint32_t>& getTextureSpvWords();
 const std::vector<uint32_t>& getTextureWithDescriptorSetSpvWords();
 const std::vector<uint32_t>& getTinyMeshFragmentShaderSpvWords();
+const std::vector<uint32_t>& getStorageBufferSpvWords();
 
 } // namespace igl::tests

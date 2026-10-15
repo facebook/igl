@@ -31,6 +31,25 @@ TEST(SpvReflectionTest, UniformBufferTest) {
   EXPECT_EQ(spvModuleInfo.buffers[1].isStorage, false);
 }
 
+TEST(SpvReflectionTest, StorageBufferTest) {
+  using namespace vulkan::util;
+
+  const auto& spvWords = getStorageBufferSpvWords();
+  const SpvModuleInfo spvModuleInfo =
+      getReflectionData(spvWords.data(), spvWords.size() * sizeof(uint32_t));
+
+  // A Uniform struct decorated BufferBlock, a Uniform struct decorated Block, and a StorageBuffer
+  // struct.
+  ASSERT_EQ(spvModuleInfo.buffers.size(), 3);
+  EXPECT_EQ(spvModuleInfo.buffers[0].bindingLocation, 2);
+  EXPECT_EQ(spvModuleInfo.buffers[0].descriptorSet, 1);
+  EXPECT_TRUE(spvModuleInfo.buffers[0].isStorage);
+  EXPECT_EQ(spvModuleInfo.buffers[1].bindingLocation, 3);
+  EXPECT_FALSE(spvModuleInfo.buffers[1].isStorage);
+  EXPECT_EQ(spvModuleInfo.buffers[2].bindingLocation, 4);
+  EXPECT_TRUE(spvModuleInfo.buffers[2].isStorage);
+}
+
 TEST(SpvReflectionTest, TextureTest) {
   using namespace vulkan::util;
 
