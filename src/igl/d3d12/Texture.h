@@ -73,6 +73,9 @@ class Texture final : public ITexture {
                     uint32_t mipLevel = 0,
                     uint32_t layer = 0);
   void transitionAll(ID3D12GraphicsCommandList* commandList, D3D12_RESOURCE_STATES newState);
+  // Whether every subresource is in a state that includes all of `bits`, so that reading it with
+  // those bits needs no barrier. Resources without a D3D12 resource count as readable.
+  [[nodiscard]] bool hasReadState(D3D12_RESOURCE_STATES bits) const;
   D3D12_RESOURCE_STATES getSubresourceState(uint32_t mipLevel = 0, uint32_t layer = 0) const;
 
   // Texture view support

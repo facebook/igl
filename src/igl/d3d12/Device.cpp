@@ -35,6 +35,7 @@
 #include <igl/d3d12/DepthStencilState.h>
 #include <igl/d3d12/Framebuffer.h>
 #include <igl/d3d12/PlatformDevice.h>
+#include <igl/d3d12/RenderPassMapping.h>
 #include <igl/d3d12/RenderPipelineState.h>
 #include <igl/d3d12/SamplerState.h>
 #include <igl/d3d12/ShaderModule.h>
@@ -523,6 +524,24 @@ Device::Device(std::unique_ptr<D3D12Context> ctx) : ctx_(std::move(ctx)) {
 
   // Validate device limits against actual device capabilities.
   capabilities_.initialize(*ctx_);
+
+  // Decide once per device whether encoders record render passes with the render pass API.
+  const RenderPassMode renderPassMode = ctx_->getConfig().renderPassMode;
+  renderPassApiEnabled_ = shouldUseRenderPassApi(renderPassMode,
+                                                 capabilities_.getRenderPassesTier(),
+                                                 capabilities_.isTileBasedRenderer(),
+                                                 capabilities_.isRenderPassesValidKnown(),
+                                                 capabilities_.areRenderPassesValid());
+  IGL_LOG_INFO(
+      "D3D12 render pass caps: RenderPassesTier=%d, TileBasedRenderer=%d, RenderPassesValid=%s; "
+      "mode=%s -> render pass API %s\n",
+      static_cast<int>(capabilities_.getRenderPassesTier()),
+      static_cast<int>(capabilities_.isTileBasedRenderer()),
+      capabilities_.isRenderPassesValidKnown()
+          ? (capabilities_.areRenderPassesValid() ? "yes" : "no")
+          : "unknown",
+      renderPassModeName(renderPassMode),
+      renderPassApiEnabled_ ? "enabled" : "disabled");
 
   // Initialize upload infrastructure (allocator pool and upload helpers).
   allocatorPool_.initialize(*ctx_, this);
@@ -1375,8 +1394,13 @@ std::shared_ptr<ITexture> Device::createTexture(const TextureDesc& desc,
   heapProps.CreationNodeMask = 1;
   heapProps.VisibleNodeMask = 1;
 
-  // Determine initial state
-  D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_COMMON;
+  // Determine initial state. With the render pass API, a texture that shaders sample starts
+  // readable: binding it inside a render pass cannot record the barrier that leaves COMMON, so one
+  // that was never rendered to, uploaded or generated would end the pass.
+  const bool startsReadable = renderPassApiEnabled_ && sampledUsage &&
+                              desc.storage != ResourceStorage::Memoryless;
+  const D3D12_RESOURCE_STATES initialState =
+      startsReadable ? D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE : D3D12_RESOURCE_STATE_COMMON;
 
   // Prepare optimized clear value for depth/stencil only.
   // For color render targets we deliberately avoid passing an optimized clear

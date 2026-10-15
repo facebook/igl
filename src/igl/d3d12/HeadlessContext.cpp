@@ -36,6 +36,7 @@ Result HeadlessD3D12Context::initializeHeadless(uint32_t width,
   // Store and validate configuration.
   config_ = config;
   config_.validate();
+  config_.renderPassMode = getRenderPassModeFromEnv(config_.renderPassMode);
 
   // Headless mode: No swapchain, so use kMaxFramesInFlight as buffer count (T43)
   swapchainBufferCount_ = kMaxFramesInFlight;

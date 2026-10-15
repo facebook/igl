@@ -880,6 +880,12 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
         list.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, mip + 1, 0);
   }
 
+  // A bind inside a render pass cannot record a barrier, so with the render pass API every
+  // subresource ends up readable, including the array slices that the loop above did not touch.
+  if (iglDevice_->isRenderPassApiEnabled()) {
+    const_cast<Texture*>(this)->transitionAll(list.Get(), D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
+  }
+
   list->Close();
   ID3D12CommandList* lists[] = {list.Get()};
   queue_->ExecuteCommandLists(1, lists);
@@ -1108,6 +1114,13 @@ void Texture::generateMipmap(ICommandBuffer& /*cmdBuffer*/,
     const_cast<Texture*>(this)->transitionTo(
         list.Get(), D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, mip + 1, 0);
   }
+
+  // A bind inside a render pass cannot record a barrier, so with the render pass API every
+  // subresource ends up readable, including the array slices that the loop above did not touch.
+  if (iglDevice_->isRenderPassApiEnabled()) {
+    const_cast<Texture*>(this)->transitionAll(list.Get(), D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
+  }
+
   list->Close();
   ID3D12CommandList* lists[] = {list.Get()};
   queue_->ExecuteCommandLists(1, lists);
@@ -1357,6 +1370,17 @@ void Texture::transitionAll(ID3D12GraphicsCommandList* commandList,
 
     state = newState;
   }
+}
+
+bool Texture::hasReadState(D3D12_RESOURCE_STATES bits) const {
+  const Texture* owner = getStateOwner();
+  if (!owner || !owner->resource_.Get() || owner->subresourceStates_.empty()) {
+    return true;
+  }
+
+  return std::all_of(owner->subresourceStates_.begin(),
+                     owner->subresourceStates_.end(),
+                     [bits](D3D12_RESOURCE_STATES state) { return (state & bits) == bits; });
 }
 
 D3D12_RESOURCE_STATES Texture::getSubresourceState(uint32_t mipLevel, uint32_t layer) const {

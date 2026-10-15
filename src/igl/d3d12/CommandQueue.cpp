@@ -139,6 +139,10 @@ SubmitHandle CommandQueue::submit(const ICommandBuffer& commandBuffer, bool /*en
   // Defensive: Ensure we have a valid command list
   IGL_DEBUG_ASSERT(commandList, "D3D12 CommandQueue::submit() with null command list");
 
+  // The timer's ResolveQueryData() is illegal inside a render pass, so an encoder that was not
+  // ended must not leave its pass open.
+  cmdBuffer.closeOpenRenderPass();
+
   // Record timer end timestamp before closing command list
   if (commandBuffer.desc.timer) {
     auto* timer = static_cast<Timer*>(commandBuffer.desc.timer.get());

@@ -28,6 +28,22 @@
 
 namespace igl::d3d12 {
 
+// Selects how render command encoders record render passes.
+// Auto uses the render pass API (BeginRenderPass()/EndRenderPass()) on tile-based renderers that
+// report a render pass tier and RenderPassesValid, and keeps OMSetRenderTargets() everywhere else.
+// The environment variable IGL_D3D12_RENDER_PASS=auto|on|off overrides the configured value.
+// A render pass cannot record barriers, so with the render pass API sampled textures start readable
+// and the encoders leave the textures they write readable: sampled attachments, resolve targets and
+// compute outputs, and generateMipmap() does so for every subresource. A texture that something
+// else wrote must be declared in `Dependencies` or bound before the first draw; if a bind still
+// needs a barrier inside a pass, the pass ends early. Depth and stencil default to
+// StoreAction::DontCare, so that loses them unless the RenderPassDesc stores them.
+enum class RenderPassMode : uint8_t {
+  Auto,
+  ForceOn,
+  ForceOff,
+};
+
 // Configuration structure for D3D12 backend.
 // Centralizes all size-related configuration with documented rationale.
 struct D3D12ContextConfig {
@@ -83,6 +99,11 @@ struct D3D12ContextConfig {
   // Larger values (256MB) reduce failures but waste memory on simple scenes
   // Microsoft MiniEngine uses similar sizes (64-256MB range)
   uint64_t uploadRingBufferSize = 128 * 1024 * 1024; // 128 MB
+
+  // === Render Passes ===
+  // Rationale: tile-based renderers keep render targets in on-chip memory and need the load/store
+  // actions of the render pass API to skip memory traffic; immediate-mode GPUs gain nothing.
+  RenderPassMode renderPassMode = RenderPassMode::Auto;
 
   // === Validation Helpers ===
   // Clamp values to D3D12 spec limits and provide warnings for unusual configurations
@@ -315,6 +336,13 @@ void SafeRelease(T*& ptr) {
     ptr = nullptr;
   }
 }
+
+// Parses "auto", "on" or "off" (case-insensitive). Anything else, including nullptr, yields
+// `fallback`.
+RenderPassMode parseRenderPassMode(const char* IGL_NULLABLE value, RenderPassMode fallback);
+
+// Applies the IGL_D3D12_RENDER_PASS environment variable on top of the configured mode.
+RenderPassMode getRenderPassModeFromEnv(RenderPassMode configured);
 
 // Texture format conversion
 DXGI_FORMAT textureFormatToDXGIFormat(TextureFormat format);

@@ -15,6 +15,7 @@
 namespace igl::d3d12 {
 
 class Device;
+class RenderCommandEncoder;
 
 class CommandBuffer final : public ICommandBuffer {
  public:
@@ -57,6 +58,28 @@ class CommandBuffer final : public ICommandBuffer {
   ID3D12GraphicsCommandList* getCommandList() const {
     return commandList_.Get();
   }
+
+  // Render pass API. Command buffers only support it when Device::isRenderPassApiEnabled() and the
+  // command list implements ID3D12GraphicsCommandList4; encoders fall back to OMSetRenderTargets()
+  // otherwise.
+  [[nodiscard]] bool supportsRenderPasses() const {
+    return commandList4_.Get() != nullptr;
+  }
+  [[nodiscard]] bool isRenderPassOpen() const {
+    return renderPassOpen_;
+  }
+  // Whether `encoder` began the render pass that is open.
+  [[nodiscard]] bool isRenderPassOwnedBy(const RenderCommandEncoder& encoder) const;
+  // `owner` is the encoder that records the pass.
+  void beginRenderPass(UINT numRenderTargets,
+                       const D3D12_RENDER_PASS_RENDER_TARGET_DESC* IGL_NULLABLE renderTargets,
+                       const D3D12_RENDER_PASS_DEPTH_STENCIL_DESC* IGL_NULLABLE depthStencil,
+                       const RenderCommandEncoder& owner);
+  void endRenderPass();
+  // Ends a render pass whose encoder was not ended before other work is recorded, because barriers,
+  // timer queries and the command list close are illegal inside a pass. Asserts in debug builds.
+  void closeOpenRenderPass();
+
   D3D12Context& getContext();
   const D3D12Context& getContext() const;
   Device& getDevice() {
@@ -135,9 +158,15 @@ class CommandBuffer final : public ICommandBuffer {
  private:
   Device& device_;
   igl::d3d12::ComPtr<ID3D12GraphicsCommandList> commandList_;
+  // The same object as commandList_; null unless the render pass API is in use.
+  igl::d3d12::ComPtr<ID3D12GraphicsCommandList4> commandList4_;
   // NOTE: Command allocators are now managed per-frame in FrameContext, not per-CommandBuffer
   size_t currentDrawCount_ = 0;
   bool recording_ = false;
+  // The command list must not be closed while a render pass is open.
+  bool renderPassOpen_ = false;
+  // The encoder that began the open render pass; null while no pass is open.
+  const RenderCommandEncoder* renderPassOwner_ = nullptr;
 
   // Scheduling fence infrastructure (separate from completion fence)
   // Used to track when command buffer is submitted to GPU queue (not when GPU completes)

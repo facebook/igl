@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <vector>
 #include <igl/RenderCommandEncoder.h>
@@ -18,9 +19,36 @@
 namespace igl::d3d12 {
 
 class CommandBuffer;
+class Texture;
 
 /**
  * @brief D3D12 implementation of render command encoder
+ *
+ * RENDER PASS API:
+ * ================
+ * With Device::isRenderPassApiEnabled() and ID3D12GraphicsCommandList4, begin() only describes the
+ * render pass and the encoder records BeginRenderPass()/EndRenderPass(), so LoadAction and
+ * StoreAction reach the driver. Otherwise it clears and binds the render targets itself.
+ * - BeginRenderPass() waits for the first draw. A pass without draws begins in endEncoding() only
+ *   if it has a clear or a resolve to record. Resource barriers are illegal inside a pass, so the
+ *   barriers of bindTexture() have to precede it.
+ * - Because of that, sampled textures start readable (Device::createTexture()) and producers leave
+ *   them readable. endEncoding() moves sampled color attachments and resolve targets to
+ *   ALL_SHADER_RESOURCE and a sampled depth attachment to DEPTH_READ | ALL_SHADER_RESOURCE, the
+ *   compute encoder does the same for the textures it writes, and generateMipmap() leaves every
+ *   subresource readable. A resolve into the swapchain back buffer ends in PRESENT instead. Binding
+ *   a readable texture records nothing. Textures written some other way, such as outside IGL, must
+ *   be declared in `Dependencies` or be bound before the first draw.
+ * - A texture bound after the first draw that still needs a barrier is a fallback: it asserts in
+ *   debug builds, ends the pass early, and the next draw continues it. Depth and stencil default to
+ *   StoreAction::DontCare, so that split loses them, and attachments with MsaaResolve lose their
+ *   multisampled contents, unless the RenderPassDesc stores them.
+ * - Store preserves an attachment, DontCare discards it, and MsaaResolve resolves into the resolve
+ *   texture without storing the multisampled contents. Depth resolves after the pass.
+ * - Memoryless attachments are not transitioned for sampling when the pass ends.
+ * - An encoder has to be ended, or destroyed, before its command buffer is destroyed. The command
+ *   buffer remembers the encoder that began the open pass, and only that encoder ends it when it is
+ *   destroyed without endEncoding().
  *
  * IMPORTANT BINDING PRECEDENCE NOTES:
  * ====================================
@@ -45,13 +73,14 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
  public:
   RenderCommandEncoder(CommandBuffer& commandBuffer,
                        const std::shared_ptr<IFramebuffer>& framebuffer);
-  ~RenderCommandEncoder() override = default;
+  ~RenderCommandEncoder() override;
 
   // Initialize encoder and setup render targets
   // IMPORTANT: Must be called exactly once after construction by
   // CommandBuffer::createRenderCommandEncoder. Calling multiple times will result in resource leaks
   // and undefined behavior. Debug builds will assert if called more than once.
-  void begin(const RenderPassDesc& renderPass);
+  // `dependencies` only matters with the render pass API; see the class comment.
+  void begin(const RenderPassDesc& renderPass, const Dependencies& dependencies);
 
   void endEncoding() override;
 
@@ -213,6 +242,67 @@ class RenderCommandEncoder final : public IRenderCommandEncoder {
 
   // Cached render pipeline state for dynamic PSO variant selection
   const RenderPipelineState* currentRenderPipelineState_ = nullptr;
+
+  // Describes color attachment `index` for BeginRenderPass(). `arraySlice` is the slice of the
+  // render target view, with the cube face and layer included; a resolve writes the same slice of
+  // the resolve texture.
+  void addRenderPassColorTarget(size_t index,
+                                const RenderPassDesc::AttachmentDesc* IGL_NULLABLE attachmentDesc,
+                                Texture& texture,
+                                const D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc,
+                                D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle,
+                                uint32_t arraySlice);
+  // Begins the render pass unless it is already open; the first begin uses the accesses from the
+  // RenderPassDesc and every later one continues the contents.
+  void ensureRenderPassBegun();
+  // Ends the open render pass early when binding `texture` needs a resource barrier.
+  void splitRenderPassIfBarrierNeeded(ITexture* IGL_NULLABLE texture);
+  // Whether a pass without any draw still has an effect: clears and resolves do, everything else
+  // leaves the attachments as they were.
+  [[nodiscard]] bool hasRenderPassWorkWithoutDraws() const;
+  // After the pass, moves `texture` to `state` when it can be sampled. A bind inside a later pass
+  // cannot record that barrier.
+  void leaveReadable(Texture* IGL_NULLABLE texture, D3D12_RESOURCE_STATES state);
+  // After a resolve wrote `texture`: the swapchain back buffer moves to PRESENT, any other texture
+  // is left readable like leaveReadable() does.
+  void leaveResolveTarget(Texture* IGL_NULLABLE texture);
+  // Viewport, scissor, stencil reference and blend factor are cached and recorded again after
+  // every BeginRenderPass(). They are recorded right away unless the pass has yet to begin.
+  [[nodiscard]] bool recordsDynamicStateNow() const;
+  void applyViewport(const D3D12_VIEWPORT& viewport);
+  void applyScissor(const D3D12_RECT& scissor);
+
+  // Render pass API state; see the class comment. Only used when `useRenderPass_`.
+  bool useRenderPass_ = false;
+  // begin() produced a description that BeginRenderPass() can use.
+  bool renderPassPrepared_ = false;
+  uint32_t renderPassSegmentCount_ = 0;
+  UINT numRenderPassTargets_ = 0;
+  std::array<D3D12_RENDER_PASS_RENDER_TARGET_DESC, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT>
+      renderPassTargets_ = {};
+  // The resolve ending accesses point into this until the pass ends.
+  std::array<D3D12_RENDER_PASS_ENDING_ACCESS_RESOLVE_SUBRESOURCE_PARAMETERS,
+             D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT>
+      resolveSubresources_ = {};
+  D3D12_RENDER_PASS_DEPTH_STENCIL_DESC renderPassDepthStencil_ = {};
+  bool hasRenderPassDepthStencil_ = false;
+  // Per framebuffer color attachment: its resolve texture is written by the pass, or resolved with
+  // ResolveSubresource() after it for formats that cannot resolve in the pass.
+  std::array<bool, IGL_COLOR_ATTACHMENTS_MAX> colorResolvedInPass_ = {};
+  std::array<bool, IGL_COLOR_ATTACHMENTS_MAX> colorResolvedAfterPass_ = {};
+  bool depthResolvedAfterPass_ = false;
+
+  D3D12_VIEWPORT cachedViewport_ = {};
+  D3D12_RECT cachedScissor_ = {};
+  uint32_t cachedStencilReference_ = 0;
+  std::array<float, 4> cachedBlendFactor_ = {};
+  bool hasCachedViewport_ = false;
+  bool hasCachedScissor_ = false;
+  bool hasCachedStencilReference_ = false;
+  bool hasCachedBlendFactor_ = false;
+
+  // Keeps the DSV heap alive when there is no DescriptorHeapManager.
+  igl::d3d12::ComPtr<ID3D12DescriptorHeap> dsvFallbackHeap_;
 };
 
 } // namespace igl::d3d12

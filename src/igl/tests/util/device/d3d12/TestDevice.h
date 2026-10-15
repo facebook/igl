@@ -18,4 +18,9 @@ namespace igl::tests::util::device::d3d12 {
  */
 std::unique_ptr<igl::d3d12::Device> createTestDevice(bool enableDebugLayer = true);
 
+/**
+ * Same as above with a custom context configuration, e.g. to force the render pass API on or off.
+ */
+std::unique_ptr<igl::d3d12::Device> createTestDevice(const igl::d3d12::D3D12ContextConfig& config);
+
 } // namespace igl::tests::util::device::d3d12

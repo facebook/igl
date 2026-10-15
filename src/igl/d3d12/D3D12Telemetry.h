@@ -23,6 +23,16 @@ class D3D12Telemetry {
     shaderCompilationCount_.fetch_add(1, std::memory_order_relaxed);
   }
 
+  // Counts BeginRenderPass() calls, including the ones that resume a split pass.
+  void incrementRenderPassBeginCount() noexcept {
+    renderPassBeginCount_.fetch_add(1, std::memory_order_relaxed);
+  }
+
+  // Counts render passes that had to be ended early to record a resource barrier.
+  void incrementRenderPassSplitCount() noexcept {
+    renderPassSplitCount_.fetch_add(1, std::memory_order_relaxed);
+  }
+
   [[nodiscard]] size_t getDrawCount() const noexcept {
     return currentDrawCount_.load(std::memory_order_relaxed);
   }
@@ -31,9 +41,19 @@ class D3D12Telemetry {
     return shaderCompilationCount_.load(std::memory_order_relaxed);
   }
 
+  [[nodiscard]] size_t getRenderPassBeginCount() const noexcept {
+    return renderPassBeginCount_.load(std::memory_order_relaxed);
+  }
+
+  [[nodiscard]] size_t getRenderPassSplitCount() const noexcept {
+    return renderPassSplitCount_.load(std::memory_order_relaxed);
+  }
+
  private:
   std::atomic<size_t> currentDrawCount_{0};
   std::atomic<size_t> shaderCompilationCount_{0};
+  std::atomic<size_t> renderPassBeginCount_{0};
+  std::atomic<size_t> renderPassSplitCount_{0};
 };
 
 } // namespace igl::d3d12

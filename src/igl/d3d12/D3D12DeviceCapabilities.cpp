@@ -12,6 +12,17 @@
 
 namespace igl::d3d12 {
 
+namespace {
+// D3D12_FEATURE_D3D12_OPTIONS18 and its data struct are missing from older Windows SDKs, so this
+// is a copy under different names. Runtimes that do not know the feature fail the query.
+constexpr D3D12_FEATURE kFeatureD3D12Options18 = static_cast<D3D12_FEATURE>(47);
+struct D3D12FeatureDataOptions18 {
+  BOOL RenderPassesValid;
+};
+static_assert(sizeof(D3D12FeatureDataOptions18) == sizeof(BOOL),
+              "D3D12_FEATURE_DATA_D3D12_OPTIONS18 consists of a single BOOL");
+} // namespace
+
 void D3D12DeviceCapabilities::initialize(D3D12Context& ctx) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   validateDeviceLimits(ctx);
@@ -70,6 +81,23 @@ void D3D12DeviceCapabilities::validateDeviceLimits(D3D12Context& ctx) {
   } else {
     IGL_D3D12_LOG_VERBOSE("  D3D12_FEATURE_D3D12_OPTIONS1 query failed (not critical)\n");
   }
+
+  // Render pass capabilities. A failed OPTIONS5 or ARCHITECTURE query reads as "no render pass
+  // support"; a failed OPTIONS18 query, which older runtimes do not know, leaves RenderPassesValid
+  // unknown.
+  if (FAILED(device->CheckFeatureSupport(
+          D3D12_FEATURE_D3D12_OPTIONS5, &deviceOptions5_, sizeof(deviceOptions5_)))) {
+    deviceOptions5_ = {};
+  }
+  architecture_.NodeIndex = 0;
+  if (FAILED(device->CheckFeatureSupport(
+          D3D12_FEATURE_ARCHITECTURE, &architecture_, sizeof(architecture_)))) {
+    architecture_ = {};
+  }
+  D3D12FeatureDataOptions18 options18 = {};
+  renderPassesValidKnown_ =
+      SUCCEEDED(device->CheckFeatureSupport(kFeatureD3D12Options18, &options18, sizeof(options18)));
+  renderPassesValid_ = renderPassesValidKnown_ && options18.RenderPassesValid != FALSE;
 
   // The rest of the original validation logic lives in Device::getFeatureLimits()
   // and related capability queries, so no additional checks are needed here.

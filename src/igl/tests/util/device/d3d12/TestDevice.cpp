@@ -21,10 +21,14 @@ std::unique_ptr<igl::d3d12::Device> createTestDevice(bool enableDebugLayer) {
   IGL_LOG_INFO("[Tests] D3D12 test device requested (debug layer: %s)\n",
                enableDebugLayer ? "enabled" : "disabled");
 
+  return createTestDevice(igl::d3d12::D3D12ContextConfig::defaultConfig());
+}
+
+std::unique_ptr<igl::d3d12::Device> createTestDevice(const igl::d3d12::D3D12ContextConfig& config) {
   // Enabling the debug layer happens inside D3D12Context::createDevice() when available.
   // Build a headless context (no swapchain) suitable for unit tests.
   auto ctx = std::make_unique<igl::d3d12::HeadlessD3D12Context>();
-  auto res = ctx->initializeHeadless(256, 256);
+  auto res = ctx->initializeHeadless(256, 256, config);
   if (res.code != Result::Code::Ok) {
     IGL_LOG_ERROR("[Tests] D3D12 headless context init failed: %s\n", res.message.c_str());
     return nullptr;

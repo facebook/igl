@@ -7,7 +7,42 @@
 
 #include <igl/d3d12/Common.h>
 
+#include <algorithm>
+#include <cctype>
+#include <cstdlib>
+#include <string_view>
+
 namespace igl::d3d12 {
+
+namespace {
+bool equalsIgnoreCase(std::string_view lhs, std::string_view rhs) {
+  return std::equal(lhs.begin(), lhs.end(), rhs.begin(), rhs.end(), [](char a, char b) {
+    return std::tolower(static_cast<unsigned char>(a)) ==
+           std::tolower(static_cast<unsigned char>(b));
+  });
+}
+} // namespace
+
+RenderPassMode parseRenderPassMode(const char* IGL_NULLABLE value, RenderPassMode fallback) {
+  if (!value) {
+    return fallback;
+  }
+  const std::string_view text(value);
+  if (equalsIgnoreCase(text, "auto")) {
+    return RenderPassMode::Auto;
+  }
+  if (equalsIgnoreCase(text, "on")) {
+    return RenderPassMode::ForceOn;
+  }
+  if (equalsIgnoreCase(text, "off")) {
+    return RenderPassMode::ForceOff;
+  }
+  return fallback;
+}
+
+RenderPassMode getRenderPassModeFromEnv(RenderPassMode configured) {
+  return parseRenderPassMode(std::getenv("IGL_D3D12_RENDER_PASS"), configured);
+}
 
 DXGI_FORMAT textureFormatToDXGIFormat(TextureFormat format) {
   switch (format) {

@@ -75,10 +75,17 @@ void D3D12ResourcesBinder::bindTexture(uint32_t index, ITexture* texture) {
   // Use pipeline-specific states for optimal barrier tracking:
   // - Graphics: PIXEL_SHADER_RESOURCE (pixel shader read)
   // - Compute: NON_PIXEL_SHADER_RESOURCE (compute/vertex/geometry shader read)
+  // With render passes, a bind after the first draw cannot record a barrier, so the encoders leave
+  // the textures they write readable. A texture that is not readable yet moves to a state that both
+  // pipeline kinds can read, so no later bind needs a barrier either.
   auto* commandList = commandBuffer_.getCommandList();
   const auto targetState = isCompute_ ? D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE
                                       : D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE;
-  d3dTexture->transitionAll(commandList, targetState);
+  if (!commandBuffer_.supportsRenderPasses()) {
+    d3dTexture->transitionAll(commandList, targetState);
+  } else if (!d3dTexture->hasReadState(targetState)) {
+    d3dTexture->transitionAll(commandList, D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
+  }
 
   // Store texture pointer for descriptor creation in updateBindings()
   bindingsTextures_.textures[index] = texture;

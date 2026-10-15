@@ -156,6 +156,7 @@ Result D3D12Context::initialize(HWND hwnd,
   // Store and validate configuration.
   config_ = config;
   config_.validate();
+  config_.renderPassMode = getRenderPassModeFromEnv(config_.renderPassMode);
 
   // Pre-allocate vectors to config size (T43). Will be verified/resized after swapchain creation.
   swapchainBufferCount_ = config_.maxFramesInFlight;

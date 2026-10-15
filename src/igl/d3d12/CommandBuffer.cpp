@@ -74,6 +74,16 @@ CommandBuffer::CommandBuffer(Device& device, const CommandBufferDesc& desc) :
     return; // Leave commandList_ null to indicate failure
   }
 
+  if (device_.isRenderPassApiEnabled()) {
+    const HRESULT commandList4Result = commandList_.As(&commandList4_);
+    if (FAILED(commandList4Result)) {
+      IGL_LOG_INFO_ONCE(
+          "ID3D12GraphicsCommandList4 is unavailable (HRESULT = 0x%08X); render passes use "
+          "OMSetRenderTargets()\n",
+          static_cast<unsigned>(commandList4Result));
+    }
+  }
+
   // Command lists are created in recording state, close it for now
   commandList_->Close();
 
@@ -94,6 +104,11 @@ CommandBuffer::CommandBuffer(Device& device, const CommandBufferDesc& desc) :
 }
 
 CommandBuffer::~CommandBuffer() {
+  // The encoder that owns an open render pass ends it from its destructor, through this command
+  // buffer, so it has to be ended or destroyed first.
+  IGL_DEBUG_ASSERT(renderPassOwner_ == nullptr,
+                   "A RenderCommandEncoder with an open render pass outlives its CommandBuffer; "
+                   "call endEncoding() on it first");
   // D-003: No need to clean up scheduleFenceEvent_ - now using dedicated events per wait
   // scheduleFence_ is a ComPtr and will be automatically released
 }
@@ -508,9 +523,54 @@ void CommandBuffer::end() {
   // No timer recording here; timer->begin() was called in begin(),
   // and timer->end() will be called in CommandQueue::submit() before close.
 
+  // A command list must not be closed inside a render pass.
+  closeOpenRenderPass();
+
   // Close the command list - all recording is complete
   commandList_->Close();
   recording_ = false;
+}
+
+bool CommandBuffer::isRenderPassOwnedBy(const RenderCommandEncoder& encoder) const {
+  return renderPassOpen_ && renderPassOwner_ == &encoder;
+}
+
+void CommandBuffer::beginRenderPass(
+    UINT numRenderTargets,
+    const D3D12_RENDER_PASS_RENDER_TARGET_DESC* IGL_NULLABLE renderTargets,
+    const D3D12_RENDER_PASS_DEPTH_STENCIL_DESC* IGL_NULLABLE depthStencil,
+    const RenderCommandEncoder& owner) {
+  IGL_PROFILER_FUNCTION();
+  if (!recording_ || !commandList4_.Get() || renderPassOpen_) {
+    IGL_DEBUG_ASSERT(false, "Cannot begin a render pass: not recording, unsupported, or open");
+    return;
+  }
+  // UAV writes from graphics pipelines are not wired in this backend, so
+  // D3D12_RENDER_PASS_FLAG_ALLOW_UAV_WRITES stays off.
+  commandList4_->BeginRenderPass(
+      numRenderTargets, renderTargets, depthStencil, D3D12_RENDER_PASS_FLAG_NONE);
+  renderPassOpen_ = true;
+  renderPassOwner_ = &owner;
+  device_.getTelemetry().incrementRenderPassBeginCount();
+}
+
+void CommandBuffer::endRenderPass() {
+  IGL_PROFILER_FUNCTION();
+  if (!renderPassOpen_) {
+    return;
+  }
+  commandList4_->EndRenderPass();
+  renderPassOpen_ = false;
+  renderPassOwner_ = nullptr;
+}
+
+void CommandBuffer::closeOpenRenderPass() {
+  if (!renderPassOpen_) {
+    return;
+  }
+  IGL_DEBUG_ASSERT(false, "A render pass is still open; call endEncoding() on its encoder first");
+  IGL_LOG_ERROR("A render pass is still open; ending it\n");
+  endRenderPass();
 }
 
 D3D12Context& CommandBuffer::getContext() {
@@ -526,7 +586,7 @@ const D3D12Context& CommandBuffer::getContext() const {
 std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder(
     const RenderPassDesc& renderPass,
     const std::shared_ptr<IFramebuffer>& framebuffer,
-    const Dependencies& /*dependencies*/,
+    const Dependencies& dependencies,
     Result* IGL_NULLABLE outResult) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   if (!renderPass.subpasses.empty()) {
@@ -548,9 +608,12 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
     return nullptr;
   }
 
+  // The barriers of the new encoder are illegal inside the pass of an encoder that was not ended.
+  closeOpenRenderPass();
+
   // Create encoder with lightweight constructor, then initialize with render pass
   auto encoder = std::make_unique<RenderCommandEncoder>(*this, framebuffer);
-  encoder->begin(renderPass);
+  encoder->begin(renderPass, dependencies);
   Result::setOk(outResult);
   return encoder;
 }
@@ -564,6 +627,10 @@ std::unique_ptr<IComputeCommandEncoder> CommandBuffer::createComputeCommandEncod
                   beginResult.message.c_str());
     return nullptr;
   }
+
+  // The barriers of the compute encoder are illegal inside the pass of an encoder that was not
+  // ended.
+  closeOpenRenderPass();
 
   return std::make_unique<ComputeCommandEncoder>(*this);
 }

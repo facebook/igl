@@ -7,6 +7,7 @@
 
 #include <igl/d3d12/ComputeCommandEncoder.h>
 
+#include <algorithm>
 #include <cstring>
 #include <igl/Macros.h>
 #include <igl/d3d12/Buffer.h>
@@ -64,6 +65,23 @@ void ComputeCommandEncoder::endEncoding() {
 
   IGL_D3D12_LOG_VERBOSE("ComputeCommandEncoder::endEncoding()\n");
   isEncoding_ = false;
+
+  auto* commandList = commandBuffer_.getCommandList();
+  if (commandBuffer_.isRecording() && commandList) {
+    for (Texture* texture : uavTextures_) {
+      if ((texture->getUsage() & TextureDesc::TextureUsageBits::Sampled) != 0) {
+        texture->transitionAll(commandList, D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
+      }
+    }
+  }
+  uavTextures_.clear();
+}
+
+void ComputeCommandEncoder::rememberUavTexture(Texture& texture) {
+  if (commandBuffer_.supportsRenderPasses() &&
+      std::find(uavTextures_.begin(), uavTextures_.end(), &texture) == uavTextures_.end()) {
+    uavTextures_.push_back(&texture);
+  }
 }
 
 void ComputeCommandEncoder::bindComputePipelineState(
@@ -133,6 +151,7 @@ void ComputeCommandEncoder::dispatchThreadGroups(const Dimensions& threadgroupCo
       auto* d3dTexture = static_cast<Texture*>(tex);
       // Ensure texture is in proper state for compute access
       d3dTexture->transitionAll(commandList, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+      rememberUavTexture(*d3dTexture);
       uavResources.push_back(d3dTexture->getResource());
     }
 
@@ -667,6 +686,7 @@ void ComputeCommandEncoder::bindImageTexture(uint32_t index,
   auto* commandList = commandBuffer_.getCommandList();
   if (commandList) {
     d3dTexture->transitionAll(commandList, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+    rememberUavTexture(*d3dTexture);
   }
 
   // Allocate descriptor and create UAV using Result-based allocation with dynamic heap growth.

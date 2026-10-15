@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <vector>
 #include <igl/ComputeCommandEncoder.h>
 #include <igl/d3d12/Common.h>
 #include <igl/d3d12/D3D12ResourcesBinder.h>
@@ -15,6 +16,7 @@ namespace igl::d3d12 {
 
 class CommandBuffer;
 class ComputePipelineState;
+class Texture;
 
 class ComputeCommandEncoder final : public IComputeCommandEncoder {
  public:
@@ -105,6 +107,11 @@ class ComputeCommandEncoder final : public IComputeCommandEncoder {
   // Tracks UAV resources bound via bindBuffer() (storage buffers) and bindImageTexture()
   // (RW textures).
   ID3D12Resource* boundUavResources_[kMaxComputeBuffers] = {};
+
+  // Textures this encoder moved to UNORDERED_ACCESS. With the render pass API, endEncoding() leaves
+  // the sampled ones readable, because a bind inside a render pass cannot record that barrier.
+  std::vector<Texture*> uavTextures_;
+  void rememberUavTexture(Texture& texture);
 };
 
 } // namespace igl::d3d12

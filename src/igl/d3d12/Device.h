@@ -180,6 +180,22 @@ class Device final : public IDevice, public IFenceProvider {
     return capabilities_.getResourceBindingTier();
   }
 
+  // Whether render command encoders record render passes with BeginRenderPass()/EndRenderPass().
+  // Decided once per device from D3D12ContextConfig::renderPassMode and the render pass
+  // capabilities. Command lists without ID3D12GraphicsCommandList4 still use OMSetRenderTargets().
+  // It also makes createTexture() create sampled textures readable instead of in COMMON, because a
+  // bind inside a render pass cannot record the barrier that leaves COMMON.
+  [[nodiscard]] bool isRenderPassApiEnabled() const {
+    return renderPassApiEnabled_;
+  }
+
+  [[nodiscard]] D3D12Telemetry& getTelemetry() {
+    return telemetry_;
+  }
+  [[nodiscard]] const D3D12Telemetry& getTelemetry() const {
+    return telemetry_;
+  }
+
   void processCompletedUploads();
   void trackUploadBuffer(igl::d3d12::ComPtr<ID3D12Resource> buffer, UINT64 fenceValue);
 
@@ -236,6 +252,7 @@ class Device final : public IDevice, public IFenceProvider {
   static constexpr size_t DEFAULT_TEXTURE_ALIGNMENT = 65536; // 64KB default for textures
 
   D3D12DeviceCapabilities capabilities_;
+  bool renderPassApiEnabled_ = false;
 
   std::unique_ptr<D3D12Context> ctx_;
   std::unique_ptr<PlatformDevice> platformDevice_;

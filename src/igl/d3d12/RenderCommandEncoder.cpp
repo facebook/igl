@@ -17,11 +17,32 @@
 #include <igl/d3d12/DescriptorHeapManager.h>
 #include <igl/d3d12/Device.h>
 #include <igl/d3d12/HeadlessContext.h>
+#include <igl/d3d12/RenderPassMapping.h>
 #include <igl/d3d12/RenderPipelineState.h>
 #include <igl/d3d12/SamplerState.h>
 #include <igl/d3d12/Texture.h>
 
 namespace igl::d3d12 {
+
+namespace {
+const RenderPassDesc::AttachmentDesc* IGL_NULLABLE
+findColorAttachmentDesc(const RenderPassDesc& renderPass, size_t index) {
+  if (index < renderPass.colorAttachments.size()) {
+    return &renderPass.colorAttachments[index];
+  }
+  return nullptr;
+}
+
+bool endingAccessDropsContents(const D3D12_RENDER_PASS_ENDING_ACCESS& access) {
+  return access.Type == D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_DISCARD ||
+         access.Type == D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_RESOLVE;
+}
+
+bool isSampled(const Texture& texture) {
+  return (texture.getUsage() & TextureDesc::TextureUsageBits::Sampled) != 0 &&
+         texture.getStorage() != ResourceStorage::Memoryless;
+}
+} // namespace
 
 RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
                                            const std::shared_ptr<IFramebuffer>& framebuffer) :
@@ -35,7 +56,21 @@ RenderCommandEncoder::RenderCommandEncoder(CommandBuffer& commandBuffer,
       "RenderCommandEncoder::RenderCommandEncoder() - Lightweight initialization\n");
 }
 
-void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
+RenderCommandEncoder::~RenderCommandEncoder() {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_DESTROY);
+  // The pass reads the resolve parameters stored in this encoder when it ends, so it must not
+  // outlive the encoder. Only the encoder that began the open pass ends it: one whose pass another
+  // encoder's creation closed must not end the pass of that encoder. An encoder that was ended, or
+  // never began a pass, leaves the command buffer alone, which may be gone by now.
+  if (renderPassPrepared_ && renderPassSegmentCount_ > 0 &&
+      commandBuffer_.isRenderPassOwnedBy(*this)) {
+    IGL_LOG_ERROR("RenderCommandEncoder destroyed without endEncoding(); ending its render pass\n");
+    commandBuffer_.endRenderPass();
+  }
+}
+
+void RenderCommandEncoder::begin(const RenderPassDesc& renderPass,
+                                 const Dependencies& dependencies) {
   IGL_PROFILER_FUNCTION();
   if (!commandBuffer_.isRecording() || !commandList_) {
     IGL_LOG_ERROR("RenderCommandEncoder::begin() - command list is closed or null\n");
@@ -44,6 +79,7 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
   // Enforce single-call semantics: begin() allocates descriptors and cannot be safely called twice.
   IGL_DEBUG_ASSERT(!hasBegun_, "begin() called multiple times - this will cause resource leaks");
   hasBegun_ = true;
+  useRenderPass_ = commandBuffer_.supportsRenderPasses();
 
   IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder::begin() - START\n");
   auto& context = commandBuffer_.getContext();
@@ -70,6 +106,22 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
   IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Setting descriptor heaps...\n");
   commandList_->SetDescriptorHeaps(2, heaps);
   IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Descriptor heaps set\n");
+
+  // A render pass cannot record barriers, so the textures that other work wrote become readable
+  // before it begins.
+  if (useRenderPass_) {
+    for (const Dependencies* deps = &dependencies; deps != nullptr; deps = deps->next) {
+      for (ITexture* texture : deps->textures) {
+        if (!texture) {
+          break;
+        }
+        auto* d3dTexture = static_cast<Texture*>(texture);
+        if (!d3dTexture->hasReadState(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)) {
+          d3dTexture->transitionAll(commandList_, D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
+        }
+      }
+    }
+  }
 
   // Create RTV from framebuffer if provided; otherwise fallback to swapchain RTV
   IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Setting up RTV...\n");
@@ -253,8 +305,16 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
         tex->transitionTo(
             commandList_, D3D12_RESOURCE_STATE_RENDER_TARGET, mipLevel, transitionSlice);
 
-        // Clear if requested
-        if (hasAttachmentDesc && renderPass.colorAttachments[i].loadAction == LoadAction::Clear) {
+        // Clear if requested. The render pass API clears in BeginRenderPass() instead.
+        if (useRenderPass_) {
+          // A cube face is a slice of its own, so the resolve destination follows the same slice
+          // as the render target view.
+          const uint32_t arraySlice = isCubeTexture ? targetArraySlice - arraySliceOffset
+                                                    : attachmentLayer;
+          addRenderPassColorTarget(
+              i, findColorAttachmentDesc(renderPass, i), *tex, rdesc, rtvHandle, arraySlice);
+        } else if (hasAttachmentDesc &&
+                   renderPass.colorAttachments[i].loadAction == LoadAction::Clear) {
           const auto& clearColor = renderPass.colorAttachments[i].clearColor;
           const float color[] = {clearColor.r, clearColor.g, clearColor.b, clearColor.a};
           IGL_D3D12_LOG_VERBOSE(
@@ -310,8 +370,14 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
     commandList_->ResourceBarrier(1, &barrier);
     IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Resource barrier executed\n");
 
-    if (!renderPass.colorAttachments.empty() &&
-        renderPass.colorAttachments[0].loadAction == LoadAction::Clear) {
+    if (useRenderPass_) {
+      renderPassTargets_[numRenderPassTargets_++] =
+          makeColorRenderTargetDesc(context.getCurrentRTV(),
+                                    findColorAttachmentDesc(renderPass, 0),
+                                    backBuffer->GetDesc().Format,
+                                    false /* hasResolveTexture */);
+    } else if (!renderPass.colorAttachments.empty() &&
+               renderPass.colorAttachments[0].loadAction == LoadAction::Clear) {
       IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Clearing render target\n");
       const auto& cc = renderPass.colorAttachments[0].clearColor;
       const float col[] = {cc.r, cc.g, cc.b, cc.a};
@@ -322,6 +388,18 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
     rtv = context.getCurrentRTV();
     IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Got RTV handle\n");
   }
+
+  // Without the render pass API the render targets are bound here. With it, BeginRenderPass() binds
+  // the first `count` of the targets described above.
+  const auto setRenderTargets = [this](UINT count,
+                                       const D3D12_CPU_DESCRIPTOR_HANDLE* handles,
+                                       const D3D12_CPU_DESCRIPTOR_HANDLE* dsv) {
+    if (useRenderPass_) {
+      numRenderPassTargets_ = count;
+    } else {
+      commandList_->OMSetRenderTargets(count, handles, FALSE, dsv);
+    }
+  };
 
   // Create/Bind depth-stencil view if we have a framebuffer with a depth attachment
   const bool hasDepth = (framebuffer_ && framebuffer_->getDepthAttachment());
@@ -340,14 +418,14 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
           return;
         }
       } else {
-        // Fallback: transient heap
-        igl::d3d12::ComPtr<ID3D12DescriptorHeap> tmpHeap;
+        // Fallback: heap owned by the encoder. The DSV is read when BeginRenderPass() is recorded,
+        // at the first draw and again after every split, so it has to outlive begin().
         D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
         dsvHeapDesc.NumDescriptors = 1;
         dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
         dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-        device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(tmpHeap.GetAddressOf()));
-        dsvHandle_ = tmpHeap->GetCPUDescriptorHandleForHeapStart();
+        device->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(dsvFallbackHeap_.GetAddressOf()));
+        dsvHandle_ = dsvFallbackHeap_->GetCPUDescriptorHandleForHeapStart();
       }
 
       // Create DSV description
@@ -381,9 +459,29 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
 
       device->CreateDepthStencilView(depthTex->getResource(), &dsvDesc, dsvHandle_);
 
-      // Clear depth and/or stencil if requested
-      const bool clearDepth = (renderPass.depthAttachment.loadAction == LoadAction::Clear);
-      const bool clearStencil = (renderPass.stencilAttachment.loadAction == LoadAction::Clear);
+      if (useRenderPass_) {
+        // Depth resolves with ResolveSubresource() after the pass, like without the render pass
+        // API, so the pass has to keep the multisampled contents.
+        const auto resolveDepth =
+            std::static_pointer_cast<Texture>(framebuffer_->getResolveDepthAttachment());
+        depthResolvedAfterPass_ =
+            renderPass.depthAttachment.storeAction == StoreAction::MsaaResolve && resolveDepth &&
+            resolveDepth->getResource() && depthResourceDesc.SampleDesc.Count > 1 &&
+            resolveDepth->getResource()->GetDesc().SampleDesc.Count == 1;
+        renderPassDepthStencil_ = makeDepthStencilDesc(dsvHandle_,
+                                                       renderPass.depthAttachment,
+                                                       renderPass.stencilAttachment,
+                                                       depthTex->getFormat(),
+                                                       dsvDesc.Format,
+                                                       depthResolvedAfterPass_);
+        hasRenderPassDepthStencil_ = true;
+      }
+
+      // Clear depth and/or stencil if requested. The render pass API clears in BeginRenderPass().
+      const bool clearDepth = !useRenderPass_ &&
+                              (renderPass.depthAttachment.loadAction == LoadAction::Clear);
+      const bool clearStencil = !useRenderPass_ &&
+                                (renderPass.stencilAttachment.loadAction == LoadAction::Clear);
 
       if (clearDepth || clearStencil) {
         D3D12_CLEAR_FLAGS clearFlags = static_cast<D3D12_CLEAR_FLAGS>(0);
@@ -415,33 +513,31 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
         // Multi-render target or offscreen rendering with color+depth
         IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: OMSetRenderTargets with %zu RTVs + DSV\n",
                               rtvs.size());
-        commandList_->OMSetRenderTargets(
-            static_cast<UINT>(rtvs.size()), rtvs.data(), FALSE, &dsvHandle_);
+        setRenderTargets(static_cast<UINT>(rtvs.size()), rtvs.data(), &dsvHandle_);
       } else if (usedOffscreenRTV) {
         // Single offscreen render target with depth
         IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: OMSetRenderTargets with 1 RTV + DSV\n");
-        commandList_->OMSetRenderTargets(1, &rtv, FALSE, &dsvHandle_);
+        setRenderTargets(1, &rtv, &dsvHandle_);
       } else if (!framebuffer_->getColorAttachment(0)) {
         // Depth-only rendering (no color attachments) - shadow mapping scenario
         IGL_D3D12_LOG_VERBOSE(
             "RenderCommandEncoder: Depth-only rendering - OMSetRenderTargets with 0 RTVs + DSV\n");
-        commandList_->OMSetRenderTargets(0, nullptr, FALSE, &dsvHandle_);
+        setRenderTargets(0, nullptr, &dsvHandle_);
       } else {
         // Swapchain backbuffer with depth
         IGL_D3D12_LOG_VERBOSE(
             "RenderCommandEncoder: OMSetRenderTargets with swapchain RTV + DSV\n");
-        commandList_->OMSetRenderTargets(1, &rtv, FALSE, &dsvHandle_);
+        setRenderTargets(1, &rtv, &dsvHandle_);
       }
     } else {
       IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: Binding RTV without DSV (no resource)\n");
       if (!rtvs.empty()) {
         IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: OMSetRenderTargets with %zu RTVs, no DSV\n",
                               rtvs.size());
-        commandList_->OMSetRenderTargets(
-            static_cast<UINT>(rtvs.size()), rtvs.data(), FALSE, nullptr);
+        setRenderTargets(static_cast<UINT>(rtvs.size()), rtvs.data(), nullptr);
       } else {
         IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder: OMSetRenderTargets with 1 RTV, no DSV\n");
-        commandList_->OMSetRenderTargets(1, &rtv, FALSE, nullptr);
+        setRenderTargets(1, &rtv, nullptr);
       }
     }
   } else {
@@ -450,11 +546,11 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
       IGL_D3D12_LOG_VERBOSE(
           "RenderCommandEncoder: OMSetRenderTargets with %zu RTVs, no DSV (no hasDepth)\n",
           rtvs.size());
-      commandList_->OMSetRenderTargets(static_cast<UINT>(rtvs.size()), rtvs.data(), FALSE, nullptr);
+      setRenderTargets(static_cast<UINT>(rtvs.size()), rtvs.data(), nullptr);
     } else {
       IGL_D3D12_LOG_VERBOSE(
           "RenderCommandEncoder: OMSetRenderTargets with 1 RTV, no DSV (no hasDepth)\n");
-      commandList_->OMSetRenderTargets(1, &rtv, FALSE, nullptr);
+      setRenderTargets(1, &rtv, nullptr);
     }
   }
 
@@ -488,14 +584,14 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
       vp.Height = static_cast<FLOAT>(dims.height);
       vp.MinDepth = 0.0f;
       vp.MaxDepth = 1.0f;
-      commandList_->RSSetViewports(1, &vp);
+      applyViewport(vp);
 
       D3D12_RECT sc{};
       sc.left = 0;
       sc.top = 0;
       sc.right = static_cast<LONG>(dims.width);
       sc.bottom = static_cast<LONG>(dims.height);
-      commandList_->RSSetScissorRects(1, &sc);
+      applyScissor(sc);
 
       IGL_D3D12_LOG_VERBOSE(
           "RenderCommandEncoder: Set default viewport/scissor to %ux%u\n", dims.width, dims.height);
@@ -513,14 +609,14 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
         vp.Height = static_cast<FLOAT>(bbDesc.Height);
         vp.MinDepth = 0.0f;
         vp.MaxDepth = 1.0f;
-        commandList_->RSSetViewports(1, &vp);
+        applyViewport(vp);
 
         D3D12_RECT scissor{};
         scissor.left = 0;
         scissor.top = 0;
         scissor.right = static_cast<LONG>(bbDesc.Width);
         scissor.bottom = static_cast<LONG>(bbDesc.Height);
-        commandList_->RSSetScissorRects(1, &scissor);
+        applyScissor(scissor);
 
         IGL_D3D12_LOG_VERBOSE(
             "RenderCommandEncoder: Fallback viewport/scissor to back buffer %llux%u\n",
@@ -544,13 +640,13 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
       vp.Height = static_cast<float>(bbDesc.Height);
       vp.MinDepth = 0;
       vp.MaxDepth = 1;
-      commandList_->RSSetViewports(1, &vp);
+      applyViewport(vp);
       D3D12_RECT scissor = {};
       scissor.left = 0;
       scissor.top = 0;
       scissor.right = static_cast<LONG>(bbDesc.Width);
       scissor.bottom = static_cast<LONG>(bbDesc.Height);
-      commandList_->RSSetScissorRects(1, &scissor);
+      applyScissor(scissor);
       IGL_D3D12_LOG_VERBOSE(
           "RenderCommandEncoder: Set default viewport/scissor to back buffer %llux%u\n",
           bbDesc.Width,
@@ -595,6 +691,8 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
     }
   }
 
+  renderPassPrepared_ = useRenderPass_ && (numRenderPassTargets_ > 0 || hasRenderPassDepthStencil_);
+
   IGL_D3D12_LOG_VERBOSE(
       "RenderCommandEncoder::begin() - Captured framebuffer formats: RTV[0]=%d, DSV=%d\n",
       static_cast<int>(dynamicState_.rtvFormats[0]),
@@ -602,9 +700,198 @@ void RenderCommandEncoder::begin(const RenderPassDesc& renderPass) {
   IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder::begin() - Complete!\n");
 }
 
+void RenderCommandEncoder::addRenderPassColorTarget(
+    size_t index,
+    const RenderPassDesc::AttachmentDesc* IGL_NULLABLE attachmentDesc,
+    Texture& texture,
+    const D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc,
+    D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle,
+    uint32_t arraySlice) {
+  IGL_PROFILER_FUNCTION();
+  const UINT slot = numRenderPassTargets_;
+  IGL_DEBUG_ASSERT(slot < renderPassTargets_.size(), "Too many render pass targets");
+
+  const auto resolveTexture =
+      std::static_pointer_cast<Texture>(framebuffer_->getResolveColorAttachment(index));
+  const bool wantsResolve = attachmentDesc &&
+                            attachmentDesc->storeAction == StoreAction::MsaaResolve;
+  const bool canResolve = wantsResolve && resolveTexture && resolveTexture->getResource() &&
+                          texture.getResource()->GetDesc().SampleDesc.Count > 1 &&
+                          resolveTexture->getResource()->GetDesc().SampleDesc.Count == 1;
+  const bool resolveInPass = canResolve && canResolveInRenderPass(resolveTexture->getFormat());
+
+  D3D12_RENDER_PASS_RENDER_TARGET_DESC target =
+      makeColorRenderTargetDesc(rtvHandle, attachmentDesc, rtvDesc.Format, resolveInPass);
+
+  if (canResolve && !resolveInPass) {
+    // D3D12_RESOLVE_MODE_AVERAGE does not exist for integer formats. They resolve with
+    // ResolveSubresource() after the pass, which needs the multisampled contents.
+    target.EndingAccess.Type = D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_PRESERVE;
+    colorResolvedAfterPass_[index] = true;
+  } else if (resolveInPass) {
+    // Every barrier precedes BeginRenderPass(): the destination is in RESOLVE_DEST for the whole
+    // pass and the multisampled source stays in RENDER_TARGET.
+    resolveTexture->transitionAll(commandList_, D3D12_RESOURCE_STATE_RESOLVE_DEST);
+
+    const uint32_t mipLevel = attachmentDesc->mipLevel;
+    // The empty SrcRect resolves the whole subresource; a sub-rectangle needs sample positions.
+    D3D12_RENDER_PASS_ENDING_ACCESS_RESOLVE_SUBRESOURCE_PARAMETERS& subresource =
+        resolveSubresources_[slot];
+    subresource = {};
+    if (rtvDesc.ViewDimension == D3D12_RTV_DIMENSION_TEXTURE2DMSARRAY) {
+      subresource.SrcSubresource = rtvDesc.Texture2DMSArray.FirstArraySlice;
+    }
+    subresource.DstSubresource = resolveTexture->calcSubresourceIndex(mipLevel, arraySlice);
+
+    D3D12_RENDER_PASS_ENDING_ACCESS_RESOLVE_PARAMETERS& resolve = target.EndingAccess.Resolve;
+    resolve.pSrcResource = texture.getResource();
+    resolve.pDstResource = resolveTexture->getResource();
+    resolve.SubresourceCount = 1;
+    resolve.pSubresourceParameters = &subresource;
+    resolve.Format = textureFormatToDXGIFormat(resolveTexture->getFormat());
+    resolve.ResolveMode = D3D12_RESOLVE_MODE_AVERAGE;
+    resolve.PreserveResolveSource = FALSE;
+    colorResolvedInPass_[index] = true;
+  }
+  renderPassTargets_[slot] = target;
+  numRenderPassTargets_ = slot + 1;
+}
+
+void RenderCommandEncoder::ensureRenderPassBegun() {
+  if (!renderPassPrepared_ || commandBuffer_.isRenderPassOpen()) {
+    return;
+  }
+  IGL_PROFILER_FUNCTION();
+
+  // Every begin after the first continues the contents of the previous one.
+  auto targets = renderPassTargets_;
+  auto depthStencil = renderPassDepthStencil_;
+  if (renderPassSegmentCount_ > 0) {
+    for (UINT i = 0; i < numRenderPassTargets_; ++i) {
+      targets[i] = asContinuation(renderPassTargets_[i]);
+    }
+    depthStencil = asContinuation(renderPassDepthStencil_);
+  }
+  commandBuffer_.beginRenderPass(numRenderPassTargets_,
+                                 numRenderPassTargets_ > 0 ? targets.data() : nullptr,
+                                 hasRenderPassDepthStencil_ ? &depthStencil : nullptr,
+                                 *this);
+  ++renderPassSegmentCount_;
+
+  if (hasCachedViewport_) {
+    commandList_->RSSetViewports(1, &cachedViewport_);
+  }
+  if (hasCachedScissor_) {
+    commandList_->RSSetScissorRects(1, &cachedScissor_);
+  }
+  if (hasCachedStencilReference_) {
+    commandList_->OMSetStencilRef(cachedStencilReference_);
+  }
+  if (hasCachedBlendFactor_) {
+    commandList_->OMSetBlendFactor(cachedBlendFactor_.data());
+  }
+}
+
+void RenderCommandEncoder::splitRenderPassIfBarrierNeeded(ITexture* IGL_NULLABLE texture) {
+  if (!texture || !useRenderPass_ || !commandBuffer_.isRenderPassOpen()) {
+    return;
+  }
+  const auto* d3dTexture = static_cast<const Texture*>(texture);
+  if (d3dTexture->hasReadState(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)) {
+    return;
+  }
+  IGL_PROFILER_FUNCTION();
+
+  // Sampled textures start readable, and uploads, generateMipmap(), encoders and compute outputs
+  // leave them readable. A texture only gets here when something else moved it to a state that
+  // pixel shaders cannot read, such as a copy, and it was neither declared in `Dependencies` nor
+  // bound before the first draw. The split keeps the command list valid in release builds.
+  IGL_DEBUG_ASSERT(false,
+                   "A texture bound inside a render pass needs a resource barrier; declare it in "
+                   "Dependencies or bind it before the first draw");
+  commandBuffer_.endRenderPass();
+  commandBuffer_.getDevice().getTelemetry().incrementRenderPassSplitCount();
+  IGL_LOG_INFO_ONCE(
+      "D3D12 render pass ended early: a texture bound after the first draw needs a resource "
+      "barrier. Declare such textures in Dependencies or bind them before the first draw.\n");
+
+  bool dropsContents = hasRenderPassDepthStencil_ &&
+                       (endingAccessDropsContents(renderPassDepthStencil_.DepthEndingAccess) ||
+                        endingAccessDropsContents(renderPassDepthStencil_.StencilEndingAccess));
+  for (UINT i = 0; i < numRenderPassTargets_; ++i) {
+    dropsContents = dropsContents || endingAccessDropsContents(renderPassTargets_[i].EndingAccess);
+  }
+  if (dropsContents) {
+    IGL_LOG_ERROR_ONCE(
+        "D3D12 render pass ended early with attachments that StoreAction::DontCare or MsaaResolve "
+        "discard; their earlier contents are lost\n");
+  }
+}
+
+bool RenderCommandEncoder::recordsDynamicStateNow() const {
+  return !useRenderPass_ || commandBuffer_.isRenderPassOpen();
+}
+
+void RenderCommandEncoder::applyViewport(const D3D12_VIEWPORT& viewport) {
+  cachedViewport_ = viewport;
+  hasCachedViewport_ = true;
+  if (recordsDynamicStateNow()) {
+    commandList_->RSSetViewports(1, &viewport);
+  }
+}
+
+void RenderCommandEncoder::applyScissor(const D3D12_RECT& scissor) {
+  cachedScissor_ = scissor;
+  hasCachedScissor_ = true;
+  if (recordsDynamicStateNow()) {
+    commandList_->RSSetScissorRects(1, &scissor);
+  }
+}
+
+bool RenderCommandEncoder::hasRenderPassWorkWithoutDraws() const {
+  for (UINT i = 0; i < numRenderPassTargets_; ++i) {
+    const D3D12_RENDER_PASS_RENDER_TARGET_DESC& target = renderPassTargets_[i];
+    if (target.BeginningAccess.Type == D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_CLEAR ||
+        target.EndingAccess.Type == D3D12_RENDER_PASS_ENDING_ACCESS_TYPE_RESOLVE) {
+      return true;
+    }
+  }
+  return hasRenderPassDepthStencil_ && (renderPassDepthStencil_.DepthBeginningAccess.Type ==
+                                            D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_CLEAR ||
+                                        renderPassDepthStencil_.StencilBeginningAccess.Type ==
+                                            D3D12_RENDER_PASS_BEGINNING_ACCESS_TYPE_CLEAR);
+}
+
+void RenderCommandEncoder::leaveReadable(Texture* IGL_NULLABLE texture,
+                                         D3D12_RESOURCE_STATES state) {
+  if (texture && texture->getResource() && isSampled(*texture)) {
+    texture->transitionAll(commandList_, state);
+  }
+}
+
+void RenderCommandEncoder::leaveResolveTarget(Texture* IGL_NULLABLE texture) {
+  if (texture && texture->getResource() &&
+      texture->getResource() == commandBuffer_.getContext().getCurrentBackBuffer()) {
+    // The back buffer is presented next, like a swapchain target that was rendered to directly.
+    texture->transitionAll(commandList_, D3D12_RESOURCE_STATE_PRESENT);
+    return;
+  }
+  leaveReadable(texture, D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
+}
+
 void RenderCommandEncoder::endEncoding() {
   IGL_PROFILER_FUNCTION();
   auto& context2 = commandBuffer_.getContext();
+
+  if (renderPassPrepared_) {
+    // Without draws, the pass only begins for its clears and resolves. A pass that a split already
+    // ended has nothing left to begin.
+    if (renderPassSegmentCount_ == 0 && hasRenderPassWorkWithoutDraws()) {
+      ensureRenderPassBegun();
+    }
+    commandBuffer_.endRenderPass();
+    renderPassPrepared_ = false;
+  }
 
   // ========== MSAA RESOLVE OPERATION ==========
   // Resolve MSAA textures to non-MSAA textures before transitioning resources
@@ -613,6 +900,16 @@ void RenderCommandEncoder::endEncoding() {
     // Resolve color attachments
     const auto indices = framebuffer_->getColorAttachmentIndices();
     for (size_t i : indices) {
+      if (useRenderPass_) {
+        if (colorResolvedInPass_[i]) {
+          // The pass wrote the resolve texture in RESOLVE_DEST.
+          leaveResolveTarget(
+              std::static_pointer_cast<Texture>(framebuffer_->getResolveColorAttachment(i)).get());
+        }
+        if (!colorResolvedAfterPass_[i]) {
+          continue;
+        }
+      }
       auto msaaAttachment = std::static_pointer_cast<Texture>(framebuffer_->getColorAttachment(i));
       auto resolveAttachment =
           std::static_pointer_cast<Texture>(framebuffer_->getResolveColorAttachment(i));
@@ -653,8 +950,12 @@ void RenderCommandEncoder::endEncoding() {
               i);
 
           // Transition resolve texture to PIXEL_SHADER_RESOURCE for subsequent use
-          resolveAttachment->transitionAll(commandList_,
-                                           D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+          if (useRenderPass_) {
+            leaveResolveTarget(resolveAttachment.get());
+          } else {
+            resolveAttachment->transitionAll(commandList_,
+                                             D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+          }
         }
       }
     }
@@ -664,7 +965,8 @@ void RenderCommandEncoder::endEncoding() {
     auto resolveDepth =
         std::static_pointer_cast<Texture>(framebuffer_->getResolveDepthAttachment());
 
-    if (msaaDepth && resolveDepth && msaaDepth->getResource() && resolveDepth->getResource()) {
+    if (msaaDepth && resolveDepth && msaaDepth->getResource() && resolveDepth->getResource() &&
+        (!useRenderPass_ || depthResolvedAfterPass_)) {
       D3D12_RESOURCE_DESC msaaDesc = msaaDepth->getResource()->GetDesc();
       D3D12_RESOURCE_DESC resolveDesc = resolveDepth->getResource()->GetDesc();
 
@@ -685,8 +987,19 @@ void RenderCommandEncoder::endEncoding() {
         IGL_D3D12_LOG_VERBOSE("RenderCommandEncoder::endEncoding - MSAA depth resolve completed\n");
 
         // Transition resolved depth to shader resource for sampling
-        resolveDepth->transitionAll(commandList_, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        if (useRenderPass_) {
+          leaveReadable(resolveDepth.get(), D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
+        } else {
+          resolveDepth->transitionAll(commandList_, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        }
       }
+    }
+
+    // A sampled depth attachment stays readable as depth, like in the Vulkan backend. The next pass
+    // that renders to it moves it back to DEPTH_WRITE.
+    if (useRenderPass_) {
+      leaveReadable(msaaDepth.get(),
+                    D3D12_RESOURCE_STATE_DEPTH_READ | D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
     }
   }
   // ========== END MSAA RESOLVE OPERATION ==========
@@ -703,6 +1016,18 @@ void RenderCommandEncoder::endEncoding() {
     if (isSwapchainTarget) {
       // Swapchain framebuffer: transition to PRESENT
       swapColor->transitionAll(commandList_, D3D12_RESOURCE_STATE_PRESENT);
+      // The other attachments of a multiple render target framebuffer are offscreen textures that a
+      // later pass can sample.
+      if (useRenderPass_) {
+        const auto indices = framebuffer_->getColorAttachmentIndices();
+        for (size_t i : indices) {
+          if (i != 0) {
+            leaveReadable(
+                std::static_pointer_cast<Texture>(framebuffer_->getColorAttachment(i)).get(),
+                D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
+          }
+        }
+      }
     } else {
       // Offscreen framebuffer (e.g., MRT targets): transition all color attachments to
       // PIXEL_SHADER_RESOURCE This allows the render targets to be sampled in subsequent rendering
@@ -710,7 +1035,9 @@ void RenderCommandEncoder::endEncoding() {
       const auto indices = framebuffer_->getColorAttachmentIndices();
       for (size_t i : indices) {
         auto attachment = std::static_pointer_cast<Texture>(framebuffer_->getColorAttachment(i));
-        if (attachment && attachment->getResource()) {
+        if (useRenderPass_) {
+          leaveReadable(attachment.get(), D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
+        } else if (attachment && attachment->getResource()) {
           attachment->transitionAll(commandList_, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         }
       }
@@ -766,7 +1093,7 @@ void RenderCommandEncoder::bindViewport(const Viewport& viewport) {
   vp.Height = viewport.height;
   vp.MinDepth = viewport.minDepth;
   vp.MaxDepth = viewport.maxDepth;
-  commandList_->RSSetViewports(1, &vp);
+  applyViewport(vp);
 }
 
 void RenderCommandEncoder::bindScissorRect(const ScissorRect& rect) {
@@ -780,7 +1107,7 @@ void RenderCommandEncoder::bindScissorRect(const ScissorRect& rect) {
   scissor.top = static_cast<LONG>(rect.y);
   scissor.right = static_cast<LONG>(rect.x + rect.width);
   scissor.bottom = static_cast<LONG>(rect.y + rect.height);
-  commandList_->RSSetScissorRects(1, &scissor);
+  applyScissor(scissor);
 }
 
 void RenderCommandEncoder::bindRenderPipelineState(
@@ -951,6 +1278,8 @@ void RenderCommandEncoder::bindTexture(size_t index, ITexture* texture) {
     IGL_LOG_ERROR("RenderCommandEncoder::bindTexture called on closed command list\n");
     return;
   }
+  // The binder records the barrier for the texture, which cannot happen inside a render pass.
+  splitRenderPassIfBarrierNeeded(texture);
   // Delegate to D3D12ResourcesBinder for centralized descriptor management.
   resourcesBinder_.bindTexture(static_cast<uint32_t>(index), texture);
 
@@ -973,6 +1302,7 @@ void RenderCommandEncoder::draw(size_t vertexCount,
   }
   // G-001: Flush any pending barriers before draw call
   flushBarriers();
+  ensureRenderPassBegun();
 
   // Apply all resource bindings (textures, samplers, buffers) before draw.
   // Even when bindBindGroup() is used for CBV tables, textures/samplers may still be
@@ -1071,6 +1401,7 @@ void RenderCommandEncoder::drawIndexed(size_t indexCount,
   }
   // G-001: Flush any pending barriers before draw call
   flushBarriers();
+  ensureRenderPassBegun();
 
   // Apply all resource bindings (textures, samplers, buffers) before draw.
   // Even when bindBindGroup() is used for CBV tables, textures/samplers may still be
@@ -1227,6 +1558,8 @@ void RenderCommandEncoder::multiDrawIndirect(IBuffer& indirectBuffer,
   // Use default stride if not provided (sizeof D3D12_DRAW_ARGUMENTS = 16 bytes)
   const UINT actualStride = stride ? stride : sizeof(D3D12_DRAW_ARGUMENTS);
 
+  ensureRenderPassBegun();
+
   // ExecuteIndirect for multi-draw
   // Parameters: signature, maxCommandCount, argumentBuffer, argumentBufferOffset, countBuffer,
   // countBufferOffset
@@ -1280,6 +1613,8 @@ void RenderCommandEncoder::multiDrawIndexedIndirect(IBuffer& indirectBuffer,
   // Use default stride if not provided (sizeof D3D12_DRAW_INDEXED_ARGUMENTS = 20 bytes)
   const UINT actualStride = stride ? stride : sizeof(D3D12_DRAW_INDEXED_ARGUMENTS);
 
+  ensureRenderPassBegun();
+
   // ExecuteIndirect for multi-draw indexed
   // Parameters: signature, maxCommandCount, argumentBuffer, argumentBufferOffset, countBuffer,
   // countBufferOffset
@@ -1306,7 +1641,11 @@ void RenderCommandEncoder::setStencilReferenceValue(uint32_t value) {
     return;
   }
   // Set stencil reference value for stencil testing
-  commandList_->OMSetStencilRef(value);
+  cachedStencilReference_ = value;
+  hasCachedStencilReference_ = true;
+  if (recordsDynamicStateNow()) {
+    commandList_->OMSetStencilRef(value);
+  }
   IGL_D3D12_LOG_VERBOSE("setStencilReferenceValue: Set stencil ref to %u\n", value);
 }
 
@@ -1317,8 +1656,11 @@ void RenderCommandEncoder::setBlendColor(const Color& color) {
   }
   // Set blend factor constants for BlendFactor::BlendColor operations
   // D3D12 uses RGBA float array, matching IGL Color structure
-  const float blendFactor[4] = {color.r, color.g, color.b, color.a};
-  commandList_->OMSetBlendFactor(blendFactor);
+  cachedBlendFactor_ = {color.r, color.g, color.b, color.a};
+  hasCachedBlendFactor_ = true;
+  if (recordsDynamicStateNow()) {
+    commandList_->OMSetBlendFactor(cachedBlendFactor_.data());
+  }
   IGL_D3D12_LOG_VERBOSE("setBlendColor: Set blend factor to (%.2f, %.2f, %.2f, %.2f)\n",
                         color.r,
                         color.g,
@@ -1563,6 +1905,7 @@ void RenderCommandEncoder::bindBindGroup(BindGroupTextureHandle handle) {
   // so that bindBindGroup(texture) behaves like a grouped bindTexture/bindSamplerState.
   for (uint32_t i = 0; i < IGL_TEXTURE_SAMPLERS_MAX; ++i) {
     if (desc->textures[i]) {
+      splitRenderPassIfBarrierNeeded(desc->textures[i].get());
       resourcesBinder_.bindTexture(i, desc->textures[i].get());
     }
   }
@@ -1995,6 +2338,11 @@ void RenderCommandEncoder::flushBarriers() {
   if (pendingBarriers_.empty()) {
     return;
   }
+  // A render pass cannot record barriers. draw() flushes before ensureRenderPassBegun(), so the
+  // barriers queued up to the first draw precede the pass; none can be queued while it is open.
+  IGL_DEBUG_ASSERT(!commandBuffer_.isRenderPassOpen(),
+                   "%zu resource barriers are pending while a render pass is open",
+                   pendingBarriers_.size());
   if (!commandBuffer_.isRecording() || !commandList_) {
     IGL_LOG_ERROR(
         "RenderCommandEncoder::flushBarriers called on closed command list; clearing pending "
