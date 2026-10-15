@@ -73,6 +73,39 @@ VkShaderStageFlagBits shaderStageToVkShaderStage(igl::ShaderStage stage) {
   return VK_SHADER_STAGE_FLAG_BITS_MAX_ENUM;
 }
 
+const char* shaderStageToString(igl::ShaderStage stage) {
+  switch (stage) {
+  case igl::ShaderStage::Vertex:
+    return "vertex";
+  case igl::ShaderStage::Fragment:
+    return "fragment";
+  case igl::ShaderStage::Compute:
+    return "compute";
+  case igl::ShaderStage::Task:
+    return "task";
+  case igl::ShaderStage::Mesh:
+    return "mesh";
+  };
+  return "unknown";
+}
+
+// Checks the bindings of a shader module that the encoders and the descriptor sets rely on. The
+// input attachments are legal only in a fragment shader. A library can have the shader modules of
+// several stages that share one SPIR-V module, in which case `stage` has to be the fragment stage
+// when one of them is a fragment shader.
+igl::Result validateShaderModule(const igl::vulkan::util::SpvModuleInfo& info,
+                                 igl::ShaderStage stage,
+                                 const std::string& debugName) {
+  if (!info.inputAttachments.empty() && stage != igl::ShaderStage::Fragment) {
+    return igl::Result(igl::Result::Code::ArgumentInvalid,
+                       IGL_FORMAT("Shader module '{}': input attachments (subpassInput) can only "
+                                  "be used in a fragment shader, but the stage is {}",
+                                  debugName,
+                                  shaderStageToString(stage)));
+  }
+  return igl::vulkan::validateShaderModuleBindings(info, debugName);
+}
+
 } // namespace
 
 namespace igl::vulkan {
@@ -313,6 +346,20 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipelineInternal(
     return nullptr;
   }
 
+  if (ctx_->features().has_VK_EXT_descriptor_buffer) {
+    const auto& fragmentModule =
+        static_cast<const ShaderModule&>(*desc.shaderStages->getFragmentModule());
+    if (!fragmentModule.getVulkanShaderModule().getSpvModuleInfo().inputAttachments.empty()) {
+      Result::setResult(
+          outResult,
+          Result::Code::Unsupported,
+          IGL_FORMAT("Render pipeline '{}': input attachments (subpassInput) are not supported "
+                     "with VK_EXT_descriptor_buffer",
+                     desc.debugName.c_str()));
+      return nullptr;
+    }
+  }
+
   return std::make_shared<RenderPipelineState>(*this, desc);
 }
 
@@ -333,6 +380,13 @@ std::shared_ptr<IShaderModule> Device::createShaderModuleInternal(const ShaderMo
         desc.info.stage, desc.input.source, desc.input.options, desc.debugName, &result);
   }
 
+  if (!result.isOk()) {
+    Result::setResult(outResult, std::move(result));
+    return nullptr;
+  }
+
+  result =
+      validateShaderModule(vulkanShaderModule->getSpvModuleInfo(), desc.info.stage, desc.debugName);
   if (!result.isOk()) {
     Result::setResult(outResult, std::move(result));
     return nullptr;
@@ -658,6 +712,20 @@ std::unique_ptr<IShaderLibrary> Device::createShaderLibraryInternal(const Shader
                                             &result);
   }
 
+  if (!result.isOk()) {
+    Result::setResult(outResult, std::move(result));
+    return nullptr;
+  }
+
+  // the modules share the SPIR-V module, so it is the one of the fragment shader when there is one
+  ShaderStage stage = ShaderStage::Fragment;
+  for (const auto& moduleInfo : desc.moduleInfo) {
+    stage = moduleInfo.stage;
+    if (stage == ShaderStage::Fragment) {
+      break;
+    }
+  }
+  result = validateShaderModule(vulkanShaderModule->getSpvModuleInfo(), stage, desc.debugName);
   if (!result.isOk()) {
     Result::setResult(outResult, std::move(result));
     return nullptr;

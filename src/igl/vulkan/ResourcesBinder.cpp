@@ -212,6 +212,40 @@ void ResourcesBinder::bindStorageImage(uint32_t index, Texture* tex) {
   }
 }
 
+void ResourcesBinder::bindInputAttachment(uint32_t index,
+                                          Texture* IGL_NULLABLE texture,
+                                          uint32_t mipLevel,
+                                          uint32_t layer) {
+  IGL_PROFILER_FUNCTION();
+
+  if (!IGL_DEBUG_VERIFY(index < IGL_COLOR_ATTACHMENTS_MAX)) {
+    IGL_DEBUG_ABORT("Invalid input attachment index");
+    return;
+  }
+  if (!IGL_DEBUG_VERIFY(isGraphics(),
+                        "Input attachments can be bound only to graphics pipelines")) {
+    return;
+  }
+
+  VkImageView imageView = VK_NULL_HANDLE;
+  if (texture) {
+    const bool isInputAttachment =
+        (texture->getUsage() & TextureDesc::TextureUsageBits::InputAttachment) != 0;
+    if (IGL_DEBUG_VERIFY(
+            isInputAttachment,
+            "Did you forget to specify TextureUsageBits::InputAttachment on your texture?")) {
+      IGL_DEBUG_ASSERT(mipLevel < texture->getNumMipLevels() && layer < texture->getNumVkLayers(),
+                       "Invalid mip level or layer of an input attachment");
+      imageView = texture->getVkImageViewForFramebuffer(mipLevel, layer, FramebufferMode::Mono);
+    }
+  }
+
+  if (bindingsStorageImages_.inputAttachments[index] != imageView) {
+    bindingsStorageImages_.inputAttachments[index] = imageView;
+    isDirtyFlags_ |= DirtyFlagBits_StorageImages;
+  }
+}
+
 void ResourcesBinder::updateBindings(VkPipelineLayout layout, const PipelineState& state) {
   ctx_.features().has_VK_EXT_descriptor_buffer ? updateBindingsByDescriptorBuffer(layout, state)
                                                : updateBindingsByDescriptorSet(layout, state);
@@ -306,7 +340,7 @@ void ResourcesBinder::bindPipeline(VkPipeline pipeline, const util::SpvModuleInf
     if (!info->textures.empty()) {
       isDirtyFlags_ |= DirtyFlagBits_Textures;
     }
-    if (!info->images.empty()) {
+    if (!info->images.empty() || !info->inputAttachments.empty()) {
       isDirtyFlags_ |= DirtyFlagBits_StorageImages;
     }
   }

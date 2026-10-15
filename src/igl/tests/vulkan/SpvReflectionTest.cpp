@@ -11,6 +11,10 @@
 
 #include "../util/SpvModules.h"
 
+#include <algorithm>
+#include <igl/glslang/GlslCompiler.h>
+#include <igl/glslang/GlslangHelpers.h>
+
 namespace igl::tests {
 
 TEST(SpvReflectionTest, UniformBufferTest) {
@@ -187,6 +191,200 @@ TEST(SpvReflectionTest, UsageMasksMergeWithBitwiseOr) {
 
   EXPECT_EQ(merged.usageMaskBuffers, 0xFFu);
   EXPECT_EQ(merged.usageMaskTextures, 0xFFu);
+}
+
+TEST(SpvReflectionTest, ReflectsSingleInputAttachment) {
+  using namespace vulkan::util;
+
+  glslang::initializeCompiler();
+
+  const char* fragmentShader = R"(#version 460
+layout(input_attachment_index = 1, set = 2, binding = 17) uniform subpassInput inA;
+layout(location = 0) out vec4 outColor;
+void main() {
+  outColor = subpassLoad(inA);
+})";
+
+  glslang_resource_t resource{};
+  glslangGetDefaultResource(&resource);
+
+  std::vector<uint32_t> spvWords;
+  Result ret = glslang::compileShader(ShaderStage::Fragment, fragmentShader, spvWords, &resource);
+  glslang::finalizeCompiler();
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+
+  SpvModuleInfo spvModuleInfo =
+      getReflectionData(spvWords.data(), spvWords.size() * sizeof(uint32_t));
+
+  ASSERT_EQ(spvModuleInfo.inputAttachments.size(), 1);
+  EXPECT_EQ(spvModuleInfo.inputAttachments[0].bindingLocation, 17);
+  EXPECT_EQ(spvModuleInfo.inputAttachments[0].descriptorSet, 2);
+  EXPECT_EQ(spvModuleInfo.inputAttachments[0].inputAttachmentIndex, 1);
+  EXPECT_TRUE(spvModuleInfo.images.empty());
+  EXPECT_TRUE(spvModuleInfo.textures.empty());
+  EXPECT_TRUE(spvModuleInfo.buffers.empty());
+}
+
+TEST(SpvReflectionTest, ReflectsMultipleInputAttachments) {
+  using namespace vulkan::util;
+
+  glslang::initializeCompiler();
+
+  const char* fragmentShader = R"(#version 460
+layout(input_attachment_index = 1, set = 2, binding = 17) uniform subpassInput inA;
+layout(input_attachment_index = 2, set = 2, binding = 18) uniform subpassInput inB;
+layout(input_attachment_index = 3, set = 2, binding = 19) uniform subpassInput inC;
+layout(location = 0) out vec4 outColor;
+void main() {
+  outColor = subpassLoad(inA) + subpassLoad(inB) + subpassLoad(inC);
+})";
+
+  glslang_resource_t resource{};
+  glslangGetDefaultResource(&resource);
+
+  std::vector<uint32_t> spvWords;
+  Result ret = glslang::compileShader(ShaderStage::Fragment, fragmentShader, spvWords, &resource);
+  glslang::finalizeCompiler();
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+
+  SpvModuleInfo spvModuleInfo =
+      getReflectionData(spvWords.data(), spvWords.size() * sizeof(uint32_t));
+
+  ASSERT_EQ(spvModuleInfo.inputAttachments.size(), 3);
+
+  // Check all three input attachments are present (order-independent)
+  std::vector<uint32_t> indices;
+  std::vector<uint32_t> bindings;
+  for (const auto& ia : spvModuleInfo.inputAttachments) {
+    indices.push_back(ia.inputAttachmentIndex);
+    bindings.push_back(ia.bindingLocation);
+    EXPECT_EQ(ia.descriptorSet, 2);
+  }
+
+  std::sort(indices.begin(), indices.end());
+  std::sort(bindings.begin(), bindings.end());
+
+  EXPECT_EQ(indices[0], 1);
+  EXPECT_EQ(indices[1], 2);
+  EXPECT_EQ(indices[2], 3);
+  EXPECT_EQ(bindings[0], 17);
+  EXPECT_EQ(bindings[1], 18);
+  EXPECT_EQ(bindings[2], 19);
+  EXPECT_TRUE(spvModuleInfo.images.empty());
+  EXPECT_TRUE(spvModuleInfo.textures.empty());
+}
+
+TEST(SpvReflectionTest, MergeIncludesInputAttachments) {
+  using namespace vulkan::util;
+
+  glslang::initializeCompiler();
+
+  glslang_resource_t resource{};
+  glslangGetDefaultResource(&resource);
+
+  // Vertex shader with no input attachments
+  const char* vertexShader = R"(#version 460
+layout(location = 0) in vec3 position;
+layout(location = 0) out vec3 vColor;
+void main() {
+  gl_Position = vec4(position, 1.0);
+  vColor = position;
+})";
+
+  std::vector<uint32_t> vertSpvWords;
+  Result ret = glslang::compileShader(ShaderStage::Vertex, vertexShader, vertSpvWords, &resource);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+
+  SpvModuleInfo vertInfo =
+      getReflectionData(vertSpvWords.data(), vertSpvWords.size() * sizeof(uint32_t));
+
+  // Fragment shader with input attachments
+  const char* fragmentShader = R"(#version 460
+layout(input_attachment_index = 1, set = 2, binding = 17) uniform subpassInput inA;
+layout(location = 0) in vec3 vColor;
+layout(location = 0) out vec4 outColor;
+void main() {
+  outColor = subpassLoad(inA);
+})";
+
+  std::vector<uint32_t> fragSpvWords;
+  ret = glslang::compileShader(ShaderStage::Fragment, fragmentShader, fragSpvWords, &resource);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+
+  SpvModuleInfo fragInfo =
+      getReflectionData(fragSpvWords.data(), fragSpvWords.size() * sizeof(uint32_t));
+
+  ASSERT_EQ(fragInfo.inputAttachments.size(), 1);
+
+  // Merge should preserve input attachments
+  SpvModuleInfo merged = mergeReflectionData(vertInfo, fragInfo);
+
+  glslang::finalizeCompiler();
+
+  ASSERT_EQ(merged.inputAttachments.size(), 1);
+  EXPECT_EQ(merged.inputAttachments[0].bindingLocation, 17);
+  EXPECT_EQ(merged.inputAttachments[0].descriptorSet, 2);
+  EXPECT_EQ(merged.inputAttachments[0].inputAttachmentIndex, 1);
+}
+
+TEST(SpvReflectionTest, ReflectsSubpassInputArrayAsArray) {
+  using namespace vulkan::util;
+
+  glslang::initializeCompiler();
+
+  const char* fragmentShader = R"(#version 460
+layout(input_attachment_index = 0, set = 2, binding = 16) uniform subpassInput inA[2];
+layout(location = 0) out vec4 outColor;
+void main() {
+  outColor = subpassLoad(inA[0]);
+})";
+
+  glslang_resource_t resource{};
+  glslangGetDefaultResource(&resource);
+
+  std::vector<uint32_t> spvWords;
+  Result ret = glslang::compileShader(ShaderStage::Fragment, fragmentShader, spvWords, &resource);
+  glslang::finalizeCompiler();
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+
+  SpvModuleInfo spvModuleInfo =
+      getReflectionData(spvWords.data(), spvWords.size() * sizeof(uint32_t));
+
+  ASSERT_EQ(spvModuleInfo.inputAttachments.size(), 1);
+  EXPECT_TRUE(spvModuleInfo.inputAttachments[0].isArray);
+  EXPECT_FALSE(spvModuleInfo.inputAttachments[0].isMultisampled);
+}
+
+TEST(SpvReflectionTest, ReflectsStorageImageAndInputAttachmentSeparately) {
+  using namespace vulkan::util;
+
+  glslang::initializeCompiler();
+
+  const char* fragmentShader = R"(#version 460
+layout(set = 2, binding = 0, rgba8) uniform image2D img;
+layout(input_attachment_index = 1, set = 2, binding = 17) uniform subpassInput inA;
+layout(location = 0) out vec4 outColor;
+void main() {
+  outColor = subpassLoad(inA);
+})";
+
+  glslang_resource_t resource{};
+  glslangGetDefaultResource(&resource);
+
+  std::vector<uint32_t> spvWords;
+  Result ret = glslang::compileShader(ShaderStage::Fragment, fragmentShader, spvWords, &resource);
+  glslang::finalizeCompiler();
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+
+  SpvModuleInfo spvModuleInfo =
+      getReflectionData(spvWords.data(), spvWords.size() * sizeof(uint32_t));
+
+  ASSERT_EQ(spvModuleInfo.images.size(), 1);
+  ASSERT_EQ(spvModuleInfo.inputAttachments.size(), 1);
+  EXPECT_EQ(spvModuleInfo.images[0].bindingLocation, 0);
+  EXPECT_EQ(spvModuleInfo.images[0].descriptorSet, 2);
+  EXPECT_EQ(spvModuleInfo.inputAttachments[0].bindingLocation, 17);
+  EXPECT_EQ(spvModuleInfo.inputAttachments[0].descriptorSet, 2);
 }
 
 } // namespace igl::tests

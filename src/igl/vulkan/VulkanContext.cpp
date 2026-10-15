@@ -221,7 +221,7 @@ class DescriptorPoolsArena final {
     device_(ctx.getVkDevice()),
     numTypes_(1),
     types_{type},
-    numDescriptorsPerDSet_(numDescriptorsPerDSet),
+    numDescriptorsPerDSet_{numDescriptorsPerDSet, 0},
     dsl_(dsl) {
     IGL_DEBUG_ASSERT(debugName);
     dpDebugName_ = IGL_FORMAT("Descriptor Pool: {}", debugName ? debugName : "");
@@ -232,11 +232,27 @@ class DescriptorPoolsArena final {
                        VkDescriptorSetLayout dsl,
                        uint32_t numDescriptorsPerDSet,
                        const char* debugName) :
+    DescriptorPoolsArena(ctx,
+                         type0,
+                         type1,
+                         dsl,
+                         numDescriptorsPerDSet,
+                         numDescriptorsPerDSet,
+                         debugName) {}
+  // `numDescriptorsPerDSet0` and `numDescriptorsPerDSet1` are the numbers of descriptors of `type0`
+  // and `type1` in a descriptor set
+  DescriptorPoolsArena(const VulkanContext& ctx,
+                       VkDescriptorType type0,
+                       VkDescriptorType type1,
+                       VkDescriptorSetLayout dsl,
+                       uint32_t numDescriptorsPerDSet0,
+                       uint32_t numDescriptorsPerDSet1,
+                       const char* debugName) :
     ctx_(ctx),
     device_(ctx.getVkDevice()),
     numTypes_(2),
     types_{type0, type1},
-    numDescriptorsPerDSet_(numDescriptorsPerDSet),
+    numDescriptorsPerDSet_{numDescriptorsPerDSet0, numDescriptorsPerDSet1},
     dsl_(dsl) {
     IGL_DEBUG_ASSERT(debugName);
     dpDebugName_ = IGL_FORMAT("Descriptor Pool: {}", debugName ? debugName : "");
@@ -308,7 +324,7 @@ class DescriptorPoolsArena final {
     VkDescriptorPoolSize poolSizes[IGL_ARRAY_NUM_ELEMENTS(types_)];
     for (uint32_t i = 0; i != numTypes_; i++) {
       poolSizes[i] = VkDescriptorPoolSize{
-          types_[i], numDescriptorsPerDSet_ ? kNumDSetsPerPool * numDescriptorsPerDSet_ : 1u};
+          types_[i], numDescriptorsPerDSet_[i] ? kNumDSetsPerPool * numDescriptorsPerDSet_[i] : 1u};
     }
     VK_ASSERT(ivkCreateDescriptorPool(&ctx_.vf_,
                                       device_,
@@ -335,7 +351,8 @@ class DescriptorPoolsArena final {
   bool isNewPool_ = true; // is a new created pool or an old cached pool
   const uint32_t numTypes_ = 0;
   VkDescriptorType types_[2] = {VK_DESCRIPTOR_TYPE_MAX_ENUM, VK_DESCRIPTOR_TYPE_MAX_ENUM};
-  const uint32_t numDescriptorsPerDSet_ = 0;
+  // the number of descriptors of types_[i] in a descriptor set
+  const std::array<uint32_t, 2> numDescriptorsPerDSet_ = {};
   uint32_t numRemainingDSetsInPool_ = 0;
   std::string dpDebugName_;
 
@@ -553,15 +570,27 @@ struct VulkanContextImpl final {
   // NOLINTBEGIN(readability-identifier-naming)
   DescriptorPoolsArena& getOrCreateArena_StorageImages(const VulkanContext& ctx,
                                                        VkDescriptorSetLayout dsl,
-                                                       uint32_t numBindings)
+                                                       uint32_t numStorageImages,
+                                                       uint32_t numInputAttachments)
   // NOLINTEND(readability-identifier-naming)
   {
     auto it = arenaStorageImages.find(dsl);
     if (it != arenaStorageImages.end()) {
       return *it->second;
     }
-    arenaStorageImages[dsl] = std::make_unique<DescriptorPoolsArena>(
-        ctx, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, dsl, numBindings, "arenaStorageImages_");
+    if (numInputAttachments) {
+      arenaStorageImages[dsl] =
+          std::make_unique<DescriptorPoolsArena>(ctx,
+                                                 VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                                                 VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
+                                                 dsl,
+                                                 numStorageImages,
+                                                 numInputAttachments,
+                                                 "arenaStorageImagesAndInputAttachments_");
+    } else {
+      arenaStorageImages[dsl] = std::make_unique<DescriptorPoolsArena>(
+          ctx, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, dsl, numStorageImages, "arenaStorageImages_");
+    }
     return *arenaStorageImages[dsl].get();
   }
   // NOLINTBEGIN(readability-identifier-naming)
@@ -1277,7 +1306,7 @@ Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                      nullptr,
                                      "Buffer: dummy storage");
 
-  // default texture
+  // default texture, also bound in place of an unbound input attachment
   {
     const VkFormat dummyTextureFormat = VK_FORMAT_R8G8B8A8_UNORM;
     Result result;
@@ -1288,7 +1317,7 @@ Result VulkanContext::initContext(const HWDeviceDesc& desc,
                              1,
                              VK_IMAGE_TILING_OPTIMAL,
                              VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
-                                 VK_IMAGE_USAGE_STORAGE_BIT,
+                                 VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT,
                              VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                              0,
                              VK_SAMPLE_COUNT_1_BIT,
@@ -2197,8 +2226,11 @@ void VulkanContext::updateBindingsStorageImages(
     const util::SpvModuleInfo& info) const {
   IGL_PROFILER_FUNCTION();
 
-  DescriptorPoolsArena& arena = pimpl_->getOrCreateArena_StorageImages(
-      *this, dsl.getVkDescriptorSetLayout(), dsl.numBindings);
+  DescriptorPoolsArena& arena =
+      pimpl_->getOrCreateArena_StorageImages(*this,
+                                             dsl.getVkDescriptorSetLayout(),
+                                             static_cast<uint32_t>(info.images.size()),
+                                             static_cast<uint32_t>(info.inputAttachments.size()));
 
   VkDescriptorSet dset = arena.getNextDescriptorSet(*immediate_, nextSubmitHandle);
 
@@ -2207,7 +2239,11 @@ void VulkanContext::updateBindingsStorageImages(
   uint32_t numStorageImages = 0;
 
   // NOLINTNEXTLINE(modernize-avoid-c-arrays)
-  VkWriteDescriptorSet writes[IGL_STORAGE_IMAGES_MAX]; // uninitialized
+  VkDescriptorImageInfo infoInputAttachments[IGL_COLOR_ATTACHMENTS_MAX]; // uninitialized
+  uint32_t numInputAttachments = 0;
+
+  // NOLINTNEXTLINE(modernize-avoid-c-arrays)
+  VkWriteDescriptorSet writes[IGL_STORAGE_IMAGES_MAX + IGL_COLOR_ATTACHMENTS_MAX]; // uninitialized
   uint32_t numWrites = 0;
 
   // make sure the guard value is always there
@@ -2227,6 +2263,33 @@ void VulkanContext::updateBindingsStorageImages(
         .sampler = VK_NULL_HANDLE,
         .imageView = imageView ? imageView : dummyImageView,
         .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
+    };
+  }
+
+  for (const util::InputAttachmentDescription& d : info.inputAttachments) {
+    IGL_DEBUG_ASSERT(d.descriptorSet == kBindPoint_StorageImages);
+    const uint32_t index = d.inputAttachmentIndex;
+    if (index >= IGL_ARRAY_NUM_ELEMENTS(data.inputAttachments) ||
+        numInputAttachments >= IGL_ARRAY_NUM_ELEMENTS(infoInputAttachments)) {
+      IGL_LOG_ERROR_ONCE("updateBindingsStorageImages: cannot bind input attachment %u\n", index);
+      continue;
+    }
+    VkImageView imageView = data.inputAttachments[index];
+    if (!imageView) {
+      IGL_LOG_ERROR_ONCE("Input attachment %u has no image view bound; using a dummy image view\n",
+                         index);
+      imageView = dummyImageView;
+    }
+    writes[numWrites++] =
+        ivkGetWriteDescriptorSetImageInfo(dset,
+                                          d.bindingLocation,
+                                          VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
+                                          1,
+                                          &infoInputAttachments[numInputAttachments]);
+    infoInputAttachments[numInputAttachments++] = VkDescriptorImageInfo{
+        .sampler = VK_NULL_HANDLE,
+        .imageView = imageView,
+        .imageLayout = kInputAttachmentImageLayout,
     };
   }
 
@@ -2390,6 +2453,9 @@ void VulkanContext::updateBindingsStorageImagesByDescriptorBuffer(
     const BindingsStorageImages& data,
     const VulkanDescriptorSetLayout& dsl,
     const util::SpvModuleInfo& info) const {
+  IGL_DEBUG_ASSERT(info.inputAttachments.empty(),
+                   "Input attachments are not supported with VK_EXT_descriptor_buffer, "
+                   "Device::createRenderPipeline() rejects such pipelines");
   if (info.images.empty()) {
     return;
   }

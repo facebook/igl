@@ -749,6 +749,71 @@ void overrideImageLayout(ITexture* texture, VkImageLayout layout) {
   tex->getVulkanTexture().image.imageLayout_ = layout;
 }
 
+Result validateShaderModuleBindings(const util::SpvModuleInfo& info, const std::string& debugName) {
+  // the reflection uses 0xffffffff for what a variable does not declare
+  const auto str = [](uint32_t value) {
+    return value == util::kNoBindingLocation ? std::string("none") : std::to_string(value);
+  };
+  const auto invalid = [&debugName](const std::string& what) {
+    return Result(Result::Code::ArgumentInvalid,
+                  IGL_FORMAT("Shader module '{}': {}", debugName, what));
+  };
+
+  for (const auto& i : info.images) {
+    if (i.descriptorSet == kBindPoint_StorageImages &&
+        i.bindingLocation >= IGL_STORAGE_IMAGES_MAX) {
+      return invalid(IGL_FORMAT(
+          "storage image with set = {}, binding = {}: the storage images use the bindings below "
+          "IGL_STORAGE_IMAGES_MAX = {}, the bindings from there are for input attachments",
+          i.descriptorSet,
+          str(i.bindingLocation),
+          IGL_STORAGE_IMAGES_MAX));
+    }
+  }
+
+  uint32_t usedIndices = 0;
+  for (const auto& a : info.inputAttachments) {
+    // this runs for every pipeline that is bound, so the message is formatted only when rejecting
+    const auto reject = [&](const std::string& reason) {
+      return invalid(
+          IGL_FORMAT("subpassInput with set = {}, binding = {}, input_attachment_index = {}: {}",
+                     str(a.descriptorSet),
+                     str(a.bindingLocation),
+                     str(a.inputAttachmentIndex),
+                     reason));
+    };
+    if (a.isArray) {
+      return reject("arrays of subpass inputs are not supported");
+    }
+    if (a.isMultisampled) {
+      return reject("multisampled subpass inputs (subpassInputMS) are not supported");
+    }
+    if (a.inputAttachmentIndex == util::kNoInputAttachmentIndex) {
+      return reject("the variable has no input_attachment_index");
+    }
+    if (a.descriptorSet != kBindPoint_StorageImages) {
+      return reject(
+          IGL_FORMAT("the set has to be {}", static_cast<uint32_t>(kBindPoint_StorageImages)));
+    }
+    if (a.inputAttachmentIndex >= IGL_COLOR_ATTACHMENTS_MAX) {
+      return reject(IGL_FORMAT("the index has to be less than IGL_COLOR_ATTACHMENTS_MAX = {}",
+                               IGL_COLOR_ATTACHMENTS_MAX));
+    }
+    if (a.bindingLocation != IGL_STORAGE_IMAGES_MAX + a.inputAttachmentIndex) {
+      return reject(
+          IGL_FORMAT("the binding has to be IGL_STORAGE_IMAGES_MAX + input_attachment_index = {}",
+                     IGL_STORAGE_IMAGES_MAX + a.inputAttachmentIndex));
+    }
+    const uint32_t indexBit = 1u << a.inputAttachmentIndex;
+    if ((usedIndices & indexBit) != 0) {
+      return reject("another subpassInput already uses this input_attachment_index");
+    }
+    usedIndices |= indexBit;
+  }
+
+  return Result();
+}
+
 void ensureShaderModule(IShaderModule* sm) {
   IGL_DEBUG_ASSERT(sm);
 
@@ -781,6 +846,12 @@ void ensureShaderModule(IShaderModule* sm) {
           kBindPoint_StorageImages);
       continue;
     }
+  }
+  // Device::createShaderModule() rejects such modules. This is called for every pipeline that is
+  // bound, so the error is logged only once.
+  const Result bindingsResult = validateShaderModuleBindings(info, sm->info().debugName);
+  if (!IGL_DEBUG_VERIFY(bindingsResult.isOk())) {
+    IGL_LOG_ERROR_ONCE("%s\n", bindingsResult.message.c_str());
   }
 }
 

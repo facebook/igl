@@ -36,6 +36,7 @@ struct BindingsTextures {
 
 struct BindingsStorageImages {
   VkImageView images[IGL_STORAGE_IMAGES_MAX] = {};
+  VkImageView inputAttachments[IGL_COLOR_ATTACHMENTS_MAX] = {};
 };
 
 static_assert(std::is_trivially_copyable_v<BindingsBuffers>);
@@ -69,6 +70,15 @@ class ResourcesBinder final {
   /// @brief Binds a texture to index equal to `index`
   void bindTexture(uint32_t index, Texture* tex);
   void bindStorageImage(uint32_t index, Texture* tex);
+
+  /// @brief Binds a texture that a fragment shader reads as input attachment `index` (a
+  /// `subpassInput` declared with `input_attachment_index = index`). The descriptor references the
+  /// image view of `mipLevel` and `layer` that the framebuffers use, because the render pass
+  /// has to read the attachment of the framebuffer. A null texture unbinds the input attachment.
+  void bindInputAttachment(uint32_t index,
+                           Texture* IGL_NULLABLE texture,
+                           uint32_t mipLevel,
+                           uint32_t layer);
 
   /// @brief Convenience function that updates all bindings in the context for all resource types
   /// that have been modified since the last time this function was called

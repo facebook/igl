@@ -63,7 +63,7 @@ struct VulkanImageViewCreateInfo;
  * Descriptor sets:
  *  0 - combined image samplers
  *  1 - uniform/storage buffers
- *  2 - storage images
+ *  2 - storage images and input attachments
  *  3 - bindless textures/samplers  <--  optional
  */
 // NOLINTBEGIN(readability-identifier-naming)

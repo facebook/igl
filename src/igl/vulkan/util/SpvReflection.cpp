@@ -22,6 +22,8 @@ static_assert(sizeof(ImageDescription) == 16);
 static_assert(std::is_trivially_copyable_v<ImageDescription>);
 static_assert(sizeof(BufferDescription) == 12);
 static_assert(std::is_trivially_copyable_v<BufferDescription>);
+static_assert(sizeof(InputAttachmentDescription) == 16);
+static_assert(std::is_trivially_copyable_v<InputAttachmentDescription>);
 
 namespace {
 
@@ -31,8 +33,11 @@ struct SpirvId {
   uint32_t storageClass = 0;
   uint32_t binding = kNoBindingLocation;
   uint32_t dset = kNoDescriptorSet;
+  uint32_t inputAttachmentIndex = kNoInputAttachmentIndex;
   TextureType type = TextureType::Invalid;
   bool isStorageImage = false;
+  bool isInputAttachment = false;
+  bool isMultisampled = false;
   uint32_t imageFormat = SpvImageFormatUnknown;
 };
 
@@ -135,6 +140,15 @@ SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes) {
         ids[targetId].dset = words[kOpDecorateOperandIds];
         break;
       }
+      case SpvDecorationInputAttachmentIndex: {
+        // words[kOpDecorateOperandIds] has to be inside of the instruction and of the module
+        const bool hasOperand = instructionSize > kOpDecorateOperandIds &&
+                                words + kOpDecorateOperandIds < spirv + size;
+        if (IGL_DEBUG_VERIFY(hasOperand, "OpDecorate out of bounds")) {
+          ids[targetId].inputAttachmentIndex = words[kOpDecorateOperandIds];
+        }
+        break;
+      }
       default:
         break;
       }
@@ -169,8 +183,13 @@ SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes) {
         const uint32_t sampledValue = (instructionSize > kOpTypeImageSampledField)
                                           ? words[kOpTypeImageSampledField]
                                           : 0; // default if missing
-        // If sampledValue == 2, this is a storage image
-        ids[targetId].isStorageImage = sampledValue == 2;
+        constexpr uint32_t kOpTypeImageMultisampledField = 6;
+        ids[targetId].isMultisampled = instructionSize > kOpTypeImageMultisampledField &&
+                                       words[kOpTypeImageMultisampledField] != 0;
+        ids[targetId].isInputAttachment = dim == SpvDimSubpassData;
+        // If sampledValue == 2, this is a storage image. A subpassInput is also declared with
+        // sampledValue == 2, but it is an input attachment.
+        ids[targetId].isStorageImage = !ids[targetId].isInputAttachment && sampledValue == 2;
         if (instructionSize > kOpTypeImageFormatField) {
           ids[targetId].imageFormat = words[kOpTypeImageFormatField];
         } else {
@@ -191,6 +210,20 @@ SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes) {
       ids[targetId].opCode = opCode;
       ids[targetId].typeId = words[kOpTypePointerObjectTypeId];
       ids[targetId].storageClass = words[kOpTypePointerStorageClassId];
+      break;
+    }
+    case SpvOpTypeArray:
+    case SpvOpTypeRuntimeArray: {
+      constexpr uint32_t kOpTypeArrayResultId = 1;
+      constexpr uint32_t kOpTypeArrayElementTypeId = 2;
+      if (IGL_DEBUG_VERIFY(instructionSize > kOpTypeArrayElementTypeId,
+                           "OpTypeArray out of bounds")) {
+        const uint32_t targetId = words[kOpTypeArrayResultId];
+        IGL_DEBUG_ASSERT(targetId < kBound);
+        IGL_DEBUG_ASSERT(ids[targetId].opCode == 0);
+        ids[targetId].opCode = opCode;
+        ids[targetId].typeId = words[kOpTypeArrayElementTypeId];
+      }
       break;
     }
     case SpvOpConstant: {
@@ -225,13 +258,23 @@ SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes) {
     words += instructionSize;
   }
 
+  const auto isArrayType = [&ids](uint32_t typeId) {
+    return typeId < ids.size() &&
+           (ids[typeId].opCode == SpvOpTypeArray || ids[typeId].opCode == SpvOpTypeRuntimeArray);
+  };
+  // arrays of arrays are followed up to this depth, a module cannot make the walk endless
+  constexpr uint32_t kMaxArrayDepth = 4;
+
   for (const auto& id : ids) {
     const bool isStorage = id.storageClass == SpvStorageClassStorageBuffer;
     const bool isUniform = id.storageClass == SpvStorageClassUniform ||
                            id.storageClass == SpvStorageClassUniformConstant;
     if (id.opCode == SpvOpVariable && (isStorage || isUniform)) {
+      if (!IGL_DEBUG_VERIFY(id.typeId < kBound && ids[id.typeId].typeId < kBound,
+                            "OpVariable out of bounds")) {
+        continue;
+      }
       IGL_DEBUG_ASSERT(ids[id.typeId].opCode == SpvOpTypePointer);
-      IGL_DEBUG_ASSERT(ids[id.typeId].typeId < kBound);
 
       const uint32_t opCode = ids[ids[id.typeId].typeId].opCode;
 
@@ -242,6 +285,14 @@ SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes) {
             {.bindingLocation = id.binding, .descriptorSet = id.dset, .isStorage = isStorage});
         break;
       case SpvOpTypeImage: {
+        const SpirvId& image = ids[ids[id.typeId].typeId];
+        if (image.isInputAttachment) {
+          info.inputAttachments.push_back({.bindingLocation = id.binding,
+                                           .descriptorSet = id.dset,
+                                           .inputAttachmentIndex = id.inputAttachmentIndex,
+                                           .isMultisampled = image.isMultisampled});
+          break;
+        }
         const TextureType tt = ids[ids[id.typeId].typeId].type; // dimension
         IGL_DEBUG_ASSERT(tt != TextureType::Invalid);
         const bool isStorageImage = ids[ids[id.typeId].typeId].isStorageImage;
@@ -266,6 +317,23 @@ SpvModuleInfo getReflectionData(const uint32_t* spirv, size_t numBytes) {
         IGL_DEBUG_ASSERT(tt != TextureType::Invalid);
         info.textures.push_back(
             {.bindingLocation = id.binding, .descriptorSet = id.dset, .type = tt});
+        break;
+      }
+      case SpvOpTypeArray:
+      case SpvOpTypeRuntimeArray: {
+        // Arrays of subpass inputs are not supported. They are reflected, so that they can be
+        // rejected instead of silently dropped.
+        uint32_t elementId = ids[ids[id.typeId].typeId].typeId;
+        for (uint32_t depth = 0; depth != kMaxArrayDepth && isArrayType(elementId); ++depth) {
+          elementId = ids[elementId].typeId;
+        }
+        if (elementId < ids.size() && ids[elementId].isInputAttachment) {
+          info.inputAttachments.push_back({.bindingLocation = id.binding,
+                                           .descriptorSet = id.dset,
+                                           .inputAttachmentIndex = id.inputAttachmentIndex,
+                                           .isArray = true,
+                                           .isMultisampled = ids[elementId].isMultisampled});
+        }
         break;
       }
       default:
@@ -318,6 +386,7 @@ SpvModuleInfo mergeReflectionData(const SpvModuleInfo& info1, const SpvModuleInf
   combineDescriptions(result.buffers, info1.buffers, info2.buffers);
   combineDescriptions(result.textures, info1.textures, info2.textures);
   combineDescriptions(result.images, info1.images, info2.images);
+  combineDescriptions(result.inputAttachments, info1.inputAttachments, info2.inputAttachments);
 
   result.hasPushConstants = info1.hasPushConstants || info2.hasPushConstants;
   result.usageMaskBuffers = info1.usageMaskBuffers | info2.usageMaskBuffers;

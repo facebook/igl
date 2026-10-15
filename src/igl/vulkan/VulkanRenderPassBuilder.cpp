@@ -220,7 +220,7 @@ VkResult VulkanRenderPassBuilder::buildWithSubpasses(const VulkanFunctionTable& 
       const VkAttachmentReference2 inputRef = {
           .sType = VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_2,
           .attachment = refsColor2_[i].attachment,
-          .layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+          .layout = kInputAttachmentImageLayout,
           .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
       };
       colorRefs[k][i] = hasBit(colorMask, i) ? refsColor2_[i] : unusedRef;

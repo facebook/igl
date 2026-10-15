@@ -192,10 +192,10 @@ PipelineState::PipelineState(
   }
   // 2. Bindless descriptors are managed in VulkanContext
 
-  // 3. Storage images
+  // 3. Storage images and input attachments
   {
     std::vector<VkDescriptorSetLayoutBinding> bindings;
-    bindings.reserve(info.images.size());
+    bindings.reserve(info.images.size() + info.inputAttachments.size());
     for (const auto& t : info.images) {
       const uint32_t loc = t.bindingLocation;
       bindings.emplace_back(VkDescriptorSetLayoutBinding{
@@ -205,6 +205,15 @@ PipelineState::PipelineState(
           .stageFlags = stageFlags,
       });
     }
+    for (const auto& a : info.inputAttachments) {
+      // VUID-VkDescriptorSetLayoutBinding-descriptorType-01510: fragment only
+      bindings.emplace_back(VkDescriptorSetLayoutBinding{
+          .binding = a.bindingLocation,
+          .descriptorType = VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,
+          .descriptorCount = 1,
+          .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+      });
+    }
     std::vector<VkDescriptorBindingFlags> bindingFlags(bindings.size());
     dslStorageImages = std::make_unique<VulkanDescriptorSetLayout>(
         ctx,
@@ -212,7 +221,8 @@ PipelineState::PipelineState(
         static_cast<uint32_t>(bindings.size()),
         bindings.data(),
         bindingFlags.data(),
-        IGL_FORMAT("Descriptor Set Layout (STORAGE_IMAGE): {}", debugName).c_str());
+        IGL_FORMAT("Descriptor Set Layout (STORAGE_IMAGE, INPUT_ATTACHMENT): {}", debugName)
+            .c_str());
   }
 }
 

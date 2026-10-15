@@ -283,6 +283,36 @@ TEST_F(ResourcesBinderStorageImageTest, StorageImageIndexIsBoundedByStorageImage
 #endif // !IGL_DEBUG_ABORT_ENABLED
 }
 
+TEST_F(ResourcesBinderStorageImageTest, InputAttachmentIndexIsBoundedByColorAttachmentsMax) {
+#if !IGL_DEBUG_ABORT_ENABLED
+  GTEST_SKIP() << "An out-of-range index is observable only through the debug abort listener";
+#else
+  vulkan::ResourcesBinder binder(nullptr, getVulkanContext(), VK_PIPELINE_BIND_POINT_GRAPHICS);
+  ASSERT_FALSE(sDebugAbortFired) << "Constructing the binder must not abort";
+
+  // A null texture clears an input attachment slot
+  binder.bindInputAttachment(0, nullptr, 0, 0);
+  binder.bindInputAttachment(IGL_COLOR_ATTACHMENTS_MAX - 1, nullptr, 0, 0);
+  EXPECT_FALSE(sDebugAbortFired)
+      << "A null texture must be accepted at every input attachment index";
+
+  binder.bindInputAttachment(IGL_COLOR_ATTACHMENTS_MAX, nullptr, 0, 0);
+  EXPECT_TRUE(sDebugAbortFired) << "One past the highest input attachment index must be rejected";
+#endif // !IGL_DEBUG_ABORT_ENABLED
+}
+
+TEST_F(ResourcesBinderStorageImageTest, InputAttachmentsNeedAGraphicsBinder) {
+#if !IGL_DEBUG_ABORT_ENABLED
+  GTEST_SKIP() << "The rejection is observable only through the debug abort listener";
+#else
+  vulkan::ResourcesBinder binder(nullptr, getVulkanContext(), VK_PIPELINE_BIND_POINT_COMPUTE);
+  ASSERT_FALSE(sDebugAbortFired) << "Constructing the binder must not abort";
+
+  binder.bindInputAttachment(0, nullptr, 0, 0);
+  EXPECT_TRUE(sDebugAbortFired) << "A compute binder must reject input attachments";
+#endif // !IGL_DEBUG_ABORT_ENABLED
+}
+
 } // namespace igl::tests
 
 #endif // IGL_PLATFORM_WINDOWS || IGL_PLATFORM_ANDROID || IGL_PLATFORM_MACOSX || IGL_PLATFORM_LINUX

@@ -100,6 +100,10 @@
 
 namespace igl::vulkan {
 
+namespace util {
+struct SpvModuleInfo;
+} // namespace util
+
 // The color definitions below are used by debugging utility functions, such as the ones provided by
 // VK_EXT_debug_utils
 #define K_COLOR_GENERATE_MIPMAPS igl::Color(1.f, 0.75f, 0.f)
@@ -177,6 +181,11 @@ struct VulkanSampler final {
 
 static_assert(std::is_trivially_copyable_v<VulkanSampler>);
 
+/// @brief The layout of the images that fragment shaders read as input attachments. It is the
+/// layout of the input attachment references of a render pass and of the descriptors that read
+/// them.
+constexpr VkImageLayout kInputAttachmentImageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
 // The functions below are convenience functions used to convert to and from Vulkan values to IGL
 // values
 
@@ -231,6 +240,16 @@ void transitionToShaderReadOnly(VkCommandBuffer cmdBuf, ITexture* texture);
 /// not perform a transition, it only updates the texture's member variable that stores its current
 /// layout
 void overrideImageLayout(ITexture* texture, VkImageLayout layout);
+
+/// @brief Checks that the input attachments and the storage images of a shader module follow the
+/// conventions of IGL. A shader declares input attachment `i` once, as
+/// `layout(input_attachment_index = i, set = kBindPoint_StorageImages, binding =
+/// IGL_STORAGE_IMAGES_MAX + i) uniform subpassInput`, without arrays and multisampling. The storage
+/// images in that set use the bindings below IGL_STORAGE_IMAGES_MAX. Returns
+/// Result::Code::ArgumentInvalid with a message that names the offending variable and `debugName`
+/// otherwise.
+[[nodiscard]] Result validateShaderModuleBindings(const util::SpvModuleInfo& info,
+                                                  const std::string& debugName);
 
 /// @brief Ensures that all shader bindings are bound by checking the SPIR-V reflection. If the
 /// function doesn't assert at some point, the shader bindings are correct. Only for debugging.
