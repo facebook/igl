@@ -1,0 +1,12 @@
+{
+  "namespace": "igl::shell::slang",
+  "programs": [
+    {"name": "SplatRender", "source": "SplatRender.slang", "profile": "portable"},
+    {"name": "SplatBin", "source": "SplatBin.slang", "profile": "portable"},
+    {"name": "SplatForward", "source": "SplatForward.slang", "profile": "portable"},
+    {"name": "SplatBackward", "source": "SplatBackward.slang", "profile": "portable"},
+    {"name": "SplatAdam", "source": "SplatAdam.slang", "profile": "portable"},
+    {"name": "ShowcaseMaterialsPass", "source": "ShowcaseMaterialsPass.slang", "profile": "highend", "conformances": ["MetalRoughMaterial:IMaterial=0", "ClearcoatMaterial:IMaterial=1", "SheenMaterial:IMaterial=2", "AnisotropicMaterial:IMaterial=3"]},
+    {"name": "ShowcaseInverse", "source": "ShowcaseInverse.slang", "profile": "highend"}
+  ]
+}
