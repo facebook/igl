@@ -103,16 +103,27 @@ glslang_spv_options_t getSpvOptions(const ShaderCompilerOptions& options) noexce
   return spvOptions;
 }
 
-// NOLINTNEXTLINE(bugprone-exception-escape)
 Result compileShader(ShaderStage stage,
                      const char* code,
                      std::vector<uint32_t>& outSPIRV,
                      const glslang_resource_t* glslLangResource,
                      const ShaderCompilerOptions& options) noexcept {
+  return compileShader(stage, code, outSPIRV, glslLangResource, options, GlslTargetVersion{});
+}
+
+// NOLINTNEXTLINE(bugprone-exception-escape)
+Result compileShader(ShaderStage stage,
+                     const char* code,
+                     std::vector<uint32_t>& outSPIRV,
+                     const glslang_resource_t* glslLangResource,
+                     const ShaderCompilerOptions& options,
+                     GlslTargetVersion target) noexcept {
   IGL_PROFILER_FUNCTION();
 
   glslang_input_t input{};
   glslangGetDefaultInput(code, getGLSLangShaderStage(stage), glslLangResource, &input);
+  input.client_version = target.clientVersion;
+  input.target_language_version = target.spirvVersion;
 
   glslang_shader_t* shader = glslang_shader_create(&input);
   IGL_SCOPE_EXIT {

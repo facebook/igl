@@ -339,6 +339,71 @@ void main() {
   igl::glslang::finalizeCompiler();
 }
 
+// SPIR-V 1.5 is rejected on pre-1.2 devices (VUID-VkShaderModuleCreateInfo-pCode-08737),
+// so the compile target must be clampable: the default stays 1.5 (byte-for-byte stability)
+// while an explicit Vulkan 1.1 / SPIR-V 1.3 target emits version word 0x10300.
+GTEST_TEST(GlslCompilerTargetVersion, DefaultAndClampedSpirvVersion) {
+  igl::glslang::initializeCompiler();
+
+  glslang_resource_t resource = {};
+  glslangGetDefaultResource(&resource);
+
+  const char* source = R"(#version 460
+layout(location = 0) out vec4 outColor;
+void main() {
+  outColor = vec4(1.0, 0.5, 0.25, 1.0);
+}
+)";
+
+  constexpr uint32_t kSpirvMagic = 0x07230203;
+  std::vector<uint32_t> spirvDefault;
+  EXPECT_TRUE(
+      glslang::compileShader(ShaderStage::Fragment, source, spirvDefault, &resource).isOk());
+  ASSERT_GT(spirvDefault.size(), 1u);
+  EXPECT_EQ(spirvDefault.front(), kSpirvMagic);
+  EXPECT_EQ(spirvDefault[1], 0x00010500u);
+
+  std::vector<uint32_t> spirvClamped;
+  const glslang::GlslTargetVersion target11 = {.clientVersion = GLSLANG_TARGET_VULKAN_1_1,
+                                               .spirvVersion = GLSLANG_TARGET_SPV_1_3};
+  EXPECT_TRUE(
+      glslang::compileShader(ShaderStage::Fragment, source, spirvClamped, &resource, {}, target11)
+          .isOk());
+  ASSERT_GT(spirvClamped.size(), 1u);
+  EXPECT_EQ(spirvClamped.front(), kSpirvMagic);
+  EXPECT_EQ(spirvClamped[1], 0x00010300u);
+
+  igl::glslang::finalizeCompiler();
+}
+
+// glslTargetForVulkanVersion() maps each Vulkan API version to the newest SPIR-V target it
+// accepts: pre-1.1 (including unknown 0.0) to Vulkan 1.0 / SPIR-V 1.0, 1.x<1.2 to Vulkan 1.1 /
+// SPIR-V 1.3, and 1.2+ to the default. Pure mapping logic - no compiler or device required.
+GTEST_TEST(GlslTargetVersion, MapsVulkanApiBoundaries) {
+  using glslang::glslTargetForVulkanVersion;
+  using glslang::GlslTargetVersion;
+
+  const GlslTargetVersion v00 = glslTargetForVulkanVersion(0, 0);
+  EXPECT_EQ(v00.clientVersion, GLSLANG_TARGET_VULKAN_1_0);
+  EXPECT_EQ(v00.spirvVersion, GLSLANG_TARGET_SPV_1_0);
+
+  const GlslTargetVersion v10 = glslTargetForVulkanVersion(1, 0);
+  EXPECT_EQ(v10.clientVersion, GLSLANG_TARGET_VULKAN_1_0);
+  EXPECT_EQ(v10.spirvVersion, GLSLANG_TARGET_SPV_1_0);
+
+  const GlslTargetVersion v11 = glslTargetForVulkanVersion(1, 1);
+  EXPECT_EQ(v11.clientVersion, GLSLANG_TARGET_VULKAN_1_1);
+  EXPECT_EQ(v11.spirvVersion, GLSLANG_TARGET_SPV_1_3);
+
+  const GlslTargetVersion v12 = glslTargetForVulkanVersion(1, 2);
+  EXPECT_EQ(v12.clientVersion, GLSLANG_TARGET_VULKAN_1_2);
+  EXPECT_EQ(v12.spirvVersion, GLSLANG_TARGET_SPV_1_5);
+
+  const GlslTargetVersion v13 = glslTargetForVulkanVersion(1, 3);
+  EXPECT_EQ(v13.clientVersion, GLSLANG_TARGET_VULKAN_1_2);
+  EXPECT_EQ(v13.spirvVersion, GLSLANG_TARGET_SPV_1_5);
+}
+
 TEST_F(DeviceVulkanTest, BufferDeviceAddress) {
   const igl::vulkan::VulkanContext& ctx =
       static_cast<const igl::vulkan::Device*>(iglDev_.get())->getVulkanContext();

@@ -580,8 +580,21 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
                            &ctx_->getVkPhysicalDeviceProperties(),
                            &ctx_->getvkPhysicalDeviceMeshShaderPropertiesEXT());
 
+  // Clamp the SPIR-V target to what the device's Vulkan API version accepts; generating
+  // the default 1.5 for older devices fails VUID-VkShaderModuleCreateInfo-pCode-08737.
+  // Newer devices keep the default.
+  const uint32_t apiVersion = ctx_->getVkPhysicalDeviceProperties().apiVersion;
+  const glslang::GlslTargetVersion target = glslang::glslTargetForVulkanVersion(
+      VK_VERSION_MAJOR(apiVersion), VK_VERSION_MINOR(apiVersion));
+
   std::vector<uint32_t> spirv;
-  const Result result = glslang::compileShader(stage, source, spirv, &glslangResource, options);
+  const Result result =
+      glslang::compileShader(stage, source, spirv, &glslangResource, options, target);
+
+  if (!result.isOk()) {
+    Result::setResult(outResult, result);
+    return nullptr;
+  }
 
   VkShaderModule vkShaderModule = VK_NULL_HANDLE;
   const VkShaderModuleCreateInfo ci = {
@@ -593,9 +606,6 @@ std::shared_ptr<VulkanShaderModule> Device::createShaderModule(ShaderStage stage
 
   Result::setResult(outResult, result);
 
-  if (!result.isOk()) {
-    return nullptr;
-  }
   IGL_DEBUG_ASSERT(vkShaderModule != VK_NULL_HANDLE);
 
   if (!debugName.empty()) {
