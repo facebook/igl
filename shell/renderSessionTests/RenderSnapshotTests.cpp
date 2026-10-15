@@ -30,6 +30,7 @@
 #include <shell/renderSessions/MeshShaderTriangleSession.h>
 #include <shell/renderSessions/MultiDrawIndexedIndirectSession.h>
 #include <shell/renderSessions/ScissorTestSession.h>
+#include <shell/renderSessions/SlangShowcaseSession.h>
 #include <shell/renderSessions/SlangSplatsSession.h>
 #include <shell/renderSessions/SpecConstantsSession.h>
 #include <shell/renderSessions/SrgbMipmapGammaSession.h>
@@ -85,6 +86,24 @@ TEST_F(RenderSnapshotTests, MRTSession) {
 TEST_F(RenderSnapshotTests, SlangSplatsSession) {
   SlangSplatsSession session(platform_);
   render(session, "SlangSplatsSession", 75);
+}
+
+TEST_F(RenderSnapshotTests, SlangShowcaseSpecialized) {
+  SlangShowcaseSession session(platform_);
+  session.setShadingMode(SlangShowcaseSession::ShadingMode::Specialized);
+  render(session, "SlangShowcaseSpecialized", 2);
+}
+
+TEST_F(RenderSnapshotTests, SlangShowcaseDynamic) {
+  SlangShowcaseSession session(platform_);
+  session.setShadingMode(SlangShowcaseSession::ShadingMode::Dynamic);
+  render(session, "SlangShowcaseDynamic", 2);
+}
+
+TEST_F(RenderSnapshotTests, SlangShowcaseHalf) {
+  SlangShowcaseSession session(platform_);
+  session.setShadingMode(SlangShowcaseSession::ShadingMode::Half);
+  render(session, "SlangShowcaseHalf", 2);
 }
 
 TEST_F(RenderSnapshotTests, TQMultiRenderPassSession) {
