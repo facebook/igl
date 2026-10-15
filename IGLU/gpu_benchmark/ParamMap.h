@@ -25,7 +25,8 @@ namespace iglu::gpu_benchmark {
 /// without the dashes but with the prefix, for example "tile-rounds" for `--tile-rounds`. A key
 /// present in both sources takes its value from `args`.
 ///
-/// Nothing here throws: a value that does not parse yields the default given by the caller.
+/// Nothing here throws: a value that does not parse yields the default given by the caller. That,
+/// a clamped value and a malformed size are logged as warnings.
 class ParamMap {
  public:
   ParamMap(const std::vector<std::pair<std::string, std::string>>& customParams,

@@ -14,6 +14,7 @@
 #include <optional>
 #include <string_view>
 #include <system_error>
+#include <igl/Common.h> // IWYU pragma: keep
 
 namespace iglu::gpu_benchmark {
 
@@ -76,6 +77,14 @@ template<typename Integer>
   return items;
 }
 
+void warnIgnored(const std::string& key, const std::string& value, const char* expected) {
+  IGLLog(IGLLogWarning,
+         "Ignoring the value '%s' of %s, which is not %s\n",
+         value.c_str(),
+         key.c_str(),
+         expected);
+}
+
 [[nodiscard]] std::optional<std::pair<uint32_t, uint32_t>> parseSize(std::string_view item) {
   const size_t separator = item.find_first_of("xX");
   if (separator == std::string_view::npos) {
@@ -136,7 +145,12 @@ int64_t ParamMap::getInt(const std::string& key, int64_t defaultValue) const {
   if (it == values_.end()) {
     return defaultValue;
   }
-  return parseInteger<int64_t>(it->second).value_or(defaultValue);
+  const std::optional<int64_t> value = parseInteger<int64_t>(it->second);
+  if (!value) {
+    warnIgnored(key, it->second, "a whole number");
+    return defaultValue;
+  }
+  return *value;
 }
 
 uint32_t ParamMap::getUint(const std::string& key,
@@ -149,11 +163,22 @@ uint32_t ParamMap::getUint(const std::string& key,
   }
   const std::optional<int64_t> value = parseInteger<int64_t>(it->second);
   if (!value) {
+    warnIgnored(key, it->second, "a whole number");
     return defaultValue;
   }
   const int64_t lower = minValue;
   const int64_t upper = std::max(lower, static_cast<int64_t>(maxValue));
-  return static_cast<uint32_t>(std::clamp(*value, lower, upper));
+  const int64_t clamped = std::clamp(*value, lower, upper);
+  if (clamped != *value) {
+    IGLLog(IGLLogWarning,
+           "The value %lld of %s is outside %lld to %lld, using %lld\n",
+           static_cast<long long>(*value),
+           key.c_str(),
+           static_cast<long long>(lower),
+           static_cast<long long>(upper),
+           static_cast<long long>(clamped));
+  }
+  return static_cast<uint32_t>(clamped);
 }
 
 double ParamMap::getDouble(const std::string& key, double defaultValue) const {
@@ -165,6 +190,7 @@ double ParamMap::getDouble(const std::string& key, double defaultValue) const {
   char* end = nullptr;
   const double value = std::strtod(begin, &end);
   if (end == begin || !std::isfinite(value) || !trim(end).empty()) {
+    warnIgnored(key, it->second, "a finite number");
     return defaultValue;
   }
   return value;
@@ -182,6 +208,7 @@ bool ParamMap::getBool(const std::string& key, bool defaultValue) const {
   if (text == "0" || text == "false" || text == "no" || text == "off") {
     return false;
   }
+  warnIgnored(key, it->second, "a boolean");
   return defaultValue;
 }
 
@@ -209,6 +236,8 @@ std::vector<std::pair<uint32_t, uint32_t>> ParamMap::getSizes(
   for (const std::string& item : splitList(it->second)) {
     if (const std::optional<std::pair<uint32_t, uint32_t>> size = parseSize(item)) {
       sizes.push_back(*size);
+    } else {
+      IGLLog(IGLLogWarning, "Ignoring the size '%s' of %s\n", item.c_str(), key.c_str());
     }
   }
   if (sizes.empty()) {

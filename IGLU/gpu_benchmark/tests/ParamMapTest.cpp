@@ -9,10 +9,35 @@
 
 #include <IGLU/gpu_benchmark/ParamMap.h>
 
+#include <cstdarg>
 #include <cstdint>
+#include <cstdio>
 #include <limits>
+#include <string>
+#include <vector>
+#include <igl/Common.h> // IWYU pragma: keep
 
 namespace iglu::gpu_benchmark::tests {
+
+namespace {
+
+std::vector<std::string>& captured() {
+  static auto* const kLines = new std::vector<std::string>();
+  return *kLines;
+}
+
+int captureHandler(IGLLogLevel /*level*/, const char* IGL_RESTRICT format, va_list ap) {
+  char buffer[1024];
+  const int length = std::vsnprintf(buffer, sizeof(buffer), format, ap);
+  captured().emplace_back(buffer);
+  return length;
+}
+
+bool contains(const std::string& text, const char* part) {
+  return text.find(part) != std::string::npos;
+}
+
+} // namespace
 
 TEST(ParamMapTest, SourcesAndPrecedence) {
   const std::vector<std::pair<std::string, std::string>> custom = {
@@ -158,6 +183,40 @@ TEST(ParamMapTest, EmptyResultsReturnTheDefault) {
   EXPECT_EQ(params.getSizes("tile-garbage", {{2, 2}}), (Sizes{{2, 2}}));
   EXPECT_EQ(params.getSizes("tile-mixed", {{2, 2}}), (Sizes{{640, 480}}));
   EXPECT_TRUE(params.getList("tile-empty", {}).empty());
+}
+
+TEST(ParamMapTest, WarnsAboutIgnoredAndClampedValues) {
+  const ParamMap params({{"tile-i", "12x"},
+                         {"tile-u", "99"},
+                         {"tile-d", "abc"},
+                         {"tile-b", "maybe"},
+                         {"tile-s", "0x0,8x8,wide"},
+                         {"tile-ok", "5"}},
+                        {},
+                        "tile-");
+  const IGLLogHandlerFunc previous = IGLLogGetHandler();
+  IGLLogSetHandler(captureHandler);
+  captured().clear();
+  EXPECT_EQ(params.getInt("tile-i", 1), 1);
+  EXPECT_EQ(params.getUint("tile-u", 1, 1, 7), 7u);
+  EXPECT_EQ(params.getDouble("tile-d", 0.5), 0.5);
+  EXPECT_TRUE(params.getBool("tile-b", true));
+  EXPECT_EQ(params.getSizes("tile-s", {}).size(), 1u);
+  const std::vector<std::string> warnings = captured();
+  EXPECT_EQ(params.getUint("tile-ok", 1, 1, 7), 5u);
+  EXPECT_EQ(params.getInt("tile-missing", 3), 3);
+  EXPECT_EQ(params.getString("tile-s", ""), "0x0,8x8,wide");
+  const size_t numLines = captured().size();
+  IGLLogSetHandler(previous);
+
+  ASSERT_EQ(warnings.size(), 6u);
+  EXPECT_TRUE(contains(warnings[0], "'12x' of tile-i")) << warnings[0];
+  EXPECT_TRUE(contains(warnings[1], "99 of tile-u is outside 1 to 7, using 7")) << warnings[1];
+  EXPECT_TRUE(contains(warnings[2], "'abc' of tile-d")) << warnings[2];
+  EXPECT_TRUE(contains(warnings[3], "'maybe' of tile-b")) << warnings[3];
+  EXPECT_TRUE(contains(warnings[4], "'0x0' of tile-s")) << warnings[4];
+  EXPECT_TRUE(contains(warnings[5], "'wide' of tile-s")) << warnings[5];
+  EXPECT_EQ(numLines, warnings.size()) << "valid and missing values log nothing";
 }
 
 } // namespace iglu::gpu_benchmark::tests
