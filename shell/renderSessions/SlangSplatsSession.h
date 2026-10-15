@@ -9,6 +9,7 @@
 
 #pragma once
 
+#include <string>
 #include <shell/shared/platform/Platform.h>
 #include <shell/shared/renderSession/RenderSession.h>
 #include <igl/IGL.h>
@@ -18,7 +19,8 @@ namespace igl::shell {
 // Fits 2048 anisotropic splats to an image by gradient descent on the GPU, with every shader
 // written once in Slang (renderSessions/slang) and differentiated by Slang. Shows the target, the
 // fit, the error, and the fit's forward-mode derivative as the splats move right. Backends
-// without compute show the splats as initialized.
+// without compute draw splats trained ahead of time; `--bake-splats <path>` retrains them and
+// writes slang/generated/SplatsBaked.h to the path.
 class SlangSplatsSession : public RenderSession {
  public:
   explicit SlangSplatsSession(std::shared_ptr<Platform> platform) :
@@ -29,6 +31,7 @@ class SlangSplatsSession : public RenderSession {
  private:
   void createTrainingPipelines(IDevice& device);
   void encodeTrainingStep(ICommandBuffer& commandBuffer);
+  void bake();
 
   std::shared_ptr<IBuffer> splats_;
   std::shared_ptr<IBuffer> tiles_;
@@ -52,6 +55,8 @@ class SlangSplatsSession : public RenderSession {
   std::shared_ptr<IRenderPipelineState> compositePipeline_;
   std::shared_ptr<IVertexInputState> splatInput_;
   std::shared_ptr<ISamplerState> sampler_;
+  std::string bakePath_;
+  uint32_t iterations_ = 0;
 };
 
 } // namespace igl::shell

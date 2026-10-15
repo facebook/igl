@@ -12,6 +12,10 @@
 #include <IGLU/slang/SlangProgram.h>
 #include <array>
 #include <cmath>
+#include <cstdio>
+#include <cstring>
+#include <fstream>
+#include <glm/packing.hpp>
 #include <initializer_list>
 #include <vector>
 #include <shell/renderSessions/slang/generated/SplatAdamSlang.h>
@@ -19,6 +23,7 @@
 #include <shell/renderSessions/slang/generated/SplatBinSlang.h>
 #include <shell/renderSessions/slang/generated/SplatForwardSlang.h>
 #include <shell/renderSessions/slang/generated/SplatRenderSlang.h>
+#include <shell/renderSessions/slang/generated/SplatsBaked.h>
 #include <shell/shared/imageLoader/ImageLoader.h>
 
 namespace igl::shell {
@@ -31,6 +36,9 @@ constexpr uint32_t kSplatCount = 2048;
 constexpr uint32_t kTilesPerRow = 32;
 constexpr uint32_t kTileStride = 256;
 constexpr uint32_t kIterationsPerFrame = 4;
+constexpr uint32_t kBakeIterations = 1200;
+// Baked splats store 10 half floats each: center, log scale, rotation, opacity logit, color, 0.
+constexpr size_t kBakedWordsPerSplat = 5;
 constexpr float kPi = 3.14159265f;
 
 struct SplatRecord {
@@ -109,14 +117,37 @@ std::vector<SplatRecord> initialSplats(const Target& target) {
   return splats;
 }
 
+std::vector<SplatRecord> bakedSplats() {
+  static_assert(slang::kBakedSplatCount == kSplatCount,
+                "SplatsBaked.h is stale; regenerate it with --bake-splats");
+  std::vector<SplatRecord> splats(kSplatCount);
+  for (size_t i = 0; i < splats.size(); ++i) {
+    std::array<float, kBakedWordsPerSplat * 2> v{};
+    for (size_t w = 0; w < kBakedWordsPerSplat; ++w) {
+      const glm::vec2 pair = glm::unpackHalf2x16(slang::kBakedSplats[i * kBakedWordsPerSplat + w]);
+      v[w * 2] = pair.x;
+      v[w * 2 + 1] = pair.y;
+    }
+    splats[i] = {.shape = {v[0], v[1], v[2], v[3]},
+                 .extra = {v[4], v[5], 0.0f, 0.0f},
+                 .color = {v[6], v[7], v[8], 0.0f}};
+  }
+  return splats;
+}
+
 std::shared_ptr<IBuffer> createBuffer(IDevice& device,
                                       BufferDesc::BufferType type,
                                       const void* data,
                                       size_t length,
-                                      size_t stride) {
+                                      size_t stride,
+                                      ResourceStorage storage = ResourceStorage::Invalid) {
   Result ret;
-  auto buffer = device.createBuffer(
-      BufferDesc{.type = type, .data = data, .length = length, .storageStride = stride}, &ret);
+  auto buffer = device.createBuffer(BufferDesc{.type = type,
+                                               .data = data,
+                                               .length = length,
+                                               .storage = storage,
+                                               .storageStride = stride},
+                                    &ret);
   IGL_DEBUG_ASSERT(ret.isOk(), "%s", ret.message.c_str());
   return buffer;
 }
@@ -151,20 +182,27 @@ void SlangSplatsSession::initialize() noexcept {
   IDevice& device = getPlatform().getDevice();
   commandQueue_ = device.createCommandQueue({}, nullptr);
 
+  for (int i = 1; i + 1 < Platform::argc(); ++i) {
+    if (std::strcmp(Platform::argv()[i], "--bake-splats") == 0) {
+      bakePath_ = Platform::argv()[i + 1];
+    }
+  }
+
+  // Only backends with compute train; the others draw splats trained ahead of time.
+  const bool training = device.hasFeature(DeviceFeatures::Compute);
   const Target target = loadTarget(getPlatform());
-  const std::vector<SplatRecord> splats = initialSplats(target);
+  const std::vector<SplatRecord> splats = training ? initialSplats(target) : bakedSplats();
   constexpr size_t kPixels = static_cast<size_t>(kImageSize) * kImageSize;
   const std::vector<uint8_t> zeros(kSplatCount * kMomentsSize, 0);
 
-  // Only backends with compute train; the others draw the initial splats.
-  const bool training = device.hasFeature(DeviceFeatures::Compute);
   splats_ = createBuffer(device,
                          training ? BufferDesc::BufferTypeBits::Storage |
                                         BufferDesc::BufferTypeBits::Vertex
                                   : BufferDesc::BufferTypeBits::Vertex,
                          splats.data(),
                          splats.size() * sizeof(SplatRecord),
-                         sizeof(SplatRecord));
+                         sizeof(SplatRecord),
+                         bakePath_.empty() ? ResourceStorage::Invalid : ResourceStorage::Shared);
   if (training) {
     tiles_ = createBuffer(device,
                           BufferDesc::BufferTypeBits::Storage,
@@ -389,6 +427,69 @@ void SlangSplatsSession::update(SurfaceTextures surfaceTextures) noexcept {
 
   commandBuffer->present(surfaceTextures.color);
   commandQueue_->submit(*commandBuffer, true);
+  if (binPipeline_) {
+    iterations_ += kIterationsPerFrame;
+    if (!bakePath_.empty() && iterations_ == kBakeIterations) {
+      commandBuffer->waitUntilCompleted();
+      bake();
+    }
+  }
+}
+
+void SlangSplatsSession::bake() {
+  Result ret;
+  const auto* records = static_cast<const SplatRecord*>(
+      splats_->map(BufferRange(kSplatCount * sizeof(SplatRecord)), &ret));
+  if (records == nullptr) {
+    IGL_LOG_INFO("SlangSplatsSession: cannot read the splats: %s\n", ret.message.c_str());
+    return;
+  }
+  std::ofstream out(bakePath_);
+  out << "/*\n"
+         " * Copyright (c) Meta Platforms, Inc. and affiliates.\n"
+         " *\n"
+         " * This source code is licensed under the MIT license found in the\n"
+         " * LICENSE file in the root directory of this source tree.\n"
+         " */\n\n"
+         "// @"
+         "generated by SlangSplatsSession --bake-splats after "
+      << kBakeIterations
+      << " training iterations.\n"
+         "// clang-format off\n\n"
+         "#pragma once\n\n"
+         "#include <cstdint>\n\n"
+         "namespace igl::shell::slang {\n\n"
+         "inline constexpr uint32_t kBakedSplatCount = "
+      << kSplatCount << ";\ninline constexpr uint32_t kBakedSplats[] = {\n";
+  char word[16];
+  for (uint32_t i = 0; i < kSplatCount; ++i) {
+    const SplatRecord& r = records[i];
+    const std::array<float, kBakedWordsPerSplat * 2> v = {r.shape[0],
+                                                          r.shape[1],
+                                                          r.shape[2],
+                                                          r.shape[3],
+                                                          r.extra[0],
+                                                          r.extra[1],
+                                                          r.color[0],
+                                                          r.color[1],
+                                                          r.color[2],
+                                                          0.0f};
+    out << "   ";
+    for (size_t w = 0; w < kBakedWordsPerSplat; ++w) {
+      std::snprintf(
+          word, sizeof(word), " 0x%08x,", glm::packHalf2x16(glm::vec2(v[w * 2], v[w * 2 + 1])));
+      out << word;
+    }
+    out << "\n";
+  }
+  out << "};\n\n} // namespace igl::shell::slang\n";
+  splats_->unmap();
+  out.close();
+  if (!out) {
+    IGL_LOG_ERROR("SlangSplatsSession: cannot write %s\n", bakePath_.c_str());
+    return;
+  }
+  IGL_LOG_INFO("SlangSplatsSession: baked %u iterations into %s\n", iterations_, bakePath_.c_str());
 }
 
 } // namespace igl::shell
