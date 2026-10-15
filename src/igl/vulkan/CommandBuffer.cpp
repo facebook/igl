@@ -46,6 +46,10 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
       Result::setResult(outResult, Result::Code::ArgumentNull, "The framebuffer is null");
       return nullptr;
     }
+    if (framebuffer->getMode() == FramebufferMode::Stereo && !ctx_.supportsMultiviewSubpasses()) {
+      Result::setResult(outResult, Result::Code::Unsupported, "Stereo subpasses are not supported");
+      return nullptr;
+    }
     const Result validation = renderPass.validate(*framebuffer);
     if (!validation.isOk()) {
       Result::setResult(outResult, validation);

@@ -18,6 +18,14 @@
 
 namespace igl::tests {
 
+namespace {
+
+constexpr VkDependencyFlags kByRegion = VK_DEPENDENCY_BY_REGION_BIT;
+constexpr VkDependencyFlags kViewLocal = VK_DEPENDENCY_VIEW_LOCAL_BIT;
+constexpr VkDependencyFlags kByRegionViewLocal = kByRegion | kViewLocal;
+
+} // namespace
+
 class VulkanRenderPassBuilderTest : public ::testing::Test {
  public:
   VulkanRenderPassBuilderTest() = default;
@@ -650,6 +658,121 @@ TEST_F(VulkanRenderPassBuilderTest, FindRenderPassSeparatesSingleAndMultiSubpass
   const auto rp2 = ctx.findRenderPass(builder2);
 
   EXPECT_NE(rp1.compatIndex, rp2.compatIndex);
+}
+
+TEST_F(VulkanRenderPassBuilderTest, StereoSubpassDependencyFlags) {
+  auto& ctx = getVulkanContext();
+
+  igl::vulkan::VulkanRenderPassBuilder builder;
+  builder.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder.setMultiviewMasks(0x3, 0x3);
+
+  const igl::RenderPassDesc::SubpassDesc subpasses[] = {
+      {.colorAttachmentMask = 0b10, .inputAttachmentMask = 0},
+      {.colorAttachmentMask = 0b01, .inputAttachmentMask = 0b10},
+  };
+  builder.setSubpasses(subpasses, 2);
+
+  const auto rp = ctx.findRenderPass(builder);
+  EXPECT_NE(rp.pass, VK_NULL_HANDLE);
+  EXPECT_EQ(rp.numSubpasses, 2u);
+
+  // build() creates the dependency 0 -> 1 first, and then the dependency of subpass 1, which is the
+  // last one to use both attachments, on VK_SUBPASS_EXTERNAL
+  ASSERT_EQ(builder.getNumDependencies(), 2u);
+  EXPECT_EQ(builder.getDependencyFlags(0), kByRegionViewLocal);
+  // A dependency on VK_SUBPASS_EXTERNAL cannot be view-local
+  EXPECT_EQ(builder.getDependencyFlags(1), 0u);
+  // There is no third dependency
+  EXPECT_EQ(builder.getDependencyFlags(2), 0u);
+}
+
+TEST_F(VulkanRenderPassBuilderTest, MonoSubpassDependencyFlags) {
+  igl::vulkan::VulkanRenderPassBuilder builder;
+  builder.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builder.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+
+  const igl::RenderPassDesc::SubpassDesc subpasses[] = {
+      {.colorAttachmentMask = 0b10, .inputAttachmentMask = 0},
+      {.colorAttachmentMask = 0b01, .inputAttachmentMask = 0b10},
+  };
+  builder.setSubpasses(subpasses, 2);
+
+  // The dependencies of StereoSubpassDependencyFlags, which are not view-local without a view mask
+  ASSERT_EQ(builder.getNumDependencies(), 2u);
+  EXPECT_EQ(builder.getDependencyFlags(0), kByRegion);
+  EXPECT_EQ(builder.getDependencyFlags(1), 0u);
+}
+
+TEST_F(VulkanRenderPassBuilderTest, SubpassDependencyFlagsOfEveryDependency) {
+  // Both the Mono and the Stereo builder
+  for (const uint32_t viewMask : {0u, 0x3u}) {
+    SCOPED_TRACE(viewMask != 0 ? "Stereo" : "Mono");
+
+    igl::vulkan::VulkanRenderPassBuilder builder;
+    for (uint32_t i = 0; i != 4; ++i) {
+      builder.addColor(
+          VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+    }
+    if (viewMask != 0) {
+      builder.setMultiviewMasks(viewMask, viewMask);
+    }
+
+    const igl::RenderPassDesc::SubpassDesc subpasses[] = {
+        {.colorAttachmentMask = 0b0011, .inputAttachmentMask = 0},
+        {.colorAttachmentMask = 0b0100, .inputAttachmentMask = 0b0001},
+        {.colorAttachmentMask = 0b1000, .inputAttachmentMask = 0b0110},
+    };
+    builder.setSubpasses(subpasses, 3);
+
+    // build() creates the dependencies of subpass 1 and 2 on the earlier subpasses first: 0 is
+    // 0 -> 1 (consecutive), 1 is 0 -> 2 (subpass 2 reads attachment 1 of subpass 0), and 2 is
+    // 1 -> 2 (consecutive). The last two are the ones of subpass 1, which is the last to use
+    // attachment 0, and of subpass 2, the last to use attachments 1, 2 and 3, on
+    // VK_SUBPASS_EXTERNAL.
+    ASSERT_EQ(builder.getNumDependencies(), 5u);
+    const VkDependencyFlags subpassFlags = viewMask != 0 ? kByRegionViewLocal : kByRegion;
+    for (uint32_t i = 0; i != 3; ++i) {
+      EXPECT_EQ(builder.getDependencyFlags(i), subpassFlags) << "dependency " << i;
+    }
+    for (uint32_t i = 3; i != 5; ++i) {
+      EXPECT_EQ(builder.getDependencyFlags(i), 0u) << "dependency " << i;
+    }
+  }
+}
+
+TEST_F(VulkanRenderPassBuilderTest, StereoSubpassVsMonoCompatibility) {
+  auto& ctx = getVulkanContext();
+
+  igl::vulkan::VulkanRenderPassBuilder builderMono;
+  builderMono.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builderMono.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+
+  const igl::RenderPassDesc::SubpassDesc subpasses[] = {
+      {.colorAttachmentMask = 0b10, .inputAttachmentMask = 0},
+      {.colorAttachmentMask = 0b01, .inputAttachmentMask = 0b10},
+  };
+  builderMono.setSubpasses(subpasses, 2);
+
+  igl::vulkan::VulkanRenderPassBuilder builderStereo;
+  builderStereo.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builderStereo.addColor(
+      VK_FORMAT_R8G8B8A8_UNORM, VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
+  builderStereo.setMultiviewMasks(0x3, 0x3);
+  builderStereo.setSubpasses(subpasses, 2);
+
+  const auto rpMono = ctx.findRenderPass(builderMono);
+  const auto rpStereo = ctx.findRenderPass(builderStereo);
+
+  EXPECT_NE(rpMono.compatIndex, rpStereo.compatIndex);
 }
 
 } // namespace igl::tests

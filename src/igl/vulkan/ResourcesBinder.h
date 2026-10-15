@@ -9,6 +9,7 @@
 
 #include <type_traits>
 #include <igl/Common.h>
+#include <igl/Framebuffer.h>
 #include <igl/Texture.h>
 #include <igl/vulkan/CommandBuffer.h>
 #include <igl/vulkan/VulkanImmediateCommands.h>
@@ -73,12 +74,15 @@ class ResourcesBinder final {
 
   /// @brief Binds a texture that a fragment shader reads as input attachment `index` (a
   /// `subpassInput` declared with `input_attachment_index = index`). The descriptor references the
-  /// image view of `mipLevel` and `layer` that the framebuffers use, because the render pass
-  /// has to read the attachment of the framebuffer. A null texture unbinds the input attachment.
+  /// image view of `mipLevel` and `layer` that the framebuffers of `mode` use, because the render
+  /// pass has to read the attachment of the framebuffer: a 2D array view of the layers from
+  /// `layer` on for FramebufferMode::Stereo, where the shader reads the layer of the view that it
+  /// renders. A null texture unbinds the input attachment.
   void bindInputAttachment(uint32_t index,
                            Texture* IGL_NULLABLE texture,
                            uint32_t mipLevel,
-                           uint32_t layer);
+                           uint32_t layer,
+                           FramebufferMode mode = FramebufferMode::Mono);
 
   /// @brief Convenience function that updates all bindings in the context for all resource types
   /// that have been modified since the last time this function was called
@@ -96,6 +100,16 @@ class ResourcesBinder final {
   /// descriptor sets that are bound stay valid and are not updated, including the sets of bind
   /// groups.
   void invalidateBoundPipeline();
+
+  /// @brief Forgets everything that this binder bound to the command buffer. The next
+  /// `bindPipeline()` binds its pipeline even if it is the one that was bound last, and every
+  /// resource type is dirty, so the next `updateBindings()` writes and binds all the descriptor
+  /// sets. A caller that binds the descriptor set of a resource type itself, like the encoder does
+  /// for bind groups, clears the dirty flag of that type afterwards. The binder then leaves that
+  /// set alone, unless a resource of the type changes or a pipeline with other shaders needs it. A
+  /// multiview render pass needs this at every subpass, because it leaves all the state of the
+  /// command buffer undefined.
+  void invalidateAll();
 
  private:
   void updateBindingsByDescriptorSet(VkPipelineLayout layout, const PipelineState& state);

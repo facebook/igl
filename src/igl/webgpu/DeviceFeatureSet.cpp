@@ -149,6 +149,7 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::MeshShaders:
   case DeviceFeatures::Multiview:
   case DeviceFeatures::MultiViewMultisample:
+  case DeviceFeatures::MultiviewSubpasses:
   case DeviceFeatures::ReadWriteFramebuffer:
   case DeviceFeatures::ShaderTextureLodExt:
   case DeviceFeatures::SRGBSwapchain:

@@ -459,8 +459,9 @@ TEST_F(SubpassesTest, ValidateRejectsStereoFramebuffer) {
   const RenderPassDesc renderPass =
       makeRenderPass(1, {{.colorAttachmentMask = 0b001}, {.colorAttachmentMask = 0b001}});
 
+  // A Stereo framebuffer needs attachments with 2 layers, and createColorTexture() has 1
   const Result validateRet = renderPass.validate(*fb);
-  EXPECT_EQ(validateRet.code, Result::Code::Unsupported);
+  EXPECT_EQ(validateRet.code, Result::Code::ArgumentInvalid);
 }
 
 TEST_F(SubpassesTest, ValidateRejectsInputWithoutUsageBit) {
@@ -529,6 +530,59 @@ TEST_F(SubpassesTest, EncoderRejectsSubpassesWhenUnsupported) {
   const auto encoder = cmdBuf->createRenderCommandEncoder(renderPass, fb, &ret);
   EXPECT_EQ(ret.code, Result::Code::Unsupported);
   EXPECT_EQ(encoder, nullptr);
+}
+
+TEST_F(SubpassesTest, EncoderRejectsStereoSubpassesWithoutTheFeature) {
+  if (!iglDev_->hasFeature(DeviceFeatures::Subpasses) ||
+      !iglDev_->hasFeature(DeviceFeatures::MultipleRenderTargets) ||
+      !iglDev_->hasFeature(DeviceFeatures::Texture2DArray)) {
+    GTEST_SKIP() << "Subpasses, multiple render targets or 2D array textures are not supported";
+  }
+  if (iglDev_->hasFeature(DeviceFeatures::MultiviewSubpasses)) {
+    GTEST_SKIP() << "Device supports stereo subpasses";
+  }
+
+  const TextureDesc textureDesc = TextureDesc::new2DArray(
+      TextureFormat::RGBA_UNorm8,
+      kSize,
+      kSize,
+      2,
+      TextureDesc::TextureUsageBits::Attachment | TextureDesc::TextureUsageBits::InputAttachment);
+  Result ret;
+  const auto att0 = iglDev_->createTexture(textureDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  ASSERT_NE(att0, nullptr);
+  const auto att1 = iglDev_->createTexture(textureDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  ASSERT_NE(att1, nullptr);
+
+  FramebufferDesc fbDesc;
+  fbDesc.colorAttachments[0].texture = att0;
+  fbDesc.colorAttachments[1].texture = att1;
+  fbDesc.mode = FramebufferMode::Stereo;
+  const auto fb = iglDev_->createFramebuffer(fbDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  ASSERT_NE(fb, nullptr);
+
+  const RenderPassDesc renderPass = makeRenderPass(
+      2,
+      {{.colorAttachmentMask = 0b10}, {.colorAttachmentMask = 0b01, .inputAttachmentMask = 0b10}});
+
+  // Nothing but the missing feature makes this render pass invalid
+  const Result validateRet = renderPass.validate(*fb);
+  EXPECT_TRUE(validateRet.isOk()) << validateRet.message;
+
+  const auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  ASSERT_NE(cmdBuf, nullptr);
+
+  const auto encoder = cmdBuf->createRenderCommandEncoder(renderPass, fb, &ret);
+  EXPECT_EQ(ret.code, Result::Code::Unsupported);
+  EXPECT_EQ(encoder, nullptr);
+  if (encoder) {
+    // Metal aborts the process if an encoder that is still encoding is released
+    encoder->endEncoding();
+  }
 }
 
 TEST_F(SubpassesTest, EncoderRejectsSubpassesWithNullFramebuffer) {

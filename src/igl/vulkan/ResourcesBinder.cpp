@@ -215,7 +215,8 @@ void ResourcesBinder::bindStorageImage(uint32_t index, Texture* tex) {
 void ResourcesBinder::bindInputAttachment(uint32_t index,
                                           Texture* IGL_NULLABLE texture,
                                           uint32_t mipLevel,
-                                          uint32_t layer) {
+                                          uint32_t layer,
+                                          FramebufferMode mode) {
   IGL_PROFILER_FUNCTION();
 
   if (!IGL_DEBUG_VERIFY(index < IGL_COLOR_ATTACHMENTS_MAX)) {
@@ -236,7 +237,7 @@ void ResourcesBinder::bindInputAttachment(uint32_t index,
             "Did you forget to specify TextureUsageBits::InputAttachment on your texture?")) {
       IGL_DEBUG_ASSERT(mipLevel < texture->getNumMipLevels() && layer < texture->getNumVkLayers(),
                        "Invalid mip level or layer of an input attachment");
-      imageView = texture->getVkImageViewForFramebuffer(mipLevel, layer, FramebufferMode::Mono);
+      imageView = texture->getVkImageViewForFramebuffer(mipLevel, layer, mode);
     }
   }
 
@@ -370,6 +371,17 @@ void ResourcesBinder::invalidateBoundPipeline() {
 
   lastPipelineBound_ = VK_NULL_HANDLE;
   keepDescriptorsOnNextBind_ = true;
+}
+
+void ResourcesBinder::invalidateAll() {
+  IGL_PROFILER_FUNCTION();
+
+  lastPipelineBound_ = VK_NULL_HANDLE;
+  // As after invalidateBoundPipeline(), the next pipeline marks resource types dirty only if its
+  // shaders differ from the ones of the last pipeline. A caller that clears the dirty flag of a
+  // type can then tell from the flag that the type needs a new descriptor set.
+  keepDescriptorsOnNextBind_ = true;
+  isDirtyFlags_ = DirtyFlagBits_Textures | DirtyFlagBits_Buffers | DirtyFlagBits_StorageImages;
 }
 
 } // namespace igl::vulkan

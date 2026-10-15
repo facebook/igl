@@ -105,8 +105,9 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
 
   VulkanRenderPassBuilder builder;
 
+  const bool isStereo = desc.mode == FramebufferMode::Stereo;
   if (desc.mode != FramebufferMode::Mono) {
-    if (desc.mode == FramebufferMode::Stereo) {
+    if (isStereo) {
       builder.setMultiviewMasks(0x00000003, 0x00000003);
     } else {
       IGL_DEBUG_ABORT("FramebufferMode::Multiview is not implemented.");
@@ -244,6 +245,11 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
   }
   framebufferMipLevel_ = mipLevel;
   framebufferLayer_ = layer;
+  framebufferMode_ = desc.mode;
+  if (isStereo && numSubpasses_ > 1) {
+    replay_ = std::make_unique<ReplayState>();
+    replay_->pushConstants.resize(ctx_.getVkPhysicalDeviceProperties().limits.maxPushConstantsSize);
+  }
 
   dynamicState_.renderPassIndex = renderPassHandle.index;
   dynamicState_.subpassIndex = 0;
@@ -271,9 +277,6 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
                              .maxDepth = +1.0f};
   const ScissorRect scissor = {.x = 0, .y = 0, .width = width, .height = height};
 
-  bindViewport(viewport);
-  bindScissorRect(scissor);
-
   const VkResult vkResult = ctx_.checkAndUpdateDescriptorSets();
   if (vkResult != VK_SUCCESS) {
     IGL_LOG_ERROR("checkAndUpdateDescriptorSets returned a non-successful result: %d", vkResult);
@@ -298,6 +301,10 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
   ctx_.vf_.vkCmdBeginRenderPass(cmdBuffer_, &bi, VK_SUBPASS_CONTENTS_INLINE);
 
   isEncoding_ = true;
+
+  // A multiview render pass leaves the dynamic state undefined when it begins
+  bindViewport(viewport);
+  bindScissorRect(scissor);
 
   Result::setOk(&outResult);
 }
@@ -423,11 +430,164 @@ void RenderCommandEncoder::nextSubpass() {
   ctx_.vf_.vkCmdNextSubpass(cmdBuffer_, VK_SUBPASS_CONTENTS_INLINE);
 
   ++currentSubpass_;
-  // the next draw call gets the pipeline for the new subpass from the render pipeline state, and
-  // binds it. The descriptor sets that are bound stay valid, because the shaders do not change.
   dynamicState_.subpassIndex = currentSubpass_ & 0x3u;
-  binder_.invalidateBoundPipeline();
+  if (replay_) {
+    invalidateStateForSubpass();
+  } else {
+    // the next draw call gets the pipeline for the new subpass from the render pipeline state, and
+    // binds it. The descriptor sets that are bound stay valid, because the shaders do not change.
+    binder_.invalidateBoundPipeline();
+  }
   bindSubpassInputAttachments();
+}
+
+void RenderCommandEncoder::invalidateStateForSubpass() {
+  IGL_PROFILER_FUNCTION();
+
+  const uint32_t dirtyFlags = binder_.isDirtyFlags_;
+  binder_.invalidateAll();
+
+  // A bind group keeps providing its descriptor set, unless the binder wrote the descriptor set
+  // of its type after the bind group was bound. Then the binder is the one that provides it.
+  if (replay_->boundTextureGroup.dset != VK_NULL_HANDLE) {
+    if ((dirtyFlags & ResourcesBinder::DirtyFlagBits_Textures) != 0) {
+      replay_->boundTextureGroup = {};
+    } else {
+      binder_.isDirtyFlags_ &= ~ResourcesBinder::DirtyFlagBits_Textures;
+    }
+  }
+  if (replay_->boundBufferGroup.dset != VK_NULL_HANDLE) {
+    if ((dirtyFlags & ResourcesBinder::DirtyFlagBits_Buffers) != 0) {
+      replay_->boundBufferGroup = {};
+    } else {
+      binder_.isDirtyFlags_ &= ~ResourcesBinder::DirtyFlagBits_Buffers;
+    }
+  }
+
+  replay_->replayedPushConstantStages = 0;
+  isReplayPending_ = true;
+}
+
+void RenderCommandEncoder::replayState() {
+  IGL_PROFILER_FUNCTION();
+
+  const ReplayState& state = *replay_;
+
+  ctx_.vf_.vkCmdSetViewport(cmdBuffer_, 0, 1, &state.viewport);
+  ctx_.vf_.vkCmdSetScissor(cmdBuffer_, 0, 1, &state.scissor);
+  if (state.hasDepthBias) {
+    ctx_.vf_.vkCmdSetDepthBias(
+        cmdBuffer_, state.depthBias, state.depthBiasClamp, state.depthBiasSlopeFactor);
+  }
+  if (state.hasBlendConstants) {
+    ctx_.vf_.vkCmdSetBlendConstants(cmdBuffer_, state.blendConstants.data());
+  }
+  if (state.hasStencilMasks) {
+    constexpr std::array<VkStencilFaceFlagBits, 2> kFaces = {VK_STENCIL_FACE_FRONT_BIT,
+                                                             VK_STENCIL_FACE_BACK_BIT};
+    for (size_t i = 0; i != kFaces.size(); ++i) {
+      ctx_.vf_.vkCmdSetStencilCompareMask(cmdBuffer_, kFaces[i], state.stencilCompareMasks[i]);
+      ctx_.vf_.vkCmdSetStencilWriteMask(cmdBuffer_, kFaces[i], state.stencilWriteMasks[i]);
+    }
+  }
+  if (state.hasStencilReference) {
+    ctx_.vf_.vkCmdSetStencilReference(
+        cmdBuffer_, VK_STENCIL_FACE_FRONT_BIT | VK_STENCIL_FACE_BACK_BIT, state.stencilReference);
+  }
+  if (state.hasCullMode) {
+    ctx_.vf_.vkCmdSetCullMode(cmdBuffer_, state.cullMode);
+  }
+  if (state.hasFrontFace) {
+    ctx_.vf_.vkCmdSetFrontFace(cmdBuffer_, state.frontFace);
+  }
+
+  replayPushConstants();
+
+  for (uint32_t i = 0; i != IGL_BUFFER_BINDINGS_MAX; ++i) {
+    const ReplayState::VertexBuffer& vertexBuffer = state.vertexBuffers[i];
+    if (vertexBuffer.buffer == VK_NULL_HANDLE) {
+      continue;
+    }
+    if (vertexBuffer.stride == 0) {
+      ctx_.vf_.vkCmdBindVertexBuffers(cmdBuffer_, i, 1, &vertexBuffer.buffer, &vertexBuffer.offset);
+    } else {
+      ctx_.vf_.vkCmdBindVertexBuffers2(cmdBuffer_,
+                                       i,
+                                       1,
+                                       &vertexBuffer.buffer,
+                                       &vertexBuffer.offset,
+                                       &vertexBuffer.size,
+                                       &vertexBuffer.stride);
+    }
+  }
+  if (state.indexBuffer != VK_NULL_HANDLE) {
+    ctx_.vf_.vkCmdBindIndexBuffer(
+        cmdBuffer_, state.indexBuffer, state.indexBufferOffset, state.indexType);
+  }
+}
+
+void RenderCommandEncoder::replayPushConstants() {
+  IGL_PROFILER_FUNCTION();
+
+  ReplayState& state = *replay_;
+  const VkPushConstantRange& range = rps_->pushConstantRange;
+  if (range.stageFlags == 0 || range.stageFlags == state.replayedPushConstantStages) {
+    return;
+  }
+  state.replayedPushConstantStages = range.stageFlags;
+
+  // The pipeline is bound at this point, so its layout exists
+  const uint32_t pushBegin = std::max(state.pushConstantsBegin, range.offset);
+  const uint32_t pushEnd = std::min(state.pushConstantsEnd, range.offset + range.size);
+  if (pushBegin < pushEnd) {
+    ctx_.vf_.vkCmdPushConstants(cmdBuffer_,
+                                rps_->getVkPipelineLayout(),
+                                range.stageFlags,
+                                pushBegin,
+                                pushEnd - pushBegin,
+                                state.pushConstants.data() + pushBegin);
+  }
+}
+
+void RenderCommandEncoder::replayBindGroups() {
+  IGL_PROFILER_FUNCTION();
+
+  const util::SpvModuleInfo& info = rps_->getSpvModuleInfo();
+  const VkPipelineLayout layout = rps_->getVkPipelineLayout();
+
+  const ReplayState::BoundBindGroup& textureGroup = replay_->boundTextureGroup;
+  if (pendingBindGroupTexture_.empty() && textureGroup.dset != VK_NULL_HANDLE &&
+      (binder_.isDirtyFlags_ & ResourcesBinder::DirtyFlagBits_Textures) == 0) {
+    if (textureGroup.usageMask == info.usageMaskTextures) {
+      ctx_.vf_.vkCmdBindDescriptorSets(cmdBuffer_,
+                                       VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                       layout,
+                                       kBindPoint_CombinedImageSamplers,
+                                       1,
+                                       &textureGroup.dset,
+                                       0,
+                                       nullptr);
+    } else {
+      binder_.isDirtyFlags_ |= ResourcesBinder::DirtyFlagBits_Textures;
+    }
+  }
+
+  const ReplayState::BoundBindGroup& bufferGroup = replay_->boundBufferGroup;
+  if (pendingBindGroupBuffer_.empty() && bufferGroup.dset != VK_NULL_HANDLE &&
+      (binder_.isDirtyFlags_ & ResourcesBinder::DirtyFlagBits_Buffers) == 0) {
+    if (bufferGroup.usageMask == info.usageMaskBuffers) {
+      ctx_.vf_.vkCmdBindDescriptorSets(cmdBuffer_,
+                                       VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                       layout,
+                                       kBindPoint_Buffers,
+                                       1,
+                                       &bufferGroup.dset,
+                                       replay_->numBoundDynamicOffsets,
+                                       replay_->boundDynamicOffsets.data());
+    } else {
+      binder_.isDirtyFlags_ |= ResourcesBinder::DirtyFlagBits_Buffers;
+    }
+  }
 }
 
 void RenderCommandEncoder::bindSubpassInputAttachments() {
@@ -438,7 +598,8 @@ void RenderCommandEncoder::bindSubpassInputAttachments() {
     Texture* texture = ((inputMask >> i) & 1u) != 0
                            ? static_cast<Texture*>(framebuffer_->getColorAttachment(i).get())
                            : nullptr;
-    binder_.bindInputAttachment(i, texture, framebufferMipLevel_, framebufferLayer_);
+    binder_.bindInputAttachment(
+        i, texture, framebufferMipLevel_, framebufferLayer_, framebufferMode_);
   }
 }
 
@@ -477,6 +638,9 @@ void RenderCommandEncoder::bindViewport(const Viewport& viewport) {
       .maxDepth = viewport.maxDepth,
   };
   ctx_.vf_.vkCmdSetViewport(cmdBuffer_, 0, 1, &vp);
+  if (replay_) {
+    replay_->viewport = vp;
+  }
 }
 
 void RenderCommandEncoder::bindScissorRect(const ScissorRect& rect) {
@@ -485,6 +649,9 @@ void RenderCommandEncoder::bindScissorRect(const ScissorRect& rect) {
       .extent = {.width = rect.width, .height = rect.height},
   };
   ctx_.vf_.vkCmdSetScissor(cmdBuffer_, 0, 1, &scissor);
+  if (replay_) {
+    replay_->scissor = scissor;
+  }
 }
 
 void RenderCommandEncoder::bindRenderPipelineState(
@@ -532,8 +699,16 @@ void RenderCommandEncoder::applyPipelineRasterizationDynamicState() {
   if ((isVulkan13 || ctx_.features().has_VK_EXT_extended_dynamic_state) &&
       ctx_.vf_.vkCmdSetCullMode) {
     const RenderPipelineDesc& desc = rps_->getRenderPipelineDesc();
-    ctx_.vf_.vkCmdSetCullMode(cmdBuffer_, cullModeToVkCullMode(desc.cullMode));
-    ctx_.vf_.vkCmdSetFrontFace(cmdBuffer_, windingModeToVkFrontFace(desc.frontFaceWinding));
+    const VkCullModeFlags cullMode = cullModeToVkCullMode(desc.cullMode);
+    const VkFrontFace frontFace = windingModeToVkFrontFace(desc.frontFaceWinding);
+    ctx_.vf_.vkCmdSetCullMode(cmdBuffer_, cullMode);
+    ctx_.vf_.vkCmdSetFrontFace(cmdBuffer_, frontFace);
+    if (replay_) {
+      replay_->hasCullMode = true;
+      replay_->cullMode = cullMode;
+      replay_->hasFrontFace = true;
+      replay_->frontFace = frontFace;
+    }
   }
 }
 
@@ -565,6 +740,12 @@ void RenderCommandEncoder::bindDepthStencilState(
         compareOp != VK_COMPARE_OP_ALWAYS;
     ctx_.vf_.vkCmdSetStencilCompareMask(cmdBuffer_, faceMask, desc.readMask);
     ctx_.vf_.vkCmdSetStencilWriteMask(cmdBuffer_, faceMask, desc.writeMask);
+    if (replay_) {
+      const size_t face = faceMask == VK_STENCIL_FACE_FRONT_BIT ? 0 : 1;
+      replay_->hasStencilMasks = true;
+      replay_->stencilCompareMasks[face] = desc.readMask;
+      replay_->stencilWriteMasks[face] = desc.writeMask;
+    }
   };
 
   setStencilState(VK_STENCIL_FACE_FRONT_BIT, desc.frontFaceStencil);
@@ -636,6 +817,9 @@ void RenderCommandEncoder::bindVertexBuffer(uint32_t index,
 
   if (attributeStride == 0) {
     ctx_.vf_.vkCmdBindVertexBuffers(cmdBuffer_, index, 1, &vkBuf, &offset);
+    if (replay_ && index < replay_->vertexBuffers.size()) {
+      replay_->vertexBuffers[index] = {.buffer = vkBuf, .offset = offset};
+    }
   } else {
     if (!ctx_.vf_.vkCmdBindVertexBuffers2) {
       IGL_LOG_ERROR_ONCE(
@@ -651,6 +835,10 @@ void RenderCommandEncoder::bindVertexBuffer(uint32_t index,
     const VkDeviceSize size = buffer.getSizeInBytes() - bufferOffset;
     const VkDeviceSize stride = attributeStride;
     ctx_.vf_.vkCmdBindVertexBuffers2(cmdBuffer_, index, 1, &vkBuf, &offset, &size, &stride);
+    if (replay_ && index < replay_->vertexBuffers.size()) {
+      replay_->vertexBuffers[index] = {
+          .buffer = vkBuf, .offset = offset, .size = size, .stride = stride};
+    }
   }
 }
 
@@ -679,6 +867,11 @@ void RenderCommandEncoder::bindIndexBuffer(IBuffer& buffer,
       indexFormatToVkIndexType(format, ctx_.features_.has_VK_EXT_index_type_uint8);
 
   ctx_.vf_.vkCmdBindIndexBuffer(cmdBuffer_, buf.getVkBuffer(), bufferOffset, type);
+  if (replay_) {
+    replay_->indexBuffer = buf.getVkBuffer();
+    replay_->indexBufferOffset = bufferOffset;
+    replay_->indexType = type;
+  }
 }
 
 void RenderCommandEncoder::bindBytes(size_t /*index*/,
@@ -715,6 +908,17 @@ void RenderCommandEncoder::bindPushConstants(const void* data, size_t length, si
                               static_cast<uint32_t>(offset),
                               static_cast<uint32_t>(length),
                               data);
+
+  if (replay_ && length != 0 &&
+      IGL_DEBUG_VERIFY(offset + length <= replay_->pushConstants.size())) {
+    checked_memcpy_offset(
+        replay_->pushConstants.data(), replay_->pushConstants.size(), offset, data, length);
+    const auto begin = static_cast<uint32_t>(offset);
+    const auto end = static_cast<uint32_t>(offset + length);
+    const bool isEmpty = replay_->pushConstantsBegin == replay_->pushConstantsEnd;
+    replay_->pushConstantsBegin = isEmpty ? begin : std::min(replay_->pushConstantsBegin, begin);
+    replay_->pushConstantsEnd = isEmpty ? end : std::max(replay_->pushConstantsEnd, end);
+  }
 }
 
 void RenderCommandEncoder::bindSamplerState(size_t index,
@@ -924,12 +1128,20 @@ void RenderCommandEncoder::setStencilReferenceValue(uint32_t value) {
 
   ctx_.vf_.vkCmdSetStencilReference(
       cmdBuffer_, VK_STENCIL_FACE_FRONT_BIT | VK_STENCIL_FACE_BACK_BIT, value);
+  if (replay_) {
+    replay_->hasStencilReference = true;
+    replay_->stencilReference = value;
+  }
 }
 
 void RenderCommandEncoder::setBlendColor(const Color& color) {
   IGL_PROFILER_FUNCTION();
 
   ctx_.vf_.vkCmdSetBlendConstants(cmdBuffer_, color.toFloatPtr());
+  if (replay_) {
+    replay_->hasBlendConstants = true;
+    replay_->blendConstants = {color.r, color.g, color.b, color.a};
+  }
 }
 
 void RenderCommandEncoder::setCullMode(CullMode cullMode) {
@@ -942,7 +1154,12 @@ void RenderCommandEncoder::setCullMode(CullMode cullMode) {
     return;
   }
 
-  ctx_.vf_.vkCmdSetCullMode(cmdBuffer_, cullModeToVkCullMode(cullMode));
+  const VkCullModeFlags vkCullMode = cullModeToVkCullMode(cullMode);
+  ctx_.vf_.vkCmdSetCullMode(cmdBuffer_, vkCullMode);
+  if (replay_) {
+    replay_->hasCullMode = true;
+    replay_->cullMode = vkCullMode;
+  }
 }
 
 void RenderCommandEncoder::setDepthBias(float depthBias, float slopeScale, float clamp) {
@@ -950,6 +1167,12 @@ void RenderCommandEncoder::setDepthBias(float depthBias, float slopeScale, float
 
   dynamicState_.depthBiasEnable = true;
   ctx_.vf_.vkCmdSetDepthBias(cmdBuffer_, depthBias, clamp, slopeScale);
+  if (replay_) {
+    replay_->hasDepthBias = true;
+    replay_->depthBias = depthBias;
+    replay_->depthBiasClamp = clamp;
+    replay_->depthBiasSlopeFactor = slopeScale;
+  }
 }
 
 void RenderCommandEncoder::setFrontFacingWinding(WindingMode frontFaceWinding) {
@@ -962,7 +1185,12 @@ void RenderCommandEncoder::setFrontFacingWinding(WindingMode frontFaceWinding) {
     return;
   }
 
-  ctx_.vf_.vkCmdSetFrontFace(cmdBuffer_, windingModeToVkFrontFace(frontFaceWinding));
+  const VkFrontFace vkFrontFace = windingModeToVkFrontFace(frontFaceWinding);
+  ctx_.vf_.vkCmdSetFrontFace(cmdBuffer_, vkFrontFace);
+  if (replay_) {
+    replay_->hasFrontFace = true;
+    replay_->frontFace = vkFrontFace;
+  }
 }
 
 bool RenderCommandEncoder::setDrawCallCountEnabled(bool value) {
@@ -1060,6 +1288,16 @@ void RenderCommandEncoder::flushDynamicState() {
 
   flushDynamicDepthStencilState();
 
+  if (isReplayPending_) {
+    isReplayPending_ = false;
+    replayState();
+    replayBindGroups();
+  } else if (replay_ && currentSubpass_ != 0) {
+    // A pipeline bound after the first draw call of the subpass can have a layout that is not
+    // compatible for push constants with the one that the replay pushed with
+    replayPushConstants();
+  }
+
   const VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
   if (!pendingBindGroupTexture_.empty()) {
@@ -1086,6 +1324,9 @@ void RenderCommandEncoder::flushDynamicState() {
     // This is necessary to support a mix of BindGroups and bindTexture() calls in the same command
     // encoder. A typical use case for that is running ImGui rendering etc.
     binder_.isDirtyFlags_ &= ~igl::vulkan::ResourcesBinder::DirtyFlagBits_Textures;
+    if (replay_) {
+      replay_->boundTextureGroup = {.dset = dset, .usageMask = usageMaskBindGroup};
+    }
     pendingBindGroupTexture_ = {}; // reset
   }
 
@@ -1119,7 +1360,22 @@ void RenderCommandEncoder::flushDynamicState() {
     // This is necessary to support a mix of BindGroups and bindBuffer() calls in the same command
     // encoder.
     binder_.isDirtyFlags_ &= ~igl::vulkan::ResourcesBinder::DirtyFlagBits_Buffers;
+    if (replay_) {
+      replay_->boundBufferGroup = {.dset = dset, .usageMask = usageMaskBindGroup};
+      replay_->numBoundDynamicOffsets = numDynamicOffsets_;
+      std::copy_n(dynamicOffsets_, numDynamicOffsets_, replay_->boundDynamicOffsets.begin());
+    }
     pendingBindGroupBuffer_ = {}; // reset
+  }
+
+  if (replay_) {
+    // the binder provides the descriptor sets that it writes now, instead of the bind groups
+    if ((binder_.isDirtyFlags_ & ResourcesBinder::DirtyFlagBits_Textures) != 0) {
+      replay_->boundTextureGroup = {};
+    }
+    if ((binder_.isDirtyFlags_ & ResourcesBinder::DirtyFlagBits_Buffers) != 0) {
+      replay_->boundBufferGroup = {};
+    }
   }
 
   binder_.updateBindings(rps_->getVkPipelineLayout(), *rps_);

@@ -109,6 +109,10 @@ struct RenderPassDesc {
    *           fragment function outputs only the attachments in colorAttachmentMask
    *  - OpenGL: layout(location = i) inout with GL_EXT_shader_framebuffer_fetch; the backend masks
    *            writes outside colorAttachmentMask
+   *
+   * In a render pass on a FramebufferMode::Stereo framebuffer (DeviceFeatures::MultiviewSubpasses),
+   * every subpass renders both views, and an input attachment reads the layer of the current view
+   * with the same fragment shader declaration as above.
    */
   struct SubpassDesc {
     uint8_t colorAttachmentMask = 0; ///< Color attachments written by this subpass
@@ -124,8 +128,12 @@ struct RenderPassDesc {
    * between them. Empty means a single subpass that writes every color attachment. Otherwise
    * requires DeviceFeatures::Subpasses and:
    *  - 2 to IGL_SUBPASSES_MAX entries
-   *  - a Mono framebuffer with single-sampled attachments, no resolve attachments, and color
-   *    attachments contiguous from index 0
+   *  - a Mono framebuffer, or a Stereo framebuffer when DeviceFeatures::MultiviewSubpasses is
+   *    available. In a Stereo render pass every subpass renders both views and an input attachment
+   *    reads the layer of the current view, so the color and depth attachments need at least 2
+   *    layers from the attached layer
+   *  - single-sampled attachments, no resolve attachments, and color attachments contiguous from
+   *    index 0
    *  - on OpenGL, color attachments that are textures: for a framebuffer without them, such as
    *    the window system's (CurrentFramebuffer), createRenderCommandEncoder() returns
    *    Result::Code::Unsupported
@@ -144,9 +152,14 @@ struct RenderPassDesc {
   /// MsaaResolve needs a multisampled attachment and a separate resolve texture. No attachment can
   /// resolve into a Memoryless texture. A framebuffer color attachment without a `colorAttachments`
   /// entry is checked as a default AttachmentDesc, which stores with StoreAction::Store. Stencil
-  /// resolve targets are not checked. Does not check DeviceFeatures; createRenderCommandEncoder()
-  /// returns Result::Code::Unsupported when the device lacks DeviceFeatures::Subpasses. For a pass
-  /// without `subpasses`, backends run this check in debug builds only and only log a failure.
+  /// resolve targets are not checked. A Stereo framebuffer with `subpasses` needs color and depth
+  /// attachments with at least 2 layers from the attached layer, which is the `layer` of the
+  /// attachment's AttachmentDesc (Result::Code::ArgumentInvalid otherwise), and a Multiview
+  /// framebuffer cannot have `subpasses` (Result::Code::Unsupported). Does not check
+  /// DeviceFeatures; createRenderCommandEncoder() returns Result::Code::Unsupported when the device
+  /// lacks DeviceFeatures::Subpasses, or DeviceFeatures::MultiviewSubpasses for a Stereo
+  /// framebuffer. For a pass without `subpasses`, backends run this check in debug builds only and
+  /// only log a failure.
   [[nodiscard]] Result validate(const IFramebuffer& framebuffer) const noexcept;
 };
 

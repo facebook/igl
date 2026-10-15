@@ -188,6 +188,7 @@ TEST_F(DeviceFeatureSetTest, hasFeatureForMacOSOrWinOrAndroidTest) {
                            !igl::opengl::hasBrokenFramebufferFetch(renderer, vendor);
     EXPECT_EQ(iglDev_->hasFeature(DeviceFeatures::Subpasses), subpasses);
     EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::MemorylessAttachments));
+    EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::MultiviewSubpasses));
 
     EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::DynamicCullMode));
     EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::DynamicFrontFacingWinding));
@@ -217,6 +218,7 @@ TEST_F(DeviceFeatureSetTest, hasFeatureForMacOSOrWinOrAndroidTest) {
     EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::ExplicitBindingExt));
     EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::ExternalMemoryObjects));
     EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::Subpasses));
+    EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::MultiviewSubpasses));
     EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::DynamicCullMode));
     EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::DynamicFrontFacingWinding));
   } else {
@@ -259,6 +261,9 @@ TEST_F(DeviceFeatureSetTest, hasFeatureForMacOSOrWinOrAndroidTest) {
       EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::ExternalMemoryObjects));
       EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::PushConstants));
       EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::FillBuffer));
+      EXPECT_EQ(iglDev_->hasFeature(DeviceFeatures::MultiviewSubpasses),
+                iglDev_->hasFeature(DeviceFeatures::Subpasses) &&
+                    iglDev_->hasFeature(DeviceFeatures::Multiview));
       // vkCmdSetCullMode and vkCmdSetFrontFace are provided together (core in
       // Vulkan 1.3 / VK_EXT_extended_dynamic_state), so both dynamic-state
       // features must report the same availability.
@@ -290,6 +295,7 @@ TEST_F(DeviceFeatureSetTest, hasFeatureForMacOSOrWinOrAndroidTest) {
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::ExternalMemoryObjects));
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::PushConstants));
       EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::FillBuffer));
+      EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::MultiviewSubpasses));
       EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::DynamicCullMode));
       EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::DynamicFrontFacingWinding));
     } else if (iglDev_->getBackendType() == igl::BackendType::D3D12) {
@@ -323,6 +329,7 @@ TEST_F(DeviceFeatureSetTest, hasFeatureForMacOSOrWinOrAndroidTest) {
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::FillBuffer));
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::Subpasses));
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::MemorylessAttachments));
+      EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::MultiviewSubpasses));
     } else {
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::Texture2DArray));
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::Texture3D));
@@ -351,6 +358,7 @@ TEST_F(DeviceFeatureSetTest, hasFeatureForMacOSOrWinOrAndroidTest) {
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::FillBuffer));
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::Subpasses));
       EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::MemorylessAttachments));
+      EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::MultiviewSubpasses));
     }
   }
 

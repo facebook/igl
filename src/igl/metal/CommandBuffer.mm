@@ -10,6 +10,7 @@
 #import <Foundation/NSRange.h>
 #import <Foundation/NSString.h>
 #import <Metal/Metal.h>
+#include <igl/Framebuffer.h>
 #include <igl/Macros.h>
 #include <igl/RenderPass.h>
 #include <igl/metal/Buffer.h>
@@ -61,6 +62,12 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
     }
     if (!framebuffer) {
       Result::setResult(outResult, Result::Code::ArgumentNull, "The framebuffer is null");
+      return nullptr;
+    }
+    // The Metal backend has no multiview
+    if (framebuffer->getMode() != FramebufferMode::Mono) {
+      Result::setResult(
+          outResult, Result::Code::Unsupported, "Subpasses support only mono framebuffers");
       return nullptr;
     }
     const Result validation = renderPass.validate(*framebuffer);

@@ -3607,6 +3607,7 @@ bool Device::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::FillBuffer:
   case DeviceFeatures::Subpasses:
   case DeviceFeatures::MemorylessAttachments:
+  case DeviceFeatures::MultiviewSubpasses:
     return false;
   default:
     return false;

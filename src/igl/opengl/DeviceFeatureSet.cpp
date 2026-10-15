@@ -696,6 +696,7 @@ bool DeviceFeatureSet::isFeatureSupported(DeviceFeatures feature) const {
   case DeviceFeatures::BindBytes:
   case DeviceFeatures::ValidationLayersEnabled:
   case DeviceFeatures::MemorylessAttachments:
+  case DeviceFeatures::MultiviewSubpasses:
     return false;
 
   case DeviceFeatures::BindUniform:

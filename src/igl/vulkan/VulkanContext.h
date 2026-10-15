@@ -287,6 +287,11 @@ class VulkanContext final {
   /// because MoltenVK may split render passes, which defeats the purpose of subpasses.
   [[nodiscard]] bool supportsSubpasses() const;
 
+  /// @brief Returns true if render passes with subpasses can render several views
+  /// (DeviceFeatures::MultiviewSubpasses): the device supports subpasses and the multiview feature
+  /// is enabled.
+  [[nodiscard]] bool supportsMultiviewSubpasses() const;
+
   [[nodiscard]] const VkSurfaceCapabilitiesKHR& getSurfaceCapabilities() const noexcept {
     return deviceSurfaceCaps_;
   }

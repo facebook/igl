@@ -3274,6 +3274,10 @@ bool VulkanContext::supportsSubpasses() const {
          !features_.enabled("VK_KHR_portability_subset");
 }
 
+bool VulkanContext::supportsMultiviewSubpasses() const {
+  return supportsSubpasses() && features_.featuresMultiview.multiview == VK_TRUE;
+}
+
 void VulkanContext::syncAcquireNext() noexcept {
   IGL_PROFILER_FUNCTION();
 

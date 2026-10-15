@@ -50,6 +50,9 @@ namespace igl {
  * MultiSampleResolve         Supports GPU multisampled texture resolve
  * Multiview                  Supports multiview
  * MultiViewMultisample       Supports multisampled multiview
+ * MultiviewSubpasses         Supports RenderPassDesc::subpasses on FramebufferMode::Stereo
+ *                            framebuffers: every subpass renders both views, and an input
+ *                            attachment reads the layer of the current view
  * PushConstants              Supports push constants(Vulkan)
  * ReadWriteFramebuffer       Supports separate FB reading/writing binding
  * SamplerMinMaxLod           Supports constraining the min and max texture LOD when sampling
@@ -141,6 +144,7 @@ enum class DeviceFeatures {
   FillBuffer,
   Subpasses,
   MemorylessAttachments,
+  MultiviewSubpasses,
 };
 // clang-format on
 

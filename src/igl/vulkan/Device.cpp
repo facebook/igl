@@ -892,6 +892,8 @@ bool Device::hasFeatureInternal(DeviceFeatures feature) const {
     return ctx_->supportsSubpasses();
   case DeviceFeatures::MemorylessAttachments:
     return ctx_->supportsLazilyAllocatedMemory();
+  case DeviceFeatures::MultiviewSubpasses:
+    return ctx_->supportsMultiviewSubpasses();
   }
 
   IGL_DEBUG_ABORT("DeviceFeatures value not handled: %d", static_cast<int>(feature));

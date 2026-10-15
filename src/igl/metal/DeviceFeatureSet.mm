@@ -280,6 +280,8 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::Subpasses:
   case DeviceFeatures::MemorylessAttachments:
     return supportsMemorylessAndProgrammableBlending_;
+  case DeviceFeatures::MultiviewSubpasses:
+    return false;
   default:
     IGL_DEBUG_ABORT("unhandled DeviceFeatures value");
     break;

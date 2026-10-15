@@ -21,15 +21,20 @@ class FakeTexture final : public ITexture {
  public:
   FakeTexture(TextureDesc::TextureUsage usage,
               uint32_t samples = 1,
-              ResourceStorage storage = ResourceStorage::Private) :
-    ITexture(TextureFormat::RGBA_UNorm8), usage_(usage), samples_(samples), storage_(storage) {}
+              ResourceStorage storage = ResourceStorage::Private,
+              uint32_t numLayers = 1) :
+    ITexture(TextureFormat::RGBA_UNorm8),
+    usage_(usage),
+    samples_(samples),
+    storage_(storage),
+    numLayers_(numLayers) {}
 
   [[nodiscard]] Dimensions getDimensions() const override {
     return Dimensions{1, 1, 1};
   }
 
   [[nodiscard]] uint32_t getNumLayers() const override {
-    return 1;
+    return numLayers_;
   }
 
   [[nodiscard]] TextureType getType() const override {
@@ -82,6 +87,7 @@ class FakeTexture final : public ITexture {
   TextureDesc::TextureUsage usage_;
   uint32_t samples_;
   ResourceStorage storage_;
+  uint32_t numLayers_;
   base::AttachmentInteropDesc desc_{};
 };
 
@@ -274,7 +280,7 @@ TEST(RenderPassValidateTest, RejectsMaskBitOutOfRange) {
   EXPECT_EQ(ret.code, Result::Code::ArgumentOutOfRange);
 }
 
-TEST(RenderPassValidateTest, RejectsStereo) {
+TEST(RenderPassValidateTest, RejectsStereoSingleLayer) {
   std::shared_ptr<ITexture> att0 =
       std::make_shared<FakeTexture>(TextureDesc::TextureUsageBits::Attachment);
   const auto fb = std::make_shared<FakeFramebuffer>(
@@ -283,8 +289,83 @@ TEST(RenderPassValidateTest, RejectsStereo) {
   const RenderPassDesc rp =
       makeRenderPass(1, {{.colorAttachmentMask = 0b001}, {.colorAttachmentMask = 0b001}});
 
+  // A Stereo framebuffer needs attachments with 2 layers, and FakeTexture has 1
+  const Result ret = rp.validate(*fb);
+  EXPECT_EQ(ret.code, Result::Code::ArgumentInvalid);
+}
+
+TEST(RenderPassValidateTest, AcceptsStereoWithTwoLayers) {
+  const auto att0 = std::make_shared<FakeTexture>(
+      TextureDesc::TextureUsageBits::Attachment, 1, ResourceStorage::Private, 2);
+  const auto fb = std::make_shared<FakeFramebuffer>(
+      textures({att0}), textures({}), nullptr, nullptr, FramebufferMode::Stereo);
+
+  const RenderPassDesc rp =
+      makeRenderPass(1, {{.colorAttachmentMask = 0b001}, {.colorAttachmentMask = 0b001}});
+
+  const Result ret = rp.validate(*fb);
+  EXPECT_TRUE(ret.isOk()) << ret.message;
+}
+
+TEST(RenderPassValidateTest, RejectsMultiviewMode) {
+  const auto att0 = std::make_shared<FakeTexture>(
+      TextureDesc::TextureUsageBits::Attachment, 1, ResourceStorage::Private, 2);
+  const auto fb = std::make_shared<FakeFramebuffer>(
+      textures({att0}), textures({}), nullptr, nullptr, FramebufferMode::Multiview);
+
+  const RenderPassDesc rp =
+      makeRenderPass(1, {{.colorAttachmentMask = 0b001}, {.colorAttachmentMask = 0b001}});
+
   const Result ret = rp.validate(*fb);
   EXPECT_EQ(ret.code, Result::Code::Unsupported);
+}
+
+TEST(RenderPassValidateTest, StereoNeedsTwoLayerDepth) {
+  const auto att0 = std::make_shared<FakeTexture>(
+      TextureDesc::TextureUsageBits::Attachment, 1, ResourceStorage::Private, 2);
+  const auto depth = std::make_shared<FakeTexture>(
+      TextureDesc::TextureUsageBits::Attachment, 1, ResourceStorage::Private, 1);
+  const auto fb = std::make_shared<FakeFramebuffer>(
+      textures({att0}), textures({}), depth, nullptr, FramebufferMode::Stereo);
+
+  const RenderPassDesc rp =
+      makeRenderPass(1, {{.colorAttachmentMask = 0b001}, {.colorAttachmentMask = 0b001}});
+
+  const Result ret = rp.validate(*fb);
+  EXPECT_EQ(ret.code, Result::Code::ArgumentInvalid);
+}
+
+TEST(RenderPassValidateTest, RejectsStereoWhenTheAttachedLayerLeavesOneLayer) {
+  // The 2 views of a Stereo framebuffer render to the 2 layers from the attached layer on, so
+  // attaching layer 1 needs at least 3 layers
+  const RenderPassDesc rp{
+      .colorAttachments = {{.loadAction = LoadAction::Clear,
+                            .storeAction = StoreAction::Store,
+                            .layer = 1}},
+      .depthAttachment = {.loadAction = LoadAction::Clear,
+                          .storeAction = StoreAction::DontCare,
+                          .layer = 1},
+      .subpasses = {{.colorAttachmentMask = 0b001}, {.colorAttachmentMask = 0b001}}};
+  const auto makeTexture = [](uint32_t numLayers) {
+    return std::make_shared<FakeTexture>(
+        TextureDesc::TextureUsageBits::Attachment, 1, ResourceStorage::Private, numLayers);
+  };
+  const auto validate = [&rp](const std::shared_ptr<ITexture>& color,
+                              const std::shared_ptr<ITexture>& depth) {
+    const auto fb = std::make_shared<FakeFramebuffer>(
+        textures({color}), textures({}), depth, nullptr, FramebufferMode::Stereo);
+    return rp.validate(*fb);
+  };
+
+  // Layer 1 is the last layer of a color attachment with 2 layers
+  EXPECT_EQ(validate(makeTexture(2), nullptr).code, Result::Code::ArgumentInvalid);
+  const Result colorRet = validate(makeTexture(3), nullptr);
+  EXPECT_TRUE(colorRet.isOk()) << colorRet.message;
+
+  // and of a depth attachment with 2 layers
+  EXPECT_EQ(validate(makeTexture(3), makeTexture(2)).code, Result::Code::ArgumentInvalid);
+  const Result depthRet = validate(makeTexture(3), makeTexture(3));
+  EXPECT_TRUE(depthRet.isOk()) << depthRet.message;
 }
 
 TEST(RenderPassValidateTest, RejectsMultisampledColor) {

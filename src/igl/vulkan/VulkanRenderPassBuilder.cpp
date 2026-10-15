@@ -269,7 +269,7 @@ VkResult VulkanRenderPassBuilder::buildWithSubpasses(const VulkanFunctionTable& 
               VK_ACCESS_INPUT_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
               VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
               VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-          .dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT,
+          .dependencyFlags = getDependencyFlags(pair),
           .viewOffset = 0,
       };
     } else {
@@ -659,6 +659,23 @@ VulkanRenderPassBuilder::SubpassDependencies VulkanRenderPassBuilder::getSubpass
 uint32_t VulkanRenderPassBuilder::getNumDependencies() const {
   // a render pass without subpasses has a single dependency on VK_SUBPASS_EXTERNAL
   return numSubpasses_ > 1 ? getSubpassDependencies().count : 1u;
+}
+
+VkDependencyFlags VulkanRenderPassBuilder::getDependencyFlags(
+    const SubpassDependencyPair& pair) const {
+  // A dependency on VK_SUBPASS_EXTERNAL cannot be view-local, and later passes can sample any texel
+  // of the attachments, so it is not by-region either
+  if (pair.dstSubpass == VK_SUBPASS_EXTERNAL) {
+    return 0;
+  }
+  // A view of a subpass only reads the same view of what an earlier subpass wrote
+  const VkDependencyFlags byRegion = VK_DEPENDENCY_BY_REGION_BIT;
+  return viewMask_ != 0 ? (byRegion | VK_DEPENDENCY_VIEW_LOCAL_BIT) : byRegion;
+}
+
+VkDependencyFlags VulkanRenderPassBuilder::getDependencyFlags(uint32_t index) const {
+  const SubpassDependencies dependencies = getSubpassDependencies();
+  return index < dependencies.count ? getDependencyFlags(dependencies.pairs[index]) : 0;
 }
 
 bool VulkanRenderPassBuilder::operator==(const VulkanRenderPassBuilder& other) const {

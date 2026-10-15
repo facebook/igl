@@ -38,6 +38,13 @@ std::unique_ptr<IRenderCommandEncoder> CommandBuffer::createRenderCommandEncoder
       Result::setResult(outResult, Result::Code::ArgumentNull, "The framebuffer is null");
       return nullptr;
     }
+    // GL_EXT_shader_framebuffer_fetch does not define reads from the framebuffers of
+    // GL_OVR_multiview
+    if (framebuffer->getMode() != FramebufferMode::Mono) {
+      Result::setResult(
+          outResult, Result::Code::Unsupported, "Subpasses support only mono framebuffers");
+      return nullptr;
+    }
     // The color attachment of CurrentFramebuffer is a placeholder that validate() cannot query,
     // and the window system's framebuffer ignores every attachment after the first
     if (!static_cast<const Framebuffer&>(*framebuffer).hasTextureAttachments()) {

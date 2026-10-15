@@ -85,6 +85,11 @@ class VulkanRenderPassBuilder final {
   /// the ones from the subpasses that are the last to use an attachment to VK_SUBPASS_EXTERNAL.
   [[nodiscard]] uint32_t getNumDependencies() const;
 
+  /// @brief The `dependencyFlags` of the `index`-th dependency that build() creates, or 0 if there
+  /// is no such dependency. The dependencies between the subpasses of a render pass with a view
+  /// mask are VK_DEPENDENCY_VIEW_LOCAL_BIT ones.
+  [[nodiscard]] VkDependencyFlags getDependencyFlags(uint32_t index) const;
+
   // comparison operator and a hash function for std::unordered_map<>
   bool operator==(const VulkanRenderPassBuilder& other) const;
 
@@ -122,6 +127,8 @@ class VulkanRenderPassBuilder final {
 
   // The dependencies of a render pass with subpasses.
   [[nodiscard]] SubpassDependencies getSubpassDependencies() const;
+
+  [[nodiscard]] VkDependencyFlags getDependencyFlags(const SubpassDependencyPair& pair) const;
 
 #if IGL_VULKAN_HAS_LEGACY_RENDERPASS
   // old code path for vkCreateRenderPass() - to be removed later

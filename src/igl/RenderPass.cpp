@@ -17,6 +17,14 @@ namespace igl {
 
 namespace {
 
+constexpr const char* kStereoLayersError =
+    "Stereo subpasses need attachments with at least 2 layers from the attached layer";
+
+// The 2 views of a Stereo framebuffer render to the 2 layers of `texture` from `layer` on
+bool hasStereoLayers(const ITexture& texture, uint8_t layer) noexcept {
+  return texture.getNumLayers() >= static_cast<uint32_t>(layer) + 2u;
+}
+
 bool isMemoryless(const std::shared_ptr<ITexture>& texture) noexcept {
   return texture != nullptr && texture->getStorage() == ResourceStorage::Memoryless;
 }
@@ -110,9 +118,11 @@ Result validateSubpasses(const RenderPassDesc& renderPass,
     return Result(Result::Code::ArgumentOutOfRange,
                   "RenderPassDesc::subpasses must have between 2 and IGL_SUBPASSES_MAX entries");
   }
-  if (framebuffer.getMode() != FramebufferMode::Mono) {
-    return Result(Result::Code::Unsupported, "Subpasses support only mono framebuffers");
+  const FramebufferMode mode = framebuffer.getMode();
+  if (mode == FramebufferMode::Multiview) {
+    return Result(Result::Code::Unsupported, "Subpasses support only mono and stereo framebuffers");
   }
+  const bool isStereo = mode == FramebufferMode::Stereo;
 
   const size_t numColorAttachments = colorIndices.size();
   if (numColorAttachments == 0) {
@@ -136,6 +146,9 @@ Result validateSubpasses(const RenderPassDesc& renderPass,
       return Result(Result::Code::ArgumentInvalid,
                     "Subpasses require every color attachment to have a texture");
     }
+    if (isStereo && !hasStereoLayers(*color, renderPass.colorAttachments[i].layer)) {
+      return Result(Result::Code::ArgumentInvalid, kStereoLayersError);
+    }
     if (color->getSamples() != 1) {
       return Result(Result::Code::Unsupported,
                     "Subpasses do not support multisampled color attachments");
@@ -149,6 +162,9 @@ Result validateSubpasses(const RenderPassDesc& renderPass,
     }
   }
   const std::shared_ptr<ITexture> depth = framebuffer.getDepthAttachment();
+  if (depth != nullptr && isStereo && !hasStereoLayers(*depth, renderPass.depthAttachment.layer)) {
+    return Result(Result::Code::ArgumentInvalid, kStereoLayersError);
+  }
   if (depth != nullptr && depth->getSamples() != 1) {
     return Result(Result::Code::Unsupported,
                   "Subpasses do not support a multisampled depth attachment");

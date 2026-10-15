@@ -8,6 +8,8 @@
 #pragma once
 
 #include <array>
+#include <memory>
+#include <vector>
 #include <igl/Buffer.h>
 #include <igl/CommandEncoder.h>
 #include <igl/Common.h>
@@ -51,7 +53,10 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
 
   /// @brief Advances to the next subpass of the render pass. The pipelines that are used from now
   /// on are the variants of the render pipeline states for the new subpass, and the input
-  /// attachments are the ones that the new subpass reads. All other bound state is kept.
+  /// attachments are the ones that the new subpass reads. All other bound state is kept. A
+  /// multiview render pass leaves the state of the command buffer undefined at the start of a
+  /// subpass, so the next draw call records the pipeline, the descriptor sets, the vertex and index
+  /// buffers, the push constants and the dynamic state again.
   void nextSubpass() override;
 
   void pushDebugGroupLabel(const char* label, const Color& color) const override;
@@ -164,6 +169,89 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
   /// unbinds the other ones
   void bindSubpassInputAttachments();
 
+  /// @brief The state that the encoder recorded into the command buffer, which the command buffer
+  /// loses at the start of every subpass of a multiview render pass. Only the encoders of the
+  /// multiview render passes with subpasses keep it.
+  struct ReplayState {
+    struct VertexBuffer {
+      VkBuffer buffer = VK_NULL_HANDLE;
+      VkDeviceSize offset = 0;
+      VkDeviceSize size = 0; // used with `stride`
+      VkDeviceSize stride = 0; // 0 if the vertex buffer was bound without a stride
+    };
+
+    VkViewport viewport = {};
+    VkRect2D scissor = {};
+
+    std::array<VertexBuffer, IGL_BUFFER_BINDINGS_MAX> vertexBuffers = {};
+    VkBuffer indexBuffer = VK_NULL_HANDLE;
+    VkDeviceSize indexBufferOffset = 0;
+    VkIndexType indexType = VK_INDEX_TYPE_UINT16;
+
+    // The bytes that were pushed since the render pass began: [pushConstantsBegin,
+    // pushConstantsEnd) of `pushConstants`, which has as many bytes as
+    // VkPhysicalDeviceLimits::maxPushConstantsSize. The bytes that no push wrote are 0.
+    std::vector<uint8_t> pushConstants;
+    uint32_t pushConstantsBegin = 0;
+    uint32_t pushConstantsEnd = 0;
+    // The push-constant stages of the pipeline layout that the push constants were last replayed
+    // for in the current subpass, or 0. IGL pipeline layouts with the same stages have the same
+    // push-constant range, so they are compatible for push constants.
+    VkShaderStageFlags replayedPushConstantStages = 0;
+
+    // The dynamic state that was set, if its `has` flag is set
+    bool hasCullMode = false;
+    VkCullModeFlags cullMode = VK_CULL_MODE_NONE;
+    bool hasFrontFace = false;
+    VkFrontFace frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    bool hasStencilMasks = false;
+    // the front face at index 0, the back face at index 1
+    std::array<uint32_t, 2> stencilCompareMasks = {};
+    std::array<uint32_t, 2> stencilWriteMasks = {};
+    bool hasStencilReference = false;
+    uint32_t stencilReference = 0;
+    bool hasBlendConstants = false;
+    std::array<float, 4> blendConstants = {};
+    bool hasDepthBias = false;
+    float depthBias = 0.0f;
+    float depthBiasClamp = 0.0f;
+    float depthBiasSlopeFactor = 0.0f;
+
+    // The descriptor set of a bind group. It is the raw descriptor set and not the handle of the
+    // bind group, because the app can destroy the bind group before the next subpass. That frees
+    // the handle, but not the descriptor set: its pool is destroyed after the command buffer
+    // completes.
+    struct BoundBindGroup {
+      VkDescriptorSet dset = VK_NULL_HANDLE; // null if the binder provides the descriptor set
+      uint32_t usageMask = 0; // the bindings that the descriptor set has
+    };
+
+    // The bind groups that provide the descriptor sets that are bound now, and the dynamic offsets
+    // of the buffer one
+    BoundBindGroup boundTextureGroup;
+    BoundBindGroup boundBufferGroup;
+    uint32_t numBoundDynamicOffsets = 0;
+    std::array<uint32_t, IGL_UNIFORM_BLOCKS_BINDING_MAX> boundDynamicOffsets = {};
+  };
+
+  /// @brief Makes the next draw call record again the state that the command buffer lost at the
+  /// start of a subpass of a multiview render pass: the binder forgets the bound pipeline and
+  /// descriptor sets, and replayState() records the rest.
+  void invalidateStateForSubpass();
+
+  /// @brief Records the state in `replay_` again, except for the pipeline and the descriptor sets
+  void replayState();
+
+  /// @brief Pushes the push constants in `replay_` again with the layout of the bound pipeline,
+  /// unless that layout has no push constants, or the current subpass already replayed them for a
+  /// layout that is compatible for push constants. Needs the pipeline to be bound.
+  void replayPushConstants();
+
+  /// @brief Binds the descriptor sets of the bind groups that provided them in the last subpass,
+  /// unless the caller binds new bind groups, the binder provides them, or the bound pipeline
+  /// needs other resources than the bind groups have. Needs the pipeline to be bound.
+  void replayBindGroups();
+
 #if IGL_DEBUG_ABORT_ENABLED
   /// @brief Asserts that the bound render pipeline state fits the current subpass
   void validatePipelineForSubpass() const;
@@ -186,9 +274,15 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
   uint32_t numSubpasses_ = 1;
   uint32_t currentSubpass_ = 0;
   uint32_t numColorAttachments_ = 0;
-  // The mip level and the layer of the attachments of the framebuffer
+  // The mip level, the layer and the mode of the attachments of the framebuffer
   uint32_t framebufferMipLevel_ = 0;
   uint32_t framebufferLayer_ = 0;
+  FramebufferMode framebufferMode_ = FramebufferMode::Mono;
+
+  // Null unless the render pass is a multiview one with subpasses
+  std::unique_ptr<ReplayState> replay_;
+  // Whether the next draw call has to record the state in `replay_` again
+  bool isReplayPending_ = false;
 
   /* Used to increment the draw call count. Should either be 0 or 1
    *  0: When draw call count is disabled during auxiliary draw calls
