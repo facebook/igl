@@ -148,6 +148,7 @@ if(IGL_WITH_WEBGPU)
   endif()
 endif()
 target_link_libraries(IGLTests PUBLIC IGLUshaderCross)
+target_link_libraries(IGLTests PUBLIC IGLUslang)
 # Add STB include directory for image utilities used by test artifacts
 target_include_directories(IGLTests PRIVATE "${IGL_ROOT_DIR}/third-party/deps/src/stb")
 

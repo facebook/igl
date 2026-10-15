@@ -1,0 +1,9 @@
+{
+  "namespace": "igl::tests::slang",
+  "programs": [
+    {"name": "SlangQuad", "source": "SlangQuad.slang", "profile": "portable"},
+    {"name": "SlangInstancedTargets", "source": "SlangInstancedTargets.slang", "profile": "portable"},
+    {"name": "SlangReduce", "source": "SlangReduce.slang", "profile": "portable"},
+    {"name": "SlangAutodiff", "source": "SlangAutodiff.slang", "profile": "portable"}
+  ]
+}
