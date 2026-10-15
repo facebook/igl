@@ -13,6 +13,7 @@
 #include <shell/renderSessions/MSAASession.h>
 #include <shell/renderSessions/ResourceTrackerSession.h>
 #include <shell/renderSessions/ShaderCompilationTestSession.h>
+#include <shell/renderSessions/SubpassDeferredSession.h>
 #include <shell/renderSessions/TQMultiRenderPassSession.h>
 #include <shell/renderSessions/TQSession.h>
 #include <shell/renderSessions/TextureAccessorSession.h>
@@ -107,5 +108,10 @@ TEST_F(IGLSampleTests, ResourceTrackerSession) {
 
 TEST_F(IGLSampleTests, ShaderCompilationTestSession) {
   igl::shell::ShaderCompilationTestSession test(platform_);
+  run(test, 1);
+}
+
+TEST_F(IGLSampleTests, SubpassDeferredSession) {
+  igl::shell::SubpassDeferredSession test(platform_);
   run(test, 1);
 }

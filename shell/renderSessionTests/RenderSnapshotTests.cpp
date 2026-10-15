@@ -33,6 +33,7 @@
 #include <shell/renderSessions/SpecConstantsSession.h>
 #include <shell/renderSessions/SrgbMipmapGammaSession.h>
 #include <shell/renderSessions/StencilOutlineSession.h>
+#include <shell/renderSessions/SubpassDeferredSession.h>
 #include <shell/renderSessions/TQMultiRenderPassSession.h>
 #include <shell/renderSessions/TQSession.h>
 #include <shell/renderSessions/Texture3DSession.h>
@@ -250,6 +251,11 @@ TEST_F(RenderSnapshotTests, SpecConstantsSession) {
 TEST_F(RenderSnapshotTests, SrgbMipmapGammaSession) {
   SrgbMipmapGammaSession session(platform_);
   render(session, "SrgbMipmapGammaSession");
+}
+
+TEST_F(RenderSnapshotTests, SubpassDeferredSession) {
+  SubpassDeferredSession session(platform_);
+  render(session, "SubpassDeferredSession");
 }
 
 TEST_F(RenderSnapshotTests, StencilOutlineSession) {

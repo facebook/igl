@@ -114,6 +114,7 @@ running N frames without WebGPU errors rather than for pixels.
 | ShaderLibraryWithDataSession | yes (snapshot) | yes | yes | 0 / 0.00% |
 | SrgbMipmapGammaSession | yes (snapshot) | yes | yes | 64 / 10.64% (WebGPU has no sRGB storage: 3 quads vs 4) |
 | StencilOutlineSession | yes (snapshot) | yes | yes | 0 / 0.00% |
+| SubpassDeferredSession | yes (snapshot) | not run | not run | not measured; matches the shared screenshot golden (WebGPU uses the two-pass fallback) |
 | TQMultiRenderPassSession | yes (snapshot) | yes | yes | 0 / 0.00% |
 | TQSession | yes (snapshot) | yes | yes | 0 / 0.00% |
 | Texture3DSession | yes (snapshot) | yes | yes | 0 / 0.00% |
