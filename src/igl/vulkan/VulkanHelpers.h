@@ -149,6 +149,7 @@ VkResult ivkCreateGraphicsPipeline(const struct VulkanFunctionTable* vt,
                                    const VkPipelineDynamicStateCreateInfo* dynamicState,
                                    VkPipelineLayout pipelineLayout,
                                    VkRenderPass renderPass,
+                                   uint32_t subpass,
                                    VkPipeline* outPipeline);
 
 VkResult ivkCreateDescriptorSetLayout(const struct VulkanFunctionTable* vt,

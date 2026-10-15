@@ -328,11 +328,16 @@ void ResourcesBinder::updateBindingsByDescriptorSet(VkPipelineLayout layout,
 void ResourcesBinder::bindPipeline(VkPipeline pipeline, const util::SpvModuleInfo* info) {
   IGL_PROFILER_FUNCTION();
 
+  if (!info) {
+    lastInfo_ = nullptr;
+  }
+
   if (lastPipelineBound_ == pipeline) {
     return;
   }
 
-  if (info) {
+  const bool keepDescriptors = keepDescriptorsOnNextBind_ && info == lastInfo_;
+  if (info && !keepDescriptors) {
     // a new pipeline might want a new descriptors configuration
     if (!info->buffers.empty()) {
       isDirtyFlags_ |= DirtyFlagBits_Buffers;
@@ -344,8 +349,10 @@ void ResourcesBinder::bindPipeline(VkPipeline pipeline, const util::SpvModuleInf
       isDirtyFlags_ |= DirtyFlagBits_StorageImages;
     }
   }
+  keepDescriptorsOnNextBind_ = false;
 
   lastPipelineBound_ = pipeline;
+  lastInfo_ = info;
 
   if (pipeline != VK_NULL_HANDLE) {
 #if IGL_VULKAN_PRINT_COMMANDS
@@ -356,6 +363,13 @@ void ResourcesBinder::bindPipeline(VkPipeline pipeline, const util::SpvModuleInf
 #endif // IGL_VULKAN_PRINT_COMMANDS
     ctx_.vf_.vkCmdBindPipeline(cmdBuffer_, bindPoint_, pipeline);
   }
+}
+
+void ResourcesBinder::invalidateBoundPipeline() {
+  IGL_PROFILER_FUNCTION();
+
+  lastPipelineBound_ = VK_NULL_HANDLE;
+  keepDescriptorsOnNextBind_ = true;
 }
 
 } // namespace igl::vulkan

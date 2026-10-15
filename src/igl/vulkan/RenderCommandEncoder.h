@@ -7,11 +7,13 @@
 
 #pragma once
 
+#include <array>
 #include <igl/Buffer.h>
 #include <igl/CommandEncoder.h>
 #include <igl/Common.h>
 #include <igl/Framebuffer.h>
 #include <igl/RenderCommandEncoder.h>
+#include <igl/RenderPass.h>
 #include <igl/vulkan/CommandBuffer.h>
 #include <igl/vulkan/RenderPipelineState.h>
 #include <igl/vulkan/ResourcesBinder.h>
@@ -43,8 +45,14 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
 
   /// @brief Ends encoding for render commands and transitions the layouts of all images bound to
   /// this encoder back to `VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL`. Also transitions all
-  /// dependent textures to `VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL`
+  /// dependent textures to `VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL`. If `nextSubpass()` was not
+  /// called for every subpass, it asserts in debug builds and advances to the last subpass first.
   void endEncoding() override;
+
+  /// @brief Advances to the next subpass of the render pass. The pipelines that are used from now
+  /// on are the variants of the render pipeline states for the new subpass, and the input
+  /// attachments are the ones that the new subpass reads. All other bound state is kept.
+  void nextSubpass() override;
 
   void pushDebugGroupLabel(const char* label, const Color& color) const override;
   void insertDebugEventLabel(const char* label, const Color& color) const override;
@@ -152,6 +160,15 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
                   Result& outResult);
   void processDependencies(const Dependencies& dependencies);
 
+  /// @brief Binds the color attachments that the current subpass reads as input attachments, and
+  /// unbinds the other ones
+  void bindSubpassInputAttachments();
+
+#if IGL_DEBUG_ABORT_ENABLED
+  /// @brief Asserts that the bound render pipeline state fits the current subpass
+  void validatePipelineForSubpass() const;
+#endif // IGL_DEBUG_ABORT_ENABLED
+
  private:
   VulkanContext& ctx_;
   VkCommandBuffer cmdBuffer_ = VK_NULL_HANDLE;
@@ -162,6 +179,16 @@ class RenderCommandEncoder : public IRenderCommandEncoder {
   ResourcesBinder binder_;
 
   RenderPipelineDynamicState dynamicState_;
+
+  // The subpasses of the render pass: the first `numSubpasses_` entries are valid. A render pass
+  // without subpasses has 1 subpass that does not read any input attachment.
+  std::array<RenderPassDesc::SubpassDesc, IGL_SUBPASSES_MAX> subpasses_ = {};
+  uint32_t numSubpasses_ = 1;
+  uint32_t currentSubpass_ = 0;
+  uint32_t numColorAttachments_ = 0;
+  // The mip level and the layer of the attachments of the framebuffer
+  uint32_t framebufferMipLevel_ = 0;
+  uint32_t framebufferLayer_ = 0;
 
   /* Used to increment the draw call count. Should either be 0 or 1
    *  0: When draw call count is disabled during auxiliary draw calls

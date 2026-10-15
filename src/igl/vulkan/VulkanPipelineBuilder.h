@@ -39,6 +39,9 @@ class VulkanPipelineBuilder final {
   VulkanPipelineBuilder& vertexInputState(const VkPipelineVertexInputStateCreateInfo& state);
   VulkanPipelineBuilder& colorBlendAttachmentStates(
       std::vector<VkPipelineColorBlendAttachmentState>& states);
+  /// @brief The index of the subpass of the render pass that the pipeline is used in. The default
+  /// is 0.
+  VulkanPipelineBuilder& subpass(uint32_t subpassIndex);
 
   [[nodiscard]] VkResult build(const VulkanFunctionTable& vf,
                                VkDevice device,
@@ -62,6 +65,7 @@ class VulkanPipelineBuilder final {
   VkPipelineMultisampleStateCreateInfo multisampleState_;
   VkPipelineDepthStencilStateCreateInfo depthStencilState_;
   std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachmentStates_;
+  uint32_t subpass_ = 0;
   static uint32_t numPipelinesCreated;
 };
 

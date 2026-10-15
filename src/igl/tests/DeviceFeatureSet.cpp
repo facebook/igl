@@ -244,7 +244,6 @@ TEST_F(DeviceFeatureSetTest, hasFeatureForMacOSOrWinOrAndroidTest) {
       EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::ExternalMemoryObjects));
       EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::PushConstants));
       EXPECT_TRUE(iglDev_->hasFeature(DeviceFeatures::FillBuffer));
-      EXPECT_FALSE(iglDev_->hasFeature(DeviceFeatures::Subpasses));
       // vkCmdSetCullMode and vkCmdSetFrontFace are provided together (core in
       // Vulkan 1.3 / VK_EXT_extended_dynamic_state), so both dynamic-state
       // features must report the same availability.

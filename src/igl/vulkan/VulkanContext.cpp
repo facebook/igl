@@ -3265,6 +3265,15 @@ bool VulkanContext::supportsLazilyAllocatedMemory() const {
          !features_.enabled("VK_KHR_portability_subset");
 }
 
+bool VulkanContext::supportsSubpasses() const {
+  // The specification requires every device to have at least 4 color attachments
+  // (maxColorAttachments) and 4 input attachment descriptors per shader stage
+  // (maxPerStageDescriptorInputAttachments), so there are no limits to check
+  static_assert(IGL_COLOR_ATTACHMENTS_MAX <= 4);
+  return vf_.vkCreateRenderPass2 != nullptr && !features_.has_VK_EXT_descriptor_buffer &&
+         !features_.enabled("VK_KHR_portability_subset");
+}
+
 void VulkanContext::syncAcquireNext() noexcept {
   IGL_PROFILER_FUNCTION();
 

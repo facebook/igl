@@ -280,6 +280,13 @@ class VulkanContext final {
   /// MoltenVK may split render passes, which defeats tile memory.
   [[nodiscard]] bool supportsLazilyAllocatedMemory() const;
 
+  /// @brief Returns true if render passes can have several subpasses that read the color
+  /// attachments of earlier subpasses as input attachments (DeviceFeatures::Subpasses): the device
+  /// can create render passes with vkCreateRenderPass2(), binds the input attachments with
+  /// descriptor sets rather than descriptor buffers, and VK_KHR_portability_subset is not enabled,
+  /// because MoltenVK may split render passes, which defeats the purpose of subpasses.
+  [[nodiscard]] bool supportsSubpasses() const;
+
   [[nodiscard]] const VkSurfaceCapabilitiesKHR& getSurfaceCapabilities() const noexcept {
     return deviceSurfaceCaps_;
   }

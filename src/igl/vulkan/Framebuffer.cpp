@@ -349,12 +349,14 @@ void Framebuffer::validateAttachments() {
 
 VkFramebuffer Framebuffer::getVkFramebuffer(uint32_t mipLevel,
                                             uint32_t layer,
-                                            VkRenderPass pass) const {
+                                            VkRenderPass pass,
+                                            uint32_t renderPassCompatKey) const {
   IGL_PROFILER_FUNCTION();
   // Because Vulkan framebuffers are immutable and we have a method updateDrawable() which can
   // change an attachment, we have to maintain a collection of attachments and map it into a
   // VulkanFramebuffer via unordered_map. The vector of attachments is a key in the hash table.
   Attachments attachments;
+  attachments.renderPassCompatKey = renderPassCompatKey;
 
   for (const auto& colorAttachment : desc_.colorAttachments) {
     // skip invalid attachments
@@ -425,6 +427,8 @@ uint64_t Framebuffer::HashFunction::operator()(const Attachments& attachments) c
   for (const auto& a : attachments.attachments) {
     hash ^= std::hash<VkImageView>()(a);
   }
+  // 0 leaves the hash of the render passes with a single subpass as it is
+  hash ^= static_cast<uint64_t>(attachments.renderPassCompatKey) * 0x9e3779b97f4a7c15ull;
 
   return hash;
 }
@@ -433,13 +437,14 @@ VkRenderPassBeginInfo Framebuffer::getRenderPassBeginInfo(VkRenderPass renderPas
                                                           uint32_t mipLevel,
                                                           uint32_t layer,
                                                           uint32_t numClearValues,
-                                                          const VkClearValue* clearValues) const {
+                                                          const VkClearValue* clearValues,
+                                                          uint32_t renderPassCompatKey) const {
   IGL_PROFILER_FUNCTION();
 
   return VkRenderPassBeginInfo{
       .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
       .renderPass = renderPass,
-      .framebuffer = getVkFramebuffer(mipLevel, layer, renderPass),
+      .framebuffer = getVkFramebuffer(mipLevel, layer, renderPass, renderPassCompatKey),
       .renderArea =
           {
               .offset = {.x = 0, .y = 0},

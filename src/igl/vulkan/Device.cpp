@@ -889,7 +889,7 @@ bool Device::hasFeatureInternal(DeviceFeatures feature) const {
     return deviceProperties.limits.timestampPeriod > 0.0f &&
            (deviceProperties.limits.timestampComputeAndGraphics == VK_TRUE);
   case DeviceFeatures::Subpasses:
-    return false;
+    return ctx_->supportsSubpasses();
   case DeviceFeatures::MemorylessAttachments:
     return ctx_->supportsLazilyAllocatedMemory();
   }

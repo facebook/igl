@@ -60,6 +60,16 @@ class alignas(sizeof(uint64_t)) RenderPipelineDynamicState {
   // Ignore modernize-use-default-member-init
   // @lint-ignore CLANGTIDY
   uint32_t stencilTestEnable : 1;
+  // The index of the current subpass. It is 0 unless the render pass has several subpasses.
+  // NOLINTNEXTLINE(modernize-use-default-member-init)
+  uint32_t subpassIndex : 2;
+  // Whether the render pass has several subpasses. Only then do the pipelines depend on
+  // `subpassIndex` and `renderPassCompatIndex`.
+  // NOLINTNEXTLINE(modernize-use-default-member-init)
+  uint32_t multiSubpass : 1;
+  // The compatibility class of the render pass (VulkanContext::RenderPassHandle::compatIndex)
+  // NOLINTNEXTLINE(modernize-use-default-member-init)
+  uint32_t renderPassCompatIndex : 8;
 
   RenderPipelineDynamicState() {
     // memset makes sure all padding bits are zero
@@ -79,6 +89,9 @@ class alignas(sizeof(uint64_t)) RenderPipelineDynamicState {
     depthBiasEnable = false;
     depthWriteEnable = false;
     stencilTestEnable = false;
+    subpassIndex = 0;
+    multiSubpass = false;
+    renderPassCompatIndex = 0;
   }
 
   [[nodiscard]] VkCompareOp getDepthCompareOp() const {
@@ -143,6 +156,8 @@ class alignas(sizeof(uint64_t)) RenderPipelineDynamicState {
 
 static_assert(sizeof(RenderPipelineDynamicState) == sizeof(uint64_t));
 static_assert(alignof(RenderPipelineDynamicState) == sizeof(uint64_t));
+// the `subpassIndex` bitfield has 2 bits
+static_assert(IGL_SUBPASSES_MAX <= 4);
 
 /** @brief Implements the igl::IRenderPipelineState interface. In Vulkan, certain render parameters
  * belong to a pipeline, which is immutable, and changing parameters is not possible once a

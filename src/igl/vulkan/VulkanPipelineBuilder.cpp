@@ -124,6 +124,11 @@ VulkanPipelineBuilder& VulkanPipelineBuilder::colorBlendAttachmentStates(
   return *this;
 }
 
+VulkanPipelineBuilder& VulkanPipelineBuilder::subpass(uint32_t subpassIndex) {
+  subpass_ = subpassIndex;
+  return *this;
+}
+
 VulkanPipelineBuilder& VulkanPipelineBuilder::shaderStage(VkPipelineShaderStageCreateInfo stage) {
   shaderStages_.push_back(stage);
   return *this;
@@ -204,6 +209,7 @@ VkResult VulkanPipelineBuilder::build(const VulkanFunctionTable& vf,
                                                 &dynamicState,
                                                 pipelineLayout,
                                                 renderPass,
+                                                subpass_,
                                                 outPipeline);
 
   if (!IGL_DEBUG_VERIFY(result == VK_SUCCESS)) {

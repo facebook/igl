@@ -407,6 +407,13 @@ VkPipeline RenderPipelineState::getVkPipeline(
   // This is safe because desc_.targetDesc already pins the format expectations
   // for this RenderPipelineState, so all render passes it encounters are compatible.
   cacheKey.renderPassIndex = 0;
+  // Render passes with several subpasses are compatible with each other only if they have the same
+  // subpasses, which is what `renderPassCompatIndex` identifies. A pipeline also belongs to one
+  // subpass. A render pass with a single subpass leaves both out of the key.
+  if (!cacheKey.multiSubpass) {
+    cacheKey.renderPassCompatIndex = 0;
+    cacheKey.subpassIndex = 0;
+  }
 
   const auto it = pipelines_.find(cacheKey);
 
@@ -631,6 +638,7 @@ VkPipeline RenderPipelineState::getVkPipeline(
           .frontFace(frontFace)
           .vertexInputState(vertexInputStateCreateInfo_)
           .colorBlendAttachmentStates(colorBlendAttachmentStates)
+          .subpass(cacheKey.subpassIndex)
           .build(ctx.vf_,
                  ctx.getVkDevice(),
                  flags,

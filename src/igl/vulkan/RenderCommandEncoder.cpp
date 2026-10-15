@@ -120,6 +120,7 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
     }
 
     const auto& colorTexture = static_cast<Texture&>(*attachment.texture);
+    numColorAttachments_++;
 
     // Specifically using renderPass.colorAttachments.size() in case we somehow
     // get into this loop even when renderPass.colorAttachments.empty() == true
@@ -226,6 +227,10 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
 
   const auto& fb = static_cast<Framebuffer&>(*framebuffer);
 
+  // CommandBuffer has validated the subpasses
+  builder.setSubpasses(renderPass.subpasses.data(),
+                       static_cast<uint32_t>(renderPass.subpasses.size()));
+
   const auto renderPassHandle = ctx_.findRenderPass(builder);
   if (renderPassHandle.pass == VK_NULL_HANDLE) {
     Result::setResult(
@@ -233,11 +238,28 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
     return;
   }
 
+  numSubpasses_ = renderPassHandle.numSubpasses;
+  if (numSubpasses_ > 1) {
+    std::copy_n(renderPass.subpasses.begin(), numSubpasses_, subpasses_.begin());
+  }
+  framebufferMipLevel_ = mipLevel;
+  framebufferLayer_ = layer;
+
   dynamicState_.renderPassIndex = renderPassHandle.index;
+  dynamicState_.subpassIndex = 0;
+  dynamicState_.multiSubpass = numSubpasses_ > 1;
+  dynamicState_.renderPassCompatIndex = renderPassHandle.compatIndex;
   dynamicState_.depthBiasEnable = false;
 
-  const VkRenderPassBeginInfo bi = fb.getRenderPassBeginInfo(
-      renderPassHandle.pass, mipLevel, layer, numClearValues, clearValues.data());
+  // The framebuffers of the render passes with subpasses are not shared with the ones of the render
+  // passes without subpasses, nor with the ones of the render passes with other subpasses
+  const uint32_t framebufferCompatKey = numSubpasses_ > 1 ? renderPassHandle.compatIndex + 1u : 0u;
+  const VkRenderPassBeginInfo bi = fb.getRenderPassBeginInfo(renderPassHandle.pass,
+                                                             mipLevel,
+                                                             layer,
+                                                             numClearValues,
+                                                             clearValues.data(),
+                                                             framebufferCompatKey);
 
   const uint32_t width = std::max(fb.getWidth() >> mipLevel, 1u);
   const uint32_t height = std::max(fb.getHeight() >> mipLevel, 1u);
@@ -267,6 +289,10 @@ void RenderCommandEncoder::initialize(const RenderPassDesc& renderPass,
       timestampQueries_ = renderPass.timestampQuery.queries;
       timestampQuerySlotIndex_ = slot;
     }
+  }
+
+  if (numSubpasses_ > 1) {
+    bindSubpassInputAttachments();
   }
 
   ctx_.vf_.vkCmdBeginRenderPass(cmdBuffer_, &bi, VK_SUBPASS_CONTENTS_INLINE);
@@ -305,6 +331,15 @@ void RenderCommandEncoder::endEncoding() {
   }
 
   isEncoding_ = false;
+
+  IGL_DEBUG_ASSERT(currentSubpass_ + 1 == numSubpasses_,
+                   "nextSubpass() must be called RenderPassDesc::subpasses.size() - 1 times before "
+                   "endEncoding()");
+  // VUID-vkCmdEndRenderPass-None-00910: the last subpass must be the current one
+  while (currentSubpass_ + 1 < numSubpasses_) {
+    ctx_.vf_.vkCmdNextSubpass(cmdBuffer_, VK_SUBPASS_CONTENTS_INLINE);
+    ++currentSubpass_;
+  }
 
   ctx_.vf_.vkCmdEndRenderPass(cmdBuffer_);
 
@@ -366,6 +401,45 @@ void RenderCommandEncoder::endEncoding() {
 #if defined(IGL_WITH_TRACY_GPU)
   TracyVkCollect(ctx_.tracyCtx_, cmdBuffer_);
 #endif
+}
+
+void RenderCommandEncoder::nextSubpass() {
+  IGL_PROFILER_FUNCTION();
+
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(&ctx_);
+
+  if (!IGL_DEBUG_VERIFY(isEncoding_)) {
+    return;
+  }
+  if (currentSubpass_ + 1 >= numSubpasses_) {
+    IGL_DEBUG_ABORT(
+        "nextSubpass() was called more than RenderPassDesc::subpasses.size() - 1 times");
+    return;
+  }
+
+#if IGL_VULKAN_PRINT_COMMANDS
+  IGL_LOG_INFO("%p vkCmdNextSubpass(%u)\n", cmdBuffer_, currentSubpass_ + 1);
+#endif // IGL_VULKAN_PRINT_COMMANDS
+  ctx_.vf_.vkCmdNextSubpass(cmdBuffer_, VK_SUBPASS_CONTENTS_INLINE);
+
+  ++currentSubpass_;
+  // the next draw call gets the pipeline for the new subpass from the render pipeline state, and
+  // binds it. The descriptor sets that are bound stay valid, because the shaders do not change.
+  dynamicState_.subpassIndex = currentSubpass_ & 0x3u;
+  binder_.invalidateBoundPipeline();
+  bindSubpassInputAttachments();
+}
+
+void RenderCommandEncoder::bindSubpassInputAttachments() {
+  IGL_PROFILER_FUNCTION();
+
+  const uint32_t inputMask = subpasses_[currentSubpass_].inputAttachmentMask;
+  for (uint32_t i = 0; i != numColorAttachments_; ++i) {
+    Texture* texture = ((inputMask >> i) & 1u) != 0
+                           ? static_cast<Texture*>(framebuffer_->getColorAttachment(i).get())
+                           : nullptr;
+    binder_.bindInputAttachment(i, texture, framebufferMipLevel_, framebufferLayer_);
+  }
 }
 
 void RenderCommandEncoder::pushDebugGroupLabel(const char* label, const Color& color) const {
@@ -935,8 +1009,52 @@ void RenderCommandEncoder::flushDynamicDepthStencilState() {
   }
 }
 
+#if IGL_DEBUG_ABORT_ENABLED
+void RenderCommandEncoder::validatePipelineForSubpass() const {
+  if (!rps_) {
+    return;
+  }
+
+  const char* const debugName = rps_->getRenderPipelineDesc().debugName.c_str();
+
+  const uint32_t inputMask = subpasses_[currentSubpass_].inputAttachmentMask;
+  for (const util::InputAttachmentDescription& a : rps_->getSpvModuleInfo().inputAttachments) {
+    IGL_DEBUG_ASSERT(a.inputAttachmentIndex < IGL_COLOR_ATTACHMENTS_MAX &&
+                         ((inputMask >> a.inputAttachmentIndex) & 1u) != 0,
+                     "Render pipeline state '%s' reads input attachment %u, which subpass %u does "
+                     "not read (input attachment mask: 0x%x)",
+                     debugName,
+                     a.inputAttachmentIndex,
+                     currentSubpass_,
+                     inputMask);
+  }
+
+  if (numSubpasses_ > 1) {
+    // every subpass has an entry for every color attachment, and so must the pipeline
+    const auto& colorAttachments = rps_->getRenderPipelineDesc().targetDesc.colorAttachments;
+    bool declaresExactlyTheAttachments = colorAttachments.size() >= numColorAttachments_;
+    for (size_t i = 0; i != colorAttachments.size(); ++i) {
+      const bool hasFormat = colorAttachments[i].textureFormat != TextureFormat::Invalid;
+      if (hasFormat != (i < numColorAttachments_)) {
+        declaresExactlyTheAttachments = false;
+      }
+    }
+    IGL_DEBUG_ASSERT(declaresExactlyTheAttachments,
+                     "Render pipeline state '%s' is used in a render pass with subpasses, so its "
+                     "targetDesc.colorAttachments must declare a format for each of the %u color "
+                     "attachments of the framebuffer, and for no other attachment",
+                     debugName,
+                     numColorAttachments_);
+  }
+}
+#endif // IGL_DEBUG_ABORT_ENABLED
+
 void RenderCommandEncoder::flushDynamicState() {
   IGL_PROFILER_FUNCTION();
+
+#if IGL_DEBUG_ABORT_ENABLED
+  validatePipelineForSubpass();
+#endif // IGL_DEBUG_ABORT_ENABLED
 
   binder_.bindPipeline(rps_->getVkPipeline(dynamicState_), &rps_->getSpvModuleInfo());
 

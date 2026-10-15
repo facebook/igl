@@ -140,8 +140,7 @@ Result validateSubpasses(const RenderPassDesc& renderPass,
       return Result(Result::Code::Unsupported,
                     "Subpasses do not support multisampled color attachments");
     }
-    const std::shared_ptr<ITexture> resolve = framebuffer.getResolveColorAttachment(i);
-    if (resolve != nullptr && resolve != color) {
+    if (framebuffer.getResolveColorAttachment(i) != nullptr) {
       return Result(Result::Code::Unsupported,
                     "Subpasses do not support resolve color attachments");
     }

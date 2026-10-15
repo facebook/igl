@@ -85,8 +85,17 @@ class ResourcesBinder final {
   void updateBindings(VkPipelineLayout layout, const PipelineState& state);
 
   /// @brief If the pipeline passed in as a parameter is different than the last pipeline bound
-  /// through this class, binds it and cache it as the last pipeline bound. Does nothing otherwise
+  /// through this class, binds it and cache it as the last pipeline bound. Does nothing otherwise.
+  /// The descriptor sets are updated at the next draw or dispatch for a new pipeline, unless
+  /// `invalidateBoundPipeline()` asks to keep them. A null `info` unbinds the last pipeline.
   void bindPipeline(VkPipeline pipeline, const util::SpvModuleInfo* info);
+
+  /// @brief Makes the next `bindPipeline()` bind its pipeline even if it is the one that was bound
+  /// last. If the shaders of the next pipeline are the ones of the pipeline that was bound last,
+  /// like the pipelines that a render pipeline state has for the subpasses of a render pass, the
+  /// descriptor sets that are bound stay valid and are not updated, including the sets of bind
+  /// groups.
+  void invalidateBoundPipeline();
 
  private:
   void updateBindingsByDescriptorSet(VkPipelineLayout layout, const PipelineState& state);
@@ -113,6 +122,10 @@ class ResourcesBinder final {
   VulkanContext& ctx_;
   VkCommandBuffer cmdBuffer_ = VK_NULL_HANDLE;
   VkPipeline lastPipelineBound_ = VK_NULL_HANDLE;
+  // the shaders of the last pipeline bound, and whether the next pipeline keeps the descriptor sets
+  // if it has the same ones: see invalidateBoundPipeline()
+  const util::SpvModuleInfo* lastInfo_ = nullptr;
+  bool keepDescriptorsOnNextBind_ = false;
   uint32_t isDirtyFlags_ =
       DirtyFlagBits_Textures | DirtyFlagBits_Buffers | DirtyFlagBits_StorageImages;
   BindingsTextures bindingsTextures_;

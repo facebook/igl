@@ -83,10 +83,17 @@ class Framebuffer final : public IFramebuffer {
    * pass. When requesting a framebuffer for a mip level, layer, or render pass, this function
    * looks for an existing framebuffer and returns it, if it exists. Otherwise, it creates a new
    * framebuffer and stores it in the cache.
+   *
+   * A framebuffer only works with the render passes that are compatible with the one that it was
+   * created with. Render passes with the same attachments can still be incompatible, because they
+   * have different subpasses. `renderPassCompatKey` tells them apart: it is 0 for render passes
+   * with a single subpass, and the same non-zero value for the render passes with subpasses that
+   * are compatible with each other.
    */
   [[nodiscard]] VkFramebuffer getVkFramebuffer(uint32_t mipLevel,
                                                uint32_t layer,
-                                               VkRenderPass pass) const;
+                                               VkRenderPass pass,
+                                               uint32_t renderPassCompatKey = 0) const;
 
   [[nodiscard]] uint32_t getWidth() const {
     return width_;
@@ -99,17 +106,22 @@ class Framebuffer final : public IFramebuffer {
     return desc_;
   }
 
-  [[nodiscard]] VkRenderPassBeginInfo getRenderPassBeginInfo(VkRenderPass renderPass,
-                                                             uint32_t mipLevel,
-                                                             uint32_t layer,
-                                                             uint32_t numClearValues,
-                                                             const VkClearValue* clearValues) const;
+  /// @brief `renderPassCompatKey` is forwarded to `getVkFramebuffer()`
+  [[nodiscard]] VkRenderPassBeginInfo getRenderPassBeginInfo(
+      VkRenderPass renderPass,
+      uint32_t mipLevel,
+      uint32_t layer,
+      uint32_t numClearValues,
+      const VkClearValue* clearValues,
+      uint32_t renderPassCompatKey = 0) const;
 
-  /// @brief Structure used as key for unordered map based on all framebuffer attachments
+  /// @brief Structure used as key for unordered map based on all framebuffer attachments and the
+  /// compatibility class of the render pass (see `getVkFramebuffer()`)
   struct Attachments {
     std::vector<VkImageView> attachments;
+    uint32_t renderPassCompatKey = 0;
     [[nodiscard]] bool operator==(const Attachments& other) const {
-      return attachments == other.attachments;
+      return attachments == other.attachments && renderPassCompatKey == other.renderPassCompatKey;
     }
   };
 

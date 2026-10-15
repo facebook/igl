@@ -552,6 +552,7 @@ VkResult ivkCreateGraphicsPipeline(const struct VulkanFunctionTable* vt,
                                    const VkPipelineDynamicStateCreateInfo* dynamicState,
                                    VkPipelineLayout pipelineLayout,
                                    VkRenderPass renderPass,
+                                   uint32_t subpass,
                                    VkPipeline* outPipeline) {
   const VkGraphicsPipelineCreateInfo ci = {
       .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
@@ -570,7 +571,7 @@ VkResult ivkCreateGraphicsPipeline(const struct VulkanFunctionTable* vt,
       .pDynamicState = dynamicState,
       .layout = pipelineLayout,
       .renderPass = renderPass,
-      .subpass = 0,
+      .subpass = subpass,
       .basePipelineHandle = VK_NULL_HANDLE,
       .basePipelineIndex = -1,
   };
