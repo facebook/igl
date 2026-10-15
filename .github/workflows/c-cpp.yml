@@ -246,6 +246,7 @@ jobs:
             cmake --build . --target HelloWorldSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
             cmake --build . --target ImguiSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
             cmake --build . --target MRTSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
+            cmake --build . --target SubpassDeferredSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
             cmake --build . --target Textured3DCubeSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
             cmake --build . --target TextureViewSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
             cmake --build . --target TinyMeshBindGroupSession_vulkan --parallel ${{ steps.cpu-cores.outputs.count }}
@@ -264,6 +265,7 @@ jobs:
             ./build/shell/HelloWorldSession_vulkan        --headless --viewport-size 1600x900 --screenshot-file HelloWorldSession.png
             ./build/shell/ImguiSession_vulkan             --headless --viewport-size 1600x900 --screenshot-file ImguiSession.png
             ./build/shell/MRTSession_vulkan               --headless --viewport-size 1600x900 --screenshot-file MRTSession.png
+            ./build/shell/SubpassDeferredSession_vulkan   --headless --viewport-size 1600x900 --screenshot-file SubpassDeferredSession.png
             ./build/shell/Textured3DCubeSession_vulkan    --headless --viewport-size 1600x900 --screenshot-file Textured3DCubeSession.png
             ./build/shell/TextureViewSession_vulkan       --headless --viewport-size 1600x900 --screenshot-file TextureViewSession.png
             ./build/shell/TinyMeshBindGroupSession_vulkan --headless --viewport-size 1600x900 --screenshot-file TinyMeshBindGroupSession.png
@@ -289,6 +291,7 @@ jobs:
               HelloWorldSession.png
               ImguiSession.png
               MRTSession.png
+              SubpassDeferredSession.png
               Textured3DCubeSession.png
               TextureViewSession.png
               TinyMeshBindGroupSession.png

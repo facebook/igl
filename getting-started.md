@@ -71,4 +71,8 @@ A basic session showing how to use multiple render passes
 
 ![image](.github/screenshot_TQMultiRenderPassSession.png)
 
+9)  [SubpassDeferredSession](./shell/renderSessions/SubpassDeferredSession.cpp)
+
+A session showing how to use subpasses with input attachments for tile-based deferred shading
+
 And many more sessions are coming!
