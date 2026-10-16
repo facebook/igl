@@ -23,6 +23,16 @@ namespace iglu::material {
 /// information to generate the underlying data and provides a simple API to manipulate it.
 class ShaderUniforms final {
  public:
+  /// How uniform buffer contents reach the GPU.
+  enum class UploadMode : uint8_t {
+    /// bind() uploads each buffer (into a Ring buffer on Metal, Vulkan and D3D12).
+    AtBind,
+    /// update() records the changed buffers into a command buffer with
+    /// ICommandBuffer::updateBuffer(), and bind() only binds. Used only when the device has
+    /// DeviceFeatures::UpdateBuffer and sub-allocation is off; otherwise behaves as AtBind.
+    CommandBuffer,
+  };
+
   // Setters: use these to update uniforms, individually or in bulk.
   void setBool(const igl::NameHandle& uniformName, const bool& value, size_t arrayIndex = 0);
   void setBool(const igl::NameHandle& blockTypeName,
@@ -202,6 +212,11 @@ class ShaderUniforms final {
 
   void setTexture(const std::string& name, igl::ITexture* value, igl::ISamplerState* sampler);
 
+  /// With UploadMode::CommandBuffer, records the current contents of every uniform buffer into
+  /// 'commandBuffer'. Call it after the last uniform change and before creating the encoder that
+  /// binds them. Does nothing in AtBind mode.
+  void update(igl::ICommandBuffer& commandBuffer);
+
   /// Binds all relevant states in 'encoder' in preparation for drawing.
   void bind(igl::IDevice& device,
             const igl::IRenderPipelineState& pipelineState,
@@ -258,7 +273,8 @@ class ShaderUniforms final {
 
   ShaderUniforms(igl::IDevice& device,
                  const igl::IRenderPipelineReflection& reflection,
-                 bool enableSuballocationforVulkan = true);
+                 bool enableSuballocationforVulkan = true,
+                 UploadMode uploadMode = UploadMode::AtBind);
   ~ShaderUniforms();
 
  private:
@@ -266,6 +282,7 @@ class ShaderUniforms final {
     void* ptr = nullptr;
     size_t size = 0;
     std::shared_ptr<igl::IBuffer> iglBuffer;
+    // ptr changed since the last update(); checked by bind() (UploadMode::CommandBuffer only)
     bool dirty = false;
 
     BufferAllocation(void* ptr, size_t size, std::shared_ptr<igl::IBuffer> buffer) :
@@ -291,6 +308,8 @@ class ShaderUniforms final {
   };
 
   igl::IDevice& device_;
+  // UploadMode::CommandBuffer is in effect: update() uploads, bind() only binds
+  bool uploadWithCommandBuffer_ = false;
 
   std::vector<std::shared_ptr<BufferAllocation>> allocations_;
 

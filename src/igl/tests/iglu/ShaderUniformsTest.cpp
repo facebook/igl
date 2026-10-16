@@ -9,6 +9,7 @@
 
 #include "../data/ShaderData.h"
 #include "../util/Common.h"
+#include "RecordingDevice.h"
 
 #include <igl/CommandBuffer.h>
 #include <igl/Framebuffer.h>
@@ -404,6 +405,153 @@ TEST_F(ShaderUniformsTest, BindUploadsSuballocatedUniformBuffer) {
   for (const uint32_t pixel : pixels) {
     EXPECT_EQ(pixel, kClearHex) << "offscreen target should hold the clear color after bind()";
   }
+}
+
+namespace {
+
+TestRenderPipelineReflection colorBlockReflection() {
+  const BufferArgDesc fragmentBuffer{
+      .name = igl::genNameHandle("FragmentUniforms"),
+      .bufferDataSize = 16,
+      .bufferIndex = 0,
+      .shaderStage = ShaderStage::Fragment,
+      .isUniformBlock = true,
+      .members = {{.name = igl::genNameHandle("color"),
+                   .type = UniformType::Float4,
+                   .offset = 0,
+                   .arrayLength = 1}},
+  };
+  return TestRenderPipelineReflection{
+      std::vector<BufferArgDesc>{fragmentBuffer},
+      std::vector<SamplerArgDesc>{},
+      std::vector<TextureArgDesc>{},
+  };
+}
+} // namespace
+
+// UploadMode::CommandBuffer writes buffers in command buffers, so they need neither CPU access nor
+// a Ring. Without DeviceFeatures::UpdateBuffer the mode falls back to the AtBind buffers.
+TEST_F(ShaderUniformsTest, CommandBufferModeCreatesPrivateBuffersWithoutRing) {
+  const TestRenderPipelineReflection reflection = colorBlockReflection();
+  RecordingDevice device(*iglDev_);
+  device.backendType = BackendType::Vulkan;
+
+  device.reportsUpdateBuffer = true;
+  {
+    const iglu::material::ShaderUniforms shaderUniforms(
+        device, reflection, false, iglu::material::ShaderUniforms::UploadMode::CommandBuffer);
+    EXPECT_EQ(device.createBufferCount, 1u);
+    EXPECT_EQ(device.recordedHint & BufferDesc::BufferAPIHintBits::Ring, 0);
+    EXPECT_EQ(device.recordedStorage, ResourceStorage::Private);
+  }
+
+  device.reportsUpdateBuffer = false;
+  {
+    const iglu::material::ShaderUniforms shaderUniforms(
+        device, reflection, false, iglu::material::ShaderUniforms::UploadMode::CommandBuffer);
+    EXPECT_EQ(device.createBufferCount, 2u);
+    EXPECT_NE(device.recordedHint & BufferDesc::BufferAPIHintBits::Ring, 0);
+    EXPECT_EQ(device.recordedStorage, ResourceStorage::Shared);
+  }
+}
+
+// update() records the uniform values into the command buffer, so commands recorded after it see
+// them.
+TEST_F(ShaderUniformsTest, CommandBufferModeUploadsInUpdate) {
+  if (!iglDev_->hasFeature(DeviceFeatures::UpdateBuffer)) {
+    GTEST_SKIP() << "Device does not report DeviceFeatures::UpdateBuffer";
+  }
+  const TestRenderPipelineReflection reflection = colorBlockReflection();
+  RecordingDevice device(*iglDev_);
+  device.backendType = iglDev_->getBackendType();
+  device.reportsUpdateBuffer = true;
+  iglu::material::ShaderUniforms shaderUniforms(
+      device, reflection, false, iglu::material::ShaderUniforms::UploadMode::CommandBuffer);
+  ASSERT_NE(device.createdBuffer, nullptr);
+  IBuffer& uniformBuffer = *device.createdBuffer;
+
+  const iglu::simdtypes::float4 color = {0.25f, 0.5f, 0.75f, 1.0f};
+  shaderUniforms.setFloat4(igl::genNameHandle("color"), color);
+
+  Result ret;
+  const BufferDesc readbackDesc{
+      .type = BufferDesc::BufferTypeBits::Storage,
+      .length = sizeof(color),
+      .storage = ResourceStorage::Shared,
+  };
+  auto readback = iglDev_->createBuffer(readbackDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+
+  auto cmdBuffer = cmdQueue_->createCommandBuffer({}, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  shaderUniforms.update(*cmdBuffer);
+  cmdBuffer->copyBuffer(uniformBuffer, *readback, 0, 0, sizeof(color));
+  cmdQueue_->submit(*cmdBuffer);
+  cmdBuffer->waitUntilCompleted();
+
+  const auto* values =
+      static_cast<const float*>(readback->map(BufferRange(sizeof(color), 0), &ret));
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  ASSERT_NE(values, nullptr);
+  EXPECT_EQ(values[0], 0.25f);
+  EXPECT_EQ(values[1], 0.5f);
+  EXPECT_EQ(values[2], 0.75f);
+  EXPECT_EQ(values[3], 1.0f);
+  readback->unmap();
+}
+
+// update() writes every buffer, not only the ones changed since the previous call, so the GPU copy
+// is restored even when the command buffer of the previous update() never reached the GPU.
+TEST_F(ShaderUniformsTest, CommandBufferModeUpdateRewritesUnchangedBuffers) {
+  if (!iglDev_->hasFeature(DeviceFeatures::UpdateBuffer) ||
+      !iglDev_->hasFeature(DeviceFeatures::FillBuffer)) {
+    GTEST_SKIP() << "Device does not report DeviceFeatures::UpdateBuffer and FillBuffer";
+  }
+  const TestRenderPipelineReflection reflection = colorBlockReflection();
+  RecordingDevice device(*iglDev_);
+  device.backendType = iglDev_->getBackendType();
+  device.reportsUpdateBuffer = true;
+  iglu::material::ShaderUniforms shaderUniforms(
+      device, reflection, false, iglu::material::ShaderUniforms::UploadMode::CommandBuffer);
+  ASSERT_NE(device.createdBuffer, nullptr);
+  IBuffer& uniformBuffer = *device.createdBuffer;
+
+  const iglu::simdtypes::float4 color = {0.25f, 0.5f, 0.75f, 1.0f};
+  shaderUniforms.setFloat4(igl::genNameHandle("color"), color);
+
+  Result ret;
+  auto first = cmdQueue_->createCommandBuffer({}, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  shaderUniforms.update(*first);
+  // Stands in for a lost write: the GPU copy no longer matches the CPU copy.
+  first->fillBuffer(uniformBuffer, BufferRange(sizeof(color), 0), 0);
+  cmdQueue_->submit(*first);
+  first->waitUntilCompleted();
+
+  const BufferDesc readbackDesc{
+      .type = BufferDesc::BufferTypeBits::Storage,
+      .length = sizeof(color),
+      .storage = ResourceStorage::Shared,
+  };
+  auto readback = iglDev_->createBuffer(readbackDesc, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+
+  auto second = cmdQueue_->createCommandBuffer({}, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  shaderUniforms.update(*second);
+  second->copyBuffer(uniformBuffer, *readback, 0, 0, sizeof(color));
+  cmdQueue_->submit(*second);
+  second->waitUntilCompleted();
+
+  const auto* values =
+      static_cast<const float*>(readback->map(BufferRange(sizeof(color), 0), &ret));
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  ASSERT_NE(values, nullptr);
+  EXPECT_EQ(values[0], 0.25f);
+  EXPECT_EQ(values[1], 0.5f);
+  EXPECT_EQ(values[2], 0.75f);
+  EXPECT_EQ(values[3], 1.0f);
+  readback->unmap();
 }
 
 } // namespace igl::tests

@@ -29,6 +29,7 @@ class RecordingDevice final : public IDevice {
   bool reportsBufferNoCopy = true;
   bool reportsBufferRing = false;
   bool reportsBindBytes = false;
+  bool reportsUpdateBuffer = false;
   // DeviceFeatureLimits::MaxBindBytesBytes; reported only when nonzero.
   size_t maxBindBytesBytes = 0;
 
@@ -37,6 +38,7 @@ class RecordingDevice final : public IDevice {
   mutable size_t createBufferCount = 0;
   mutable BufferDesc::BufferType recordedType = 0;
   mutable BufferDesc::BufferAPIHint recordedHint = 0;
+  mutable ResourceStorage recordedStorage = ResourceStorage::Invalid;
   // Non-owning: the object under test owns the buffer. Stays null without a delegate.
   mutable IBuffer* IGL_NULLABLE createdBuffer = nullptr;
 
@@ -45,6 +47,7 @@ class RecordingDevice final : public IDevice {
     ++createBufferCount;
     recordedType = desc.type;
     recordedHint = desc.hint;
+    recordedStorage = desc.storage;
     if (delegate_ == nullptr) {
       Result::setOk(outResult);
       return nullptr;
@@ -65,6 +68,9 @@ class RecordingDevice final : public IDevice {
     }
     if (feature == DeviceFeatures::BindBytes) {
       return reportsBindBytes;
+    }
+    if (feature == DeviceFeatures::UpdateBuffer) {
+      return reportsUpdateBuffer;
     }
     return false;
   }

@@ -55,7 +55,8 @@ namespace iglu::material {
 
 ShaderUniforms::ShaderUniforms(igl::IDevice& device,
                                const igl::IRenderPipelineReflection& reflection,
-                               bool enableSuballocationforVulkan) :
+                               bool enableSuballocationforVulkan,
+                               UploadMode uploadMode) :
   device_(device) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   bool hasBindBytesFeature = device.hasFeature(igl::DeviceFeatures::BindBytes);
@@ -70,6 +71,12 @@ ShaderUniforms::ShaderUniforms(igl::IDevice& device,
 
   const bool isSuballocated = enableSuballocationforVulkan &&
                               device_.getBackendType() == igl::BackendType::Vulkan;
+  // Sub-allocations are written between draws of one encoder, where a command buffer write is not
+  // allowed.
+  IGL_DEBUG_ASSERT(uploadMode == UploadMode::AtBind || !isSuballocated,
+                   "UploadMode::CommandBuffer does not support sub-allocation");
+  uploadWithCommandBuffer_ = uploadMode == UploadMode::CommandBuffer && !isSuballocated &&
+                             device.hasFeature(igl::DeviceFeatures::UpdateBuffer);
   for (const igl::BufferArgDesc& iglDesc : reflection.allUniformBuffers()) {
     const size_t length = iglDesc.bufferDataSize;
     IGL_DEBUG_ASSERT(length > 0, "unexpected buffer with size 0");
@@ -106,16 +113,19 @@ ShaderUniforms::ShaderUniforms(igl::IDevice& device,
       // pass a Result* and check it; passing nullptr silently swallows errors.
       igl::Result result;
       const auto backendType = device_.getBackendType();
+      // Writes recorded in command buffers are ordered with the GPU reads, so those buffers need
+      // neither a Ring nor CPU access.
+      const bool useRing = !uploadWithCommandBuffer_ && (backendType == igl::BackendType::Metal ||
+                                                         backendType == igl::BackendType::Vulkan ||
+                                                         backendType == igl::BackendType::D3D12);
       const igl::BufferDesc desc{
           .type = igl::BufferDesc::BufferTypeBits::Uniform,
           .length = bufferAllocationLength,
-          .storage = igl::ResourceStorage::Shared,
+          .storage = uploadWithCommandBuffer_ ? igl::ResourceStorage::Private
+                                              : igl::ResourceStorage::Shared,
           .hint = static_cast<igl::BufferDesc::BufferAPIHint>(
               igl::BufferDesc::BufferAPIHintBits::UniformBlock |
-              ((backendType == igl::BackendType::Metal || backendType == igl::BackendType::Vulkan ||
-                backendType == igl::BackendType::D3D12)
-                   ? igl::BufferDesc::BufferAPIHintBits::Ring
-                   : 0)),
+              (useRing ? igl::BufferDesc::BufferAPIHintBits::Ring : 0)),
       };
       buffer = device.createBuffer(desc, &result);
       IGL_DEBUG_ASSERT(result.isOk(), "createBuffer(uniform) failed: %s", result.message.c_str());
@@ -129,6 +139,8 @@ ShaderUniforms::ShaderUniforms(igl::IDevice& device,
       continue;
     }
     auto allocation = std::make_shared<BufferAllocation>(data, bufferAllocationLength, buffer);
+    // The buffer has not been written yet; bind() checks that update() ran first.
+    allocation->dirty = true;
     allocations_.push_back(allocation);
 
     std::shared_ptr<BufferDesc> bufferDesc = std::make_shared<BufferDesc>();
@@ -279,7 +291,9 @@ void ShaderUniforms::setUniformBytes(const UniformDesc& uniformDesc,
   );
   if (err != 0) {
     IGL_LOG_ERROR_ONCE("[IGL][Error] Failed to update uniform buffer\n");
+    return;
   }
+  strongBuffer->allocation->dirty = true;
 }
 
 void ShaderUniforms::setUniformBytes(const igl::NameHandle& blockTypeName,
@@ -907,7 +921,16 @@ void ShaderUniforms::bindBuffer(igl::IDevice& device,
     }
 #endif
   } else {
-    if (buffer->allocation->iglBuffer) {
+    if (buffer->allocation->iglBuffer && uploadWithCommandBuffer_) {
+      // A change made after update() has not reached the buffer; the draw reads the older values.
+      if (!IGL_DEBUG_VERIFY(!buffer->allocation->dirty,
+                            "uniform buffer changed after update(): call update() before "
+                            "creating the encoder")) {
+        IGL_LOG_ERROR_ONCE("[IGL][Error] Uniform buffer %s changed after update()\n",
+                           buffer->iglBufferDesc.name.c_str());
+      }
+      encoder.bindBuffer(buffer->iglBufferDesc.bufferIndex, buffer->allocation->iglBuffer.get());
+    } else if (buffer->allocation->iglBuffer) {
       uintptr_t subAllocatedOffset = 0;
       size_t uploadSize = buffer->allocation->size;
       if (buffer->isSuballocated && buffer->currentAllocation >= 0) {
@@ -927,6 +950,23 @@ void ShaderUniforms::bindBuffer(igl::IDevice& device,
                         buffer->allocation->ptr,
                         buffer->iglBufferDesc.bufferDataSize);
     }
+  }
+}
+
+void ShaderUniforms::update(igl::ICommandBuffer& commandBuffer) {
+  IGL_PROFILER_FUNCTION();
+  if (!uploadWithCommandBuffer_) {
+    return;
+  }
+  for (const auto& allocation : allocations_) {
+    // Every buffer is written on every call, so a command buffer that is dropped before submission
+    // cannot leave a buffer behind its CPU copy.
+    if (!allocation->iglBuffer) {
+      continue;
+    }
+    commandBuffer.updateBuffer(
+        *allocation->iglBuffer, igl::BufferRange(allocation->size, 0), allocation->ptr);
+    allocation->dirty = false;
   }
 }
 
