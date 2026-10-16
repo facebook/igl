@@ -149,7 +149,7 @@ void ComputeCommandAdapter::willDispatch() {
     }
     auto& textureState = textureStates_[index];
     if (auto* texture = static_cast<Texture*>(textureState)) {
-      ret = pipelineState->bindTextureUnit(index, texture);
+      ret = pipelineState->bindImageTextureUnit(index, texture);
       CLEAR_DIRTY(textureStatesDirty_, index);
       if (!ret.isOk()) {
         IGL_LOG_INFO_ONCE(ret.message.c_str());

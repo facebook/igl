@@ -121,7 +121,7 @@ void ComputePipelineState::unbind() {
   }
 }
 
-Result ComputePipelineState::bindTextureUnit(const size_t unit, Texture* texture) {
+Result ComputePipelineState::bindImageTextureUnit(const size_t unit, Texture* texture) {
   IGL_PROFILER_FUNCTION();
   if (!shaderStages_) {
     return Result{Result::Code::InvalidOperation, "No shader set\n"};
@@ -138,6 +138,37 @@ Result ComputePipelineState::bindTextureUnit(const size_t unit, Texture* texture
   }
 
   texture->bindImage(samplerUnit);
+
+  return Result();
+}
+
+Result ComputePipelineState::bindSamplerTextureUnit(const size_t unit, Texture* texture) {
+  IGL_PROFILER_FUNCTION();
+  if (!shaderStages_) {
+    return Result{Result::Code::InvalidOperation, "No shader set\n"};
+  }
+
+  if (unit >= IGL_TEXTURE_SAMPLERS_MAX) {
+    return Result{Result::Code::ArgumentInvalid, "Sampler unit specified greater than maximum\n"};
+  }
+
+  if (IGL_DEBUG_VERIFY_NOT(texture == nullptr)) {
+    return Result{Result::Code::ArgumentInvalid, "Texture is nullptr\n"};
+  }
+
+  getContext().activeTexture(static_cast<GLenum>(GL_TEXTURE0 + unit));
+  texture->bind();
+
+  // A sampler uniform defaults to 0 in GLES, so without this the shader reads GL_TEXTURE0 no
+  // matter which unit the texture was bound to.
+  const GLint samplerLocation(samplerUnitMap_[unit]);
+  if (samplerLocation >= 0) {
+    getContext().uniform1i(samplerLocation, static_cast<GLint>(unit));
+  } else {
+    IGL_LOG_INFO_ONCE(
+        "No sampler uniform mapped for compute texture unit %zu; shader will read GL_TEXTURE0\n",
+        unit);
+  }
 
   return Result();
 }
