@@ -19,6 +19,8 @@
 #include <shell/renderSessions/slang/generated/ShowcaseInverseSlang.h>
 #include <shell/renderSessions/slang/generated/ShowcaseMaterialsPassSlang.h>
 #include <shell/renderSessions/slang/generated/ShowcasePostSlang.h>
+#include <shell/renderSessions/slang/generated/ShowcaseTerrainCullSlang.h>
+#include <shell/renderSessions/slang/generated/ShowcaseTerrainSlang.h>
 #include <shell/shared/platform/DisplayContext.h>
 #include <shell/shared/renderSession/ShellParams.h>
 #include <igl/Timer.h>
@@ -98,6 +100,41 @@ struct InverseUniforms {
 struct PostUniforms {
   glm::vec4 params;
 };
+
+// Mirrors ShowcaseTerrainCommon.slang.
+constexpr uint32_t kTerrainMeshlets = 73 * 73;
+constexpr uint32_t kTerrainMeshletTriangles = 98;
+constexpr uint32_t kTerrainTaskGroupSize = 32;
+struct TerrainUniforms {
+  glm::mat4 viewProjection;
+  glm::vec4 camera;
+  std::array<glm::vec4, 6> cullPlanes;
+  Lighting lighting;
+  glm::vec4 display;
+};
+
+// The planes bounding a [0, 1]-depth clip volume, pointing inward.
+std::array<glm::vec4, 6> frustumPlanes(const glm::mat4& m) {
+  const glm::mat4 t = glm::transpose(m);
+  std::array<glm::vec4, 6> planes = {
+      t[3] + t[0], t[3] - t[0], t[3] + t[1], t[3] - t[1], t[2], t[3] - t[2]};
+  for (glm::vec4& plane : planes) {
+    plane /= glm::length(glm::vec3(plane));
+  }
+  return planes;
+}
+
+// A low sun, a cool fill and a sky, far enough to light the whole terrain.
+Lighting terrainLighting() {
+  return {.lights = {glm::vec4(70.0f, 45.0f, -50.0f, 11000.0f),
+                     glm::vec4(-80.0f, 60.0f, 70.0f, 3500.0f),
+                     glm::vec4(0.0f, 100.0f, 0.0f, 0.0f)},
+          .lightColors = {glm::vec4(1.0f, 0.86f, 0.68f, 0.0f),
+                          glm::vec4(0.45f, 0.55f, 0.8f, 0.0f),
+                          glm::vec4(0.0f)},
+          .sky = glm::vec4(0.3f, 0.38f, 0.5f, 0.0f),
+          .ground = glm::vec4(0.06f, 0.05f, 0.04f, 0.0f)};
+}
 
 glm::mat4 viewProjection(float aspect) {
   return glm::perspectiveLH_ZO(glm::radians(38.0f), aspect, 0.1f, 100.0f) *
@@ -265,6 +302,12 @@ void SlangShowcaseSession::initialize() noexcept {
 
   createInverseResources(device);
   postSampler_ = device.createSamplerState(SamplerStateDesc::newLinear(), nullptr);
+  terrainUniforms_ =
+      device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Uniform,
+                                     .length = sizeof(TerrainUniforms),
+                                     .storage = ResourceStorage::Shared,
+                                     .hint = BufferDesc::BufferAPIHintBits::UniformBlock},
+                          nullptr);
   postUniforms_ =
       device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Uniform,
                                      .length = sizeof(PostUniforms),
@@ -385,6 +428,28 @@ bool SlangShowcaseSession::createPipelines(TextureFormat format) {
   sensitivityPipeline_ = create(pass, "sphereVertex", "fragmentSensitivity", format, vertexInput_);
   radiancePipeline_ =
       create(pass, "sphereVertex", "fragmentRadiance", TextureFormat::RGBA_F16, vertexInput_);
+  terrainVertexPipeline_ = create(
+      slang::kShowcaseTerrainProgram, "terrainVertexFallback", "terrainFragment", format, nullptr);
+  if (device.hasFeature(DeviceFeatures::MeshShaders)) {
+    Result ret;
+    RenderPipelineDesc desc{
+        .shaderStages = iglu::slang::createMeshRenderStages(device,
+                                                            slang::kShowcaseTerrainCullProgram,
+                                                            "terrainTask",
+                                                            "terrainMesh",
+                                                            slang::kShowcaseTerrainProgram,
+                                                            "terrainFragment",
+                                                            &ret),
+        .targetDesc = {.colorAttachments = {{.textureFormat = format}},
+                       .depthAttachmentFormat = TextureFormat::Z_UNorm32},
+        .cullMode = CullMode::Disabled,
+    };
+    if (ret.isOk()) {
+      terrainMeshPipeline_ = device.createRenderPipeline(desc, nullptr);
+    } else {
+      IGL_LOG_INFO("SlangShowcaseSession: %s\n", ret.message.c_str());
+    }
+  }
   for (size_t chain = 0; chain < kPostEntryPoints.size(); ++chain) {
     postPipelines_[chain] =
         create(slang::kShowcasePostProgram, "postVertex", kPostEntryPoints[chain], format, nullptr);
@@ -417,10 +482,54 @@ void SlangShowcaseSession::bindSphereResources(IRenderCommandEncoder& encoder) c
   encoder.bindBuffer(3, fitted_.get());
 }
 
+void SlangShowcaseSession::drawTerrain(IRenderCommandEncoder& encoder,
+                                       float aspect,
+                                       bool encodeGamma) {
+  // The camera flies a circle over the terrain, looking ahead and down.
+  const float angle = 0.12f * static_cast<float>(frame_) / 60.0f;
+  const glm::vec3 eye(34.0f * std::cos(angle), 20.0f, 34.0f * std::sin(angle));
+  const glm::vec3 ahead(14.0f * std::cos(angle + 1.1f), 2.0f, 14.0f * std::sin(angle + 1.1f));
+  const glm::mat4 flying = glm::perspectiveLH_ZO(glm::radians(50.0f), aspect, 0.5f, 400.0f) *
+                           glm::lookAtLH(eye, ahead, glm::vec3(0.0f, 1.0f, 0.0f));
+  const glm::vec3 overviewEye(0.0f, 115.0f, -70.0f);
+  const TerrainUniforms uniforms{
+      .viewProjection =
+          terrainOverview_
+              ? glm::perspectiveLH_ZO(glm::radians(50.0f), aspect, 1.0f, 500.0f) *
+                    glm::lookAtLH(overviewEye, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f))
+              : flying,
+      .camera = glm::vec4(terrainOverview_ ? overviewEye : eye, 1.0f),
+      .cullPlanes = frustumPlanes(flying),
+      .lighting = terrainLighting(),
+      .display = glm::vec4(encodeGamma ? 1.0f : 0.0f,
+                           terrainMeshletColors_ ? 1.0f : 0.0f,
+                           terrainOverview_ ? 0.0f : 0.006f,
+                           0.0f),
+  };
+  terrainUniforms_->upload(&uniforms, BufferRange(sizeof(uniforms)));
+  encoder.bindDepthStencilState(depthState_);
+  encoder.bindBuffer(1,
+                     BindTarget::kVertex | BindTarget::kFragment | BindTarget::kTask |
+                         BindTarget::kMesh,
+                     terrainUniforms_.get());
+  if (terrainMeshPipeline_ && !terrainVertexFallback_) {
+    const iglu::slang::Program& cull = slang::kShowcaseTerrainCullProgram;
+    encoder.bindRenderPipelineState(terrainMeshPipeline_);
+    encoder.drawMeshTasks(
+        Dimensions((kTerrainMeshlets + kTerrainTaskGroupSize - 1) / kTerrainTaskGroupSize, 1, 1),
+        workgroupSize(cull, "terrainTask"),
+        workgroupSize(cull, "terrainMesh"));
+  } else if (terrainVertexPipeline_) {
+    encoder.bindRenderPipelineState(terrainVertexPipeline_);
+    encoder.draw(kTerrainMeshletTriangles * 3, kTerrainMeshlets);
+  }
+}
+
 void SlangShowcaseSession::drawOverlay(ShadingMode mode, PostChain chain) {
-  constexpr std::array<const char*, 3> kTitles = {"Slang showcase 1/5: materials",
+  constexpr std::array<const char*, 4> kTitles = {"Slang showcase 1/5: materials",
                                                   "Slang showcase 2/5: inverse rendering",
-                                                  "Slang showcase 3/5: post effects"};
+                                                  "Slang showcase 3/5: post effects",
+                                                  "Slang showcase 4/5: GPU-driven terrain"};
   ImGui::SetNextWindowPos(ImVec2(10, 10));
   ImGui::Begin("##SlangShowcase",
                nullptr,
@@ -446,6 +555,14 @@ void SlangShowcaseSession::drawOverlay(ShadingMode mode, PostChain chain) {
   case Chapter::PostEffects:
     ImGui::Text("%s", kPostChainNames[static_cast<size_t>(chain)]);
     break;
+  case Chapter::Terrain:
+    ImGui::Text("%u meshlets, %u triangles: %s",
+                kTerrainMeshlets,
+                kTerrainMeshlets * kTerrainMeshletTriangles,
+                terrainMeshPipeline_ && !terrainVertexFallback_
+                    ? "task shader culls, mesh shader expands"
+                    : "vertex shader, no culling");
+    break;
   }
   if (timer_ != nullptr) {
     ImGui::Text("GPU frame: %.3f ms", gpuMilliseconds_);
@@ -464,6 +581,8 @@ void SlangShowcaseSession::drawOverlay(ShadingMode mode, PostChain chain) {
   ImGui::RadioButton("Inverse rendering", &chapter, 1);
   ImGui::SameLine();
   ImGui::RadioButton("Post effects", &chapter, 2);
+  ImGui::SameLine();
+  ImGui::RadioButton("Terrain", &chapter, 3);
   const auto previous = chapter_;
   chapter_ = static_cast<Chapter>(chapter);
   switch (previous) {
@@ -482,6 +601,15 @@ void SlangShowcaseSession::drawOverlay(ShadingMode mode, PostChain chain) {
     ImGui::SameLine();
     if (ImGui::Button("Restart")) {
       restartFit();
+    }
+    break;
+  case Chapter::Terrain:
+    ImGui::Checkbox("From above", &terrainOverview_);
+    ImGui::SameLine();
+    ImGui::Checkbox("Meshlets", &terrainMeshletColors_);
+    if (terrainMeshPipeline_) {
+      ImGui::SameLine();
+      ImGui::Checkbox("Vertex shader", &terrainVertexFallback_);
     }
     break;
   case Chapter::PostEffects: {
@@ -588,6 +716,9 @@ void SlangShowcaseSession::update(SurfaceTextures surfaceTextures) noexcept {
     encoder->bindSamplerState(0, BindTarget::kFragment, postSampler_.get());
     encoder->bindBuffer(1, postUniforms_.get());
     encoder->draw(3);
+  } else if (supported_ && chapter_ == Chapter::Terrain) {
+    drawTerrain(
+        *encoder, size.width / size.height, !surfaceTextures.color->getProperties().isSRGB());
   } else if (supported_) {
     bindSphereResources(*encoder);
     if (chapter_ == Chapter::InverseRendering) {

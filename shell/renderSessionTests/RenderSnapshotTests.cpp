@@ -133,6 +133,19 @@ TEST_F(RenderSnapshotTests, SlangShowcasePostNoir) {
   render(session, "SlangShowcasePostNoir", 2);
 }
 
+TEST_F(RenderSnapshotTests, SlangShowcaseTerrain) {
+  SlangShowcaseSession session(platform_);
+  session.setChapter(SlangShowcaseSession::Chapter::Terrain);
+  render(session, "SlangShowcaseTerrain", 2);
+}
+
+TEST_F(RenderSnapshotTests, SlangShowcaseTerrainCulling) {
+  SlangShowcaseSession session(platform_);
+  session.setChapter(SlangShowcaseSession::Chapter::Terrain);
+  session.setTerrainOptions(true, true, false);
+  render(session, "SlangShowcaseTerrainCulling", 2);
+}
+
 TEST_F(RenderSnapshotTests, TQMultiRenderPassSession) {
   TQMultiRenderPassSession session(platform_);
   render(session, "TQMultiRenderPassSession");

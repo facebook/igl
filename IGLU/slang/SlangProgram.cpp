@@ -147,6 +147,66 @@ std::unique_ptr<igl::IShaderStages> createRenderStages(const igl::IDevice& devic
   return nullptr;
 }
 
+std::unique_ptr<igl::IShaderStages> createMeshRenderStages(const igl::IDevice& device,
+                                                           const Program& meshProgram,
+                                                           std::string_view taskEntryPoint,
+                                                           std::string_view meshEntryPoint,
+                                                           const Program& fragmentProgram,
+                                                           std::string_view fragmentEntryPoint,
+                                                           igl::Result* IGL_NULLABLE outResult) {
+  const EntryPoint* task = taskEntryPoint.empty() ? nullptr
+                                                  : findEntryPoint(meshProgram, taskEntryPoint);
+  const EntryPoint* mesh = findEntryPoint(meshProgram, meshEntryPoint);
+  const EntryPoint* fragment = findEntryPoint(fragmentProgram, fragmentEntryPoint);
+  if ((!taskEntryPoint.empty() && (task == nullptr || task->stage != igl::ShaderStage::Task)) ||
+      mesh == nullptr || mesh->stage != igl::ShaderStage::Mesh || fragment == nullptr ||
+      fragment->stage != igl::ShaderStage::Fragment) {
+    igl::Result::setResult(outResult,
+                           igl::Result::Code::ArgumentInvalid,
+                           std::string("No such task/mesh entry points in ") + meshProgram.name +
+                               " or fragment entry point in " + fragmentProgram.name);
+    return nullptr;
+  }
+  const bool vulkan = device.getBackendType() == igl::BackendType::Vulkan;
+  const bool metal = device.getBackendType() == igl::BackendType::Metal;
+  const auto hasCode = [vulkan, metal](const Program& program, const EntryPoint& entryPoint) {
+    return vulkan ? entryPoint.spirv != nullptr : metal && !program.msl.empty();
+  };
+  if ((task != nullptr && !hasCode(meshProgram, *task)) || !hasCode(meshProgram, *mesh) ||
+      !hasCode(fragmentProgram, *fragment)) {
+    setUnsupported(outResult, meshProgram);
+    return nullptr;
+  }
+  const auto module = [&device, vulkan, outResult](const Program& program,
+                                                   const EntryPoint& entryPoint) {
+    return vulkan ? igl::ShaderModuleCreator::fromBinaryInput(
+                        device,
+                        entryPoint.spirv,
+                        entryPoint.spirvWords * sizeof(uint32_t),
+                        {.stage = entryPoint.stage, .entryPoint = "main"},
+                        entryPoint.name,
+                        outResult)
+                  : igl::ShaderModuleCreator::fromStringInput(
+                        device,
+                        program.msl.join().c_str(),
+                        {.stage = entryPoint.stage, .entryPoint = entryPoint.name},
+                        entryPoint.name,
+                        outResult);
+  };
+  std::shared_ptr<igl::IShaderModule> taskModule;
+  if (task != nullptr) {
+    taskModule = module(meshProgram, *task);
+  }
+  std::shared_ptr<igl::IShaderModule> meshModule = module(meshProgram, *mesh);
+  std::shared_ptr<igl::IShaderModule> fragmentModule = module(fragmentProgram, *fragment);
+  if ((task != nullptr && taskModule == nullptr) || meshModule == nullptr ||
+      fragmentModule == nullptr) {
+    return nullptr;
+  }
+  return igl::ShaderStagesCreator::fromMeshRenderModules(
+      device, std::move(taskModule), std::move(meshModule), std::move(fragmentModule), outResult);
+}
+
 std::unique_ptr<igl::IShaderStages> createComputeStages(const igl::IDevice& device,
                                                         const Program& program,
                                                         std::string_view computeEntryPoint,

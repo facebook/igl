@@ -8,6 +8,8 @@
     {"name": "SplatAdam", "source": "SplatAdam.slang", "profile": "portable"},
     {"name": "ShowcaseMaterialsPass", "source": "ShowcaseMaterialsPass.slang", "profile": "highend", "conformances": ["MetalRoughMaterial:IMaterial=0", "ClearcoatMaterial:IMaterial=1", "SheenMaterial:IMaterial=2", "AnisotropicMaterial:IMaterial=3"]},
     {"name": "ShowcaseInverse", "source": "ShowcaseInverse.slang", "profile": "highend"},
-    {"name": "ShowcasePost", "source": "ShowcasePost.slang", "profile": "highend"}
+    {"name": "ShowcasePost", "source": "ShowcasePost.slang", "profile": "highend"},
+    {"name": "ShowcaseTerrainCull", "source": "ShowcaseTerrainCull.slang", "profile": "highend"},
+    {"name": "ShowcaseTerrain", "source": "ShowcaseTerrain.slang", "profile": "highend"}
   ]
 }

@@ -107,7 +107,19 @@ struct Program {
     std::string_view computeEntryPoint,
     igl::Result* IGL_NULLABLE outResult);
 
-/// Threads per threadgroup, for dispatchThreadGroups().
+/// Mesh shading on Vulkan and Metal: an optional task stage (none if `taskEntryPoint` is empty)
+/// and a mesh stage from `meshProgram`, and a fragment stage from `fragmentProgram`, which may be
+/// a different program.
+[[nodiscard]] std::unique_ptr<igl::IShaderStages> createMeshRenderStages(
+    const igl::IDevice& device,
+    const Program& meshProgram,
+    std::string_view taskEntryPoint,
+    std::string_view meshEntryPoint,
+    const Program& fragmentProgram,
+    std::string_view fragmentEntryPoint,
+    igl::Result* IGL_NULLABLE outResult);
+
+/// Threads per threadgroup, for dispatchThreadGroups() and drawMeshTasks().
 [[nodiscard]] igl::Dimensions workgroupSize(const EntryPoint& entryPoint);
 
 /// Adds the names OpenGL binds the entry points' samplers and blocks by. Harmless on other

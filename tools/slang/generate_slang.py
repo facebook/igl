@@ -487,6 +487,47 @@ def gl_resources(
         entry.entry_points.add(entry_index)
 
 
+def spirv_local_size(words: list[int]) -> list[int] | None:
+    """The LocalSize execution mode of a single-entry SPIR-V module, if any."""
+    op_execution_mode, local_size = 16, 17
+    i = 5
+    while i < len(words):
+        count, opcode = words[i] >> 16, words[i] & 0xFFFF
+        if count == 0:
+            break
+        if opcode == op_execution_mode and count >= 6 and words[i + 2] == local_size:
+            return list(words[i + 3 : i + 6])
+        i += count
+    return None
+
+
+def compile_entries(
+    compiler: Compiler,
+    artifacts: Artifacts,
+    targets: frozenset[str],
+    vertex_names: dict[int, str],
+    reflections: dict[str, dict],
+) -> list[GlResource]:
+    """Compiles each entry point for SPIR-V, HLSL and OpenGL; returns the OpenGL resource names."""
+    resources: dict[tuple[str, int], GlResource] = {}
+    for entry in artifacts.entries:
+        spv, entry.spirv, reflections[f"spirv:{entry.name}"] = compiler.spirv(entry)
+        # Reflection gives thread counts for compute only; Metal needs them for task and mesh too.
+        if entry.stage in ("amplification", "mesh"):
+            entry.workgroup_size = spirv_local_size(entry.spirv) or entry.workgroup_size
+        if "hlsl" in targets and entry.stage in ("vertex", "fragment", "compute"):
+            entry.hlsl = compiler.hlsl(entry)
+        if "gl" in targets and entry.stage in ("vertex", "fragment", "compute"):
+            entry.glsl, entry.essl, named_glsl = compiler.gl(entry, spv, vertex_names)
+            gl_resources(
+                named_glsl,
+                [entry.glsl, entry.essl],
+                artifacts.entries.index(entry),
+                resources,
+            )
+    return sorted(resources.values(), key=lambda r: (r.kind, r.index))
+
+
 def compile_program(tools: Tools, spec: ProgramSpec, tmp: str) -> Artifacts:
     compiler = Compiler(tools, spec, tmp)
     targets = spec.profile.targets
@@ -522,20 +563,9 @@ def compile_program(tools: Tools, spec: ProgramSpec, tmp: str) -> Artifacts:
         location: ATTRIBUTE_NAMES.get(s, s.lower()) for location, s in semantics.items()
     }
     artifacts.attributes = sorted(vertex_names.items())
-    resources: dict[tuple[str, int], GlResource] = {}
-    for entry in artifacts.entries:
-        spv, entry.spirv, reflections[f"spirv:{entry.name}"] = compiler.spirv(entry)
-        if "hlsl" in targets and entry.stage in ("vertex", "fragment", "compute"):
-            entry.hlsl = compiler.hlsl(entry)
-        if "gl" in targets and entry.stage in ("vertex", "fragment", "compute"):
-            entry.glsl, entry.essl, named_glsl = compiler.gl(entry, spv, vertex_names)
-            gl_resources(
-                named_glsl,
-                [entry.glsl, entry.essl],
-                artifacts.entries.index(entry),
-                resources,
-            )
-    artifacts.gl_resources = sorted(resources.values(), key=lambda r: (r.kind, r.index))
+    artifacts.gl_resources = compile_entries(
+        compiler, artifacts, targets, vertex_names, reflections
+    )
     errors = lint(spec, reflections) + lint_compute_uniforms(artifacts)
     if errors:
         raise GeneratorError(

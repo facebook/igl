@@ -26,12 +26,16 @@ namespace igl::shell {
 //    roughness.
 // 3. Post effects composed at compile time: a variadic generic chains effects, and each chain of
 //    effects compiles to its own pipeline.
+// 4. GPU-driven geometry: a procedural terrain of meshlets, culled by a task shader and expanded by
+//    a mesh shader with no vertex or index buffers; without mesh shaders, an instanced vertex
+//    shader draws every meshlet.
 class SlangShowcaseSession : public RenderSession {
  public:
   enum class Chapter : uint8_t {
     Materials,
     InverseRendering,
     PostEffects,
+    Terrain,
   };
   enum class ShadingMode : uint8_t {
     Specialized,
@@ -66,6 +70,13 @@ class SlangShowcaseSession : public RenderSession {
     fixedPostChain_ = chain;
     hasFixedPostChain_ = true;
   }
+  // Chapter 4 options: look from above at what the flying camera culls, color by meshlet, and draw
+  // with the vertex shader even where mesh shaders are available.
+  void setTerrainOptions(bool overview, bool meshletColors, bool vertexFallback) noexcept {
+    terrainOverview_ = overview;
+    terrainMeshletColors_ = meshletColors;
+    terrainVertexFallback_ = vertexFallback;
+  }
 
  private:
   bool createPipelines(TextureFormat format);
@@ -73,6 +84,7 @@ class SlangShowcaseSession : public RenderSession {
   void restartFit();
   void encodeInverseStep(ICommandBuffer& commandBuffer);
   void bindSphereResources(IRenderCommandEncoder& encoder) const;
+  void drawTerrain(IRenderCommandEncoder& encoder, float aspect, bool encodeGamma);
   void drawOverlay(ShadingMode mode, PostChain chain);
   [[nodiscard]] ShadingMode currentMode() const;
   [[nodiscard]] PostChain currentPostChain() const;
@@ -94,6 +106,9 @@ class SlangShowcaseSession : public RenderSession {
   std::shared_ptr<IFramebuffer> radianceFramebuffer_;
   std::shared_ptr<ISamplerState> postSampler_;
   std::shared_ptr<IBuffer> postUniforms_;
+  std::shared_ptr<IRenderPipelineState> terrainMeshPipeline_;
+  std::shared_ptr<IRenderPipelineState> terrainVertexPipeline_;
+  std::shared_ptr<IBuffer> terrainUniforms_;
   std::shared_ptr<IBuffer> fitted_;
   std::shared_ptr<IBuffer> adam_;
   std::shared_ptr<IBuffer> pixelGradients_;
@@ -111,6 +126,9 @@ class SlangShowcaseSession : public RenderSession {
   bool hasFixedMode_ = false;
   PostChain fixedPostChain_ = PostChain::Neutral;
   bool hasFixedPostChain_ = false;
+  bool terrainOverview_ = false;
+  bool terrainMeshletColors_ = false;
+  bool terrainVertexFallback_ = false;
   bool showSensitivity_ = false;
   bool supported_ = false;
 };

@@ -29,6 +29,9 @@ A grid of physically based spheres, one chapter at a time:
    back-propagating through the same materials, and shows how the fit responds to roughness.
 3. Post effects: three chains of effects (neutral, film, noir) composed at compile time, each its
    own pipeline.
+4. GPU-driven terrain: 5329 procedural meshlets with no vertex or index buffers. A task shader culls
+   them against the camera's frustum and a mesh shader expands the survivors; without mesh shaders,
+   an instanced vertex shader draws every meshlet.
 
 | Program | Stage | What it does |
 |---|---|---|
@@ -36,12 +39,15 @@ A grid of physically based spheres, one chapter at a time:
 | `ShowcaseMaterialsPass` | vertex, fragment | Draws the spheres in every mode, and their linear radiance for chapter 3 |
 | `ShowcaseInverse` | compute | Per-pixel gradients against the hidden parameters, then Adam per sphere |
 | `ShowcasePost` | vertex, fragment | Post chains over the linear radiance of chapter 3 |
+| `ShowcaseTerrainCommon` | module | Heightfield, meshlet layout and frustum test |
+| `ShowcaseTerrainCull` | task, mesh | Culls meshlets and expands the visible ones |
+| `ShowcaseTerrain` | vertex, fragment | Shades the terrain, and draws it without mesh shaders |
 
 ## Slang features used
 
 | Feature | Where |
 |---|---|
-| Modules with access control (`module`, `import`, `public`) | `SplatCommon`, `ShowcaseMaterials` |
+| Modules with access control (`module`, `import`, `public`) | `SplatCommon`, `ShowcaseMaterials`, `ShowcaseTerrainCommon` |
 | Interfaces and generics, specialized at compile time | `ISplatKernel`, `ILoss`, `IMaterialModel` |
 | Generics over the float type (`__BuiltinFloatingPointType`) | `ShowcaseMaterials` lobes in `float` and `half` |
 | Static interface requirements | `IMaterialModel` |
@@ -52,6 +58,8 @@ A grid of physically based spheres, one chapter at a time:
 | `IDifferentiable` structs | `Splat`, `MaterialData` |
 | `Atomic<T>` | `SplatBin` |
 | `groupshared` with fixed-order reductions | `SplatBackward`, `ShowcaseInverse` |
+| `groupshared` atomics for compaction | `ShowcaseTerrainCull` |
 | Variadic generics (`each`, `expand`) | `PostChain` in `ShowcasePost` |
+| Task (amplification) and mesh shaders (`DispatchMesh`, `OutputVertices`) | `ShowcaseTerrainCull` |
 | `[ForceUnroll]`, `nointerpolation` | `ShowcaseMaterials`, `ShowcaseMaterialsPass` |
 | Several entry points per program | `SplatRender`, `ShowcaseMaterialsPass`, `ShowcaseInverse`, `ShowcasePost` |
