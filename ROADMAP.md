@@ -6,6 +6,7 @@ Our plans encompass the following projects:
 * Support SparkSL CLI tools to utilize SparkSL shaders in RenderSessions.
 * Develop new RenderSession examples.
 * Add OpenXR Android project.
+* Broaden Slang coverage: port more sessions and shaders to Slang so one source runs on every backend.
 
 ## IGL evolution:
 * Implement Queries support.
@@ -22,7 +23,7 @@ Furthermore, we would like to present some ideas for potential supporters:
 
 ## How you can help:
 
-* Assist with new API porting, such as DirectX, WebGPU, or any preferred platform of your choice.
+* Assist with new API porting, or with the platforms the existing DirectX 12 and WebGPU backends do not reach yet (Win32 and Android surfaces for WebGPU).
 * Contribute to the creation of additional examples, elevating their quality and diversity.
 * Explore fancy projects involving web-based tools and integration with IDEs.
 * Collaborate on the development of an IGL command capture and playback system. Offer expertise in playback on varying backends, providing an added bonus to the functionality.

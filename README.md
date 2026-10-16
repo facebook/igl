@@ -26,7 +26,12 @@ There are a lot of good options for abstracting GPU API's; each making different
  * OpenGL 3.1+
  * OpenGL ES 2.0+
  * Vulkan 1.2
+ * DirectX 12
+ * WebGPU
  * WebGL 2.0
+
+OpenGL ES, DirectX 12, WebGPU and WebGL are opt-in: `IGL_WITH_OPENGLES`, `IGL_WITH_D3D12`,
+`IGL_WITH_WEBGPU` and `IGL_WITH_WEBGL` default to `OFF`.
 
 ## Supported platforms
 
@@ -46,6 +51,24 @@ There are a lot of good options for abstracting GPU API's; each making different
 | OpenGL ES 3.1 - 3.2      | :heavy_check_mark: (Angle) | :heavy_check_mark: (Angle) | :heavy_multiplication_x:      | :heavy_multiplication_x:      | :heavy_check_mark:                 |
 | OpenGL 3.1 - 4.6         | :heavy_check_mark:         | :heavy_check_mark:         | :heavy_check_mark:            | :heavy_multiplication_x:      | :heavy_multiplication_x:           |
 | Metal 2                  | :heavy_multiplication_x:   | :heavy_multiplication_x:   | :heavy_check_mark:            | :heavy_check_mark:            | :heavy_multiplication_x:           |
+| DirectX 12               | :heavy_check_mark:         | :heavy_multiplication_x:   | :heavy_multiplication_x:      | :heavy_multiplication_x:      | :heavy_multiplication_x:           |
+
+WebGPU is not in the table because it is not tied to one native platform: `igl::webgpu` runs on
+[Dawn](https://dawn.googlesource.com/dawn) natively (Metal on macOS and iOS, Vulkan on Linux) and
+in the browser through Emscripten's `emdawnwebgpu`. Win32 and Android surfaces are not covered yet.
+Shaders are WGSL. See [src/igl/webgpu/ROADMAP.md](./src/igl/webgpu/ROADMAP.md) for the current
+state.
+
+## Shading languages
+
+Shaders can be written in GLSL, MSL, HLSL or SparkSL, and in [Slang](https://shader-slang.org).
+A Slang shader is written once and compiled ahead of time to SPIR-V, MSL, HLSL, WGSL and GLSL, so
+the same source runs on every backend. The generated C++ headers are checked in, so building IGL
+never runs `slangc`.
+
+See [tools/slang/README.md](./tools/slang/README.md) for how programs are declared and regenerated,
+and [shell/renderSessions/slang/README.md](./shell/renderSessions/slang/README.md) for the two
+render sessions written entirely in Slang.
 
 ## Build
 
@@ -101,6 +124,13 @@ cd build
 emcmake cmake .. -G Ninja
 cmake --build .
 ```
+
+## Samples
+
+Three desktop samples and over thirty render sessions ship with IGL, covering bind groups, bindless
+buffers, texture views, specialization constants, mesh shaders, indirect draws, subpasses, YUV
+sampling, GPU timers and the two Slang sessions. They are listed in
+[getting-started.md](./getting-started.md) and built by default (`IGL_WITH_SAMPLES`).
 
 ## Screenshots
 
