@@ -42,7 +42,7 @@ Result ComputePipelineState::create(const ComputePipelineDesc& desc) {
 
     IGL_DEBUG_ASSERT(!imageName.toString().empty());
     const int loc = reflection_->getIndexByName(imageName);
-    if (IGL_DEBUG_VERIFY(loc >= 0)) {
+    if (loc >= 0) {
       GLint unit = 0;
       getContext().getUniformiv(shaderStages_->getProgramID(), loc, &unit);
       if (IGL_DEBUG_VERIFY(unit >= 0)) {
@@ -80,7 +80,7 @@ Result ComputePipelineState::create(const ComputePipelineDesc& desc) {
 
     IGL_DEBUG_ASSERT(!bufferName.toString().empty());
     const int loc = reflection_->getIndexByName(bufferName);
-    if (IGL_DEBUG_VERIFY(loc >= 0)) {
+    if (loc >= 0) {
       if (const auto& ssboDictionary = reflection_->getShaderStorageBufferObjectDictionary();
           ssboDictionary.find(bufferName) != ssboDictionary.end()) {
         bufferUnitMap_[bufferUnit] = loc;
