@@ -68,6 +68,24 @@ and fails if the checked-in headers differ.
 
 ## Existing GLSL
 
-`slangc` also reads GLSL (`-lang glsl`), so a Vulkan GLSL shader can be compiled straight to MSL,
-HLSL or WGSL as a first step. Converting it to Slang proper means replacing GLSL built-ins and
-resource declarations with Slang and the macros above, and flipping matrix products to `mul(v, M)`.
+`glsl2slang.py` converts GLSL shaders into a Slang program that follows these rules:
+
+```sh
+python3 glsl2slang.py --vertex shader.vert --fragment shader.frag -o Program.slang \
+    [--texture NAME=UNIT]... [--buffer NAME=INDEX]... [--uniforms-index N]
+```
+
+It keeps statements, comments and preprocessor lines, renames types and built-ins, rewrites matrix
+products by the matrix rule (`M * v` becomes `mul(v, M)`), turns samplers, uniform blocks, loose
+uniforms and storage buffers into the macros above, and wraps each stage's inputs and outputs in an
+entry point. Bindings come from the GLSL layout qualifiers unless `--texture` or `--buffer` moves
+them; a buffer at index 0 draws a warning, since Metal keeps the vertex stream there. Whatever it
+cannot convert is reported with its line.
+
+`--verify` compiles the GLSL with glslangValidator and the Slang output with slangc, and compares
+their stage inputs and outputs, uniform block sizes, storage buffers and samplers (pass the tools
+with `--glslang`, `--slangc` and `--spirv-cross`). It needs GLSL that compiles for Vulkan; for
+GLSL ES 1.0, check the output by rendering it.
+
+`slangc` also reads GLSL directly (`-lang glsl`), which compiles a Vulkan GLSL shader to MSL, HLSL
+or WGSL without converting it.
