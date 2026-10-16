@@ -146,6 +146,20 @@ TEST_F(RenderSnapshotTests, SlangShowcaseTerrainCulling) {
   render(session, "SlangShowcaseTerrainCulling", 2);
 }
 
+TEST_F(RenderSnapshotTests, SlangShowcaseTileMemorySubpasses) {
+  SlangShowcaseSession session(platform_);
+  session.setChapter(SlangShowcaseSession::Chapter::TileMemory);
+  session.setTileMemoryOptions(true, 32);
+  render(session, "SlangShowcaseTileMemorySubpasses", 2);
+}
+
+TEST_F(RenderSnapshotTests, SlangShowcaseTileMemoryStored) {
+  SlangShowcaseSession session(platform_);
+  session.setChapter(SlangShowcaseSession::Chapter::TileMemory);
+  session.setTileMemoryOptions(false, 32);
+  render(session, "SlangShowcaseTileMemoryStored", 2);
+}
+
 TEST_F(RenderSnapshotTests, TQMultiRenderPassSession) {
   TQMultiRenderPassSession session(platform_);
   render(session, "TQMultiRenderPassSession");

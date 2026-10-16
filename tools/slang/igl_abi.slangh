@@ -54,6 +54,15 @@
 #define IGL_LOAD2D(name, texel, lod) IGL_CONCAT(name, Texture).Load(int3(texel, lod))
 #endif
 
+// Color attachment i read as an input attachment, at the pixel of the fragment, in a subpass whose
+// inputAttachmentMask has bit i: Vulkan set 2 binding 16 + i, Metal [[color(i)]]. Read it with
+// name.SubpassLoad(). HLSL and WGSL have no input attachments, so only highend programs use it.
+#if defined(IGL_TARGET_SPIRV) || defined(IGL_TARGET_METAL)
+#define IGL_SUBPASS_INPUT(name, index)                                   \
+  [[vk::input_attachment_index(index)]] [[vk::binding(16 + (index), 2)]] \
+  SubpassInput<float4> name
+#endif
+
 // The vertex and instance index including the draw's base vertex and base instance, as Vulkan, Metal
 // and WebGPU count them. D3D12 excludes both bases and OpenGL excludes the base instance, so portable
 // programs draw with base vertex and base instance 0. SV_VertexID/SV_InstanceID would subtract the

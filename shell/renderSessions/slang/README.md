@@ -32,6 +32,11 @@ A grid of physically based spheres, one chapter at a time:
 4. GPU-driven terrain: 5329 procedural meshlets with no vertex or index buffers. A task shader culls
    them against the camera's frustum and a mesh shader expands the survivors; without mesh shaders,
    an instanced vertex shader draws every meshlet.
+5. Tile memory: deferred lighting with up to 64 point lights, each pixel shaded by the material model
+   of its sphere. One render pass writes a memoryless G-buffer (normal, tangent, position and sphere)
+   in a subpass, and the next subpass lights the image from it, reading it as input attachments, so
+   the G-buffer never leaves tile memory. A toggle compares this with the classic path, which stores
+   the G-buffer and samples it in a second pass; devices without subpasses use the classic path.
 
 | Program | Stage | What it does |
 |---|---|---|
@@ -42,6 +47,7 @@ A grid of physically based spheres, one chapter at a time:
 | `ShowcaseTerrainCommon` | module | Heightfield, meshlet layout and frustum test |
 | `ShowcaseTerrainCull` | task, mesh | Culls meshlets and expands the visible ones |
 | `ShowcaseTerrain` | vertex, fragment | Shades the terrain, and draws it without mesh shaders |
+| `ShowcaseDeferred` | vertex, fragment | Writes the G-buffer, and lights it from input attachments or from stored textures |
 
 ## Slang features used
 
@@ -52,6 +58,8 @@ A grid of physically based spheres, one chapter at a time:
 | Generics over the float type (`__BuiltinFloatingPointType`) | `ShowcaseMaterials` lobes in `float` and `half` |
 | Static interface requirements | `IMaterialModel` |
 | Dynamic dispatch (`createDynamicObject`, `[anyValueSize]`) | `IMaterial` in chapters 1 and 3 |
+| Static dispatch: a `switch` over specializations on a type id read per pixel | `ShowcaseMaterialsPass` (chapter 2), `ShowcaseDeferred` |
+| Input attachments (`SubpassInput`, `IGL_SUBPASS_INPUT`) | `ShowcaseDeferred` |
 | Reverse-mode autodiff (`bwd_diff`, `DifferentialPair`) | `SplatForward`, `SplatBackward`, `ShowcaseInverse` |
 | Forward-mode autodiff (`fwd_diff`) | `SplatRender`, `ShowcaseMaterialsPass` |
 | `no_diff` and a custom `[BackwardDerivative]` | `SplatCommon` |
@@ -62,4 +70,4 @@ A grid of physically based spheres, one chapter at a time:
 | Variadic generics (`each`, `expand`) | `PostChain` in `ShowcasePost` |
 | Task (amplification) and mesh shaders (`DispatchMesh`, `OutputVertices`) | `ShowcaseTerrainCull` |
 | `[ForceUnroll]`, `nointerpolation` | `ShowcaseMaterials`, `ShowcaseMaterialsPass` |
-| Several entry points per program | `SplatRender`, `ShowcaseMaterialsPass`, `ShowcaseInverse`, `ShowcasePost` |
+| Several entry points per program | `SplatRender`, `ShowcaseMaterialsPass`, `ShowcaseInverse`, `ShowcasePost`, `ShowcaseDeferred` |

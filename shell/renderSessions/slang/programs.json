@@ -10,6 +10,7 @@
     {"name": "ShowcaseInverse", "source": "ShowcaseInverse.slang", "profile": "highend"},
     {"name": "ShowcasePost", "source": "ShowcasePost.slang", "profile": "highend"},
     {"name": "ShowcaseTerrainCull", "source": "ShowcaseTerrainCull.slang", "profile": "highend"},
-    {"name": "ShowcaseTerrain", "source": "ShowcaseTerrain.slang", "profile": "highend"}
+    {"name": "ShowcaseTerrain", "source": "ShowcaseTerrain.slang", "profile": "highend"},
+    {"name": "ShowcaseDeferred", "source": "ShowcaseDeferred.slang", "profile": "highend"}
   ]
 }

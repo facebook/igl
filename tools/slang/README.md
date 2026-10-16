@@ -38,6 +38,7 @@ every backend:
 | `IGL_STORAGE_BUFFER(Type, name, i)` | `bindBuffer(i)`, read-write |
 | `IGL_READONLY_STORAGE_BUFFER(Type, name, i)` | `bindBuffer(i)`, read-only (`highend`) |
 | `IGL_TEXTURE2D(name, u)` with `IGL_SAMPLE2D(name, uv)` | `bindTexture(u)` and `bindSamplerState(u)` |
+| `IGL_SUBPASS_INPUT(name, i)` with `name.SubpassLoad()` | color attachment `i` as an input attachment of a subpass (`highend`) |
 | `IGL_SV_VERTEX_ID`, `IGL_SV_INSTANCE_ID` | vertex and instance index |
 
 Rules the generator enforces or relies on:
@@ -51,6 +52,8 @@ Rules the generator enforces or relies on:
   5 vertex attributes with semantics `POSITION`, `TEXCOORD`, `COLOR`, `NORMAL` and `TANGENT`, and
   draw with base vertex and base instance 0.
 - Never name an entry point `main`: Metal reserves it.
+- Fragment outputs that skip color attachments, as in a subpass, declare `[[vk::location(i)]]` with
+  `SV_Target<i>`: Metal takes the attachment from `SV_Target`, but SPIR-V numbers outputs from 0.
 
 Dynamic dispatch needs the conformance table: list `"conformances": ["Type:IInterface=id", ...]` in
 the manifest entry, using typealiases for generic types.

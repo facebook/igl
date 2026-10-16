@@ -11,6 +11,7 @@
 
 #include <IGLU/imgui/Session.h>
 #include <array>
+#include <string>
 #include <shell/shared/platform/Platform.h>
 #include <shell/shared/renderSession/RenderSession.h>
 #include <igl/IGL.h>
@@ -29,6 +30,10 @@ namespace igl::shell {
 // 4. GPU-driven geometry: a procedural terrain of meshlets, culled by a task shader and expanded by
 //    a mesh shader with no vertex or index buffers; without mesh shaders, an instanced vertex
 //    shader draws every meshlet.
+// 5. Deferred lighting in tile memory: the spheres write a G-buffer that never leaves tile memory,
+//    because one render pass writes it in a subpass and reads it as input attachments in the next,
+//    where up to 64 point lights shade it. It compares with the classic path, which stores the
+//    G-buffer and samples it in a second pass.
 class SlangShowcaseSession : public RenderSession {
  public:
   enum class Chapter : uint8_t {
@@ -36,6 +41,7 @@ class SlangShowcaseSession : public RenderSession {
     InverseRendering,
     PostEffects,
     Terrain,
+    TileMemory,
   };
   enum class ShadingMode : uint8_t {
     Specialized,
@@ -77,14 +83,26 @@ class SlangShowcaseSession : public RenderSession {
     terrainMeshletColors_ = meshletColors;
     terrainVertexFallback_ = vertexFallback;
   }
+  // Chapter 5 options: keep the G-buffer in tile memory with subpasses or store it and sample it,
+  // and light the spheres with this many point lights, at most 64.
+  void setTileMemoryOptions(bool subpasses, uint32_t lightCount) noexcept {
+    tileSubpasses_ = subpasses;
+    lightCount_ = lightCount;
+  }
 
  private:
   bool createPipelines(TextureFormat format);
   void createInverseResources(IDevice& device);
+  void createDeferredResources(IDevice& device);
   void restartFit();
   void encodeInverseStep(ICommandBuffer& commandBuffer);
   void bindSphereResources(IRenderCommandEncoder& encoder) const;
   void drawTerrain(IRenderCommandEncoder& encoder, float aspect, bool encodeGamma);
+  bool renderInTileMemory(ICommandBuffer& commandBuffer, const std::shared_ptr<ITexture>& surface);
+  bool renderGBuffer(ICommandBuffer& commandBuffer);
+  void bindLightingResources(IRenderCommandEncoder& encoder) const;
+  bool disableSubpasses(const std::string& reason);
+  [[nodiscard]] bool canRenderDeferred() const;
   void drawOverlay(ShadingMode mode, PostChain chain);
   [[nodiscard]] ShadingMode currentMode() const;
   [[nodiscard]] PostChain currentPostChain() const;
@@ -109,6 +127,16 @@ class SlangShowcaseSession : public RenderSession {
   std::shared_ptr<IRenderPipelineState> terrainMeshPipeline_;
   std::shared_ptr<IRenderPipelineState> terrainVertexPipeline_;
   std::shared_ptr<IBuffer> terrainUniforms_;
+  std::shared_ptr<IRenderPipelineState> gbufferSubpassPipeline_;
+  std::shared_ptr<IRenderPipelineState> lightingSubpassPipeline_;
+  std::shared_ptr<IRenderPipelineState> gbufferStoredPipeline_;
+  std::shared_ptr<IRenderPipelineState> lightingStoredPipeline_;
+  std::shared_ptr<IDepthStencilState> lightingDepthState_;
+  std::shared_ptr<IFramebuffer> subpassFramebuffer_;
+  std::array<std::shared_ptr<ITexture>, 3> gbuffer_;
+  std::shared_ptr<IFramebuffer> gbufferFramebuffer_;
+  std::shared_ptr<IBuffer> lights_;
+  std::shared_ptr<IBuffer> deferredUniforms_;
   std::shared_ptr<IBuffer> fitted_;
   std::shared_ptr<IBuffer> adam_;
   std::shared_ptr<IBuffer> pixelGradients_;
@@ -120,7 +148,11 @@ class SlangShowcaseSession : public RenderSession {
   size_t indexCount_ = 0;
   uint64_t frame_ = 0;
   uint32_t steps_ = 0;
+  uint32_t lightCount_ = 32;
   double gpuMilliseconds_ = 0.0;
+  // Why chapter 5 stores the G-buffer even when asked to keep it in tile memory; empty while
+  // subpasses work.
+  std::string noSubpassesReason_;
   Chapter chapter_ = Chapter::Materials;
   ShadingMode fixedMode_ = ShadingMode::Specialized;
   bool hasFixedMode_ = false;
@@ -130,6 +162,7 @@ class SlangShowcaseSession : public RenderSession {
   bool terrainMeshletColors_ = false;
   bool terrainVertexFallback_ = false;
   bool showSensitivity_ = false;
+  bool tileSubpasses_ = true;
   bool supported_ = false;
 };
 

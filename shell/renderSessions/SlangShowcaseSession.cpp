@@ -10,12 +10,14 @@
 #include <shell/renderSessions/SlangShowcaseSession.h>
 
 #include <IGLU/slang/SlangProgram.h>
+#include <algorithm>
 #include <cmath>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/glm.hpp>
 #include <string_view>
 #include <vector>
+#include <shell/renderSessions/slang/generated/ShowcaseDeferredSlang.h>
 #include <shell/renderSessions/slang/generated/ShowcaseInverseSlang.h>
 #include <shell/renderSessions/slang/generated/ShowcaseMaterialsPassSlang.h>
 #include <shell/renderSessions/slang/generated/ShowcasePostSlang.h>
@@ -38,6 +40,7 @@ constexpr uint64_t kFramesPerMode = 240;
 constexpr uint32_t kStepsPerFrame = 8;
 constexpr float kEyeDistance = 16.0f;
 constexpr float kPi = 3.14159265f;
+constexpr Color kClearColor(0.02f, 0.02f, 0.03f, 1.0f);
 
 constexpr std::array<const char*, kMaterialTypes> kSpecializedEntryPoints = {"fragmentMetalRough",
                                                                              "fragmentClearcoat",
@@ -113,6 +116,21 @@ struct TerrainUniforms {
   glm::vec4 display;
 };
 
+// Mirrors ShowcaseDeferred.slang.
+constexpr uint32_t kMaxLights = 64;
+struct PointLight {
+  glm::vec4 position; // position, intensity
+  glm::vec4 color;
+};
+struct DeferredUniforms {
+  std::array<uint32_t, 4> lightCount;
+};
+constexpr TextureFormat kGBufferFormat = TextureFormat::RGBA_F16;
+constexpr TextureDesc::TextureUsage kTileGBufferUsage =
+    TextureDesc::TextureUsageBits::Attachment | TextureDesc::TextureUsageBits::InputAttachment;
+constexpr TextureDesc::TextureUsage kStoredGBufferUsage =
+    TextureDesc::TextureUsageBits::Attachment | TextureDesc::TextureUsageBits::Sampled;
+
 // The planes bounding a [0, 1]-depth clip volume, pointing inward.
 std::array<glm::vec4, 6> frustumPlanes(const glm::mat4& m) {
   const glm::mat4 t = glm::transpose(m);
@@ -157,6 +175,28 @@ Lighting lighting(float seconds) {
     result.lightColors[i] = glm::vec4(colors[i], 0.0f);
   }
   return result;
+}
+
+// Point lights circling the grid in front of the spheres, on four rings that turn in alternate
+// directions, in colors around the hue circle. Each of `count` lights is dimmer the more there are,
+// so the image brightens only gently as lights are added.
+std::array<PointLight, kMaxLights> pointLights(float seconds, uint32_t count) {
+  const float intensity = 9.0f / std::sqrt(static_cast<float>(std::max(count, 1u)));
+  std::array<PointLight, kMaxLights> lights{};
+  for (uint32_t i = 0; i < count; ++i) {
+    const auto index = static_cast<float>(i);
+    const float radius = 1.6f + 1.3f * static_cast<float>(i % 4);
+    const float angle = (i % 2 == 0 ? 0.4f : -0.3f) * seconds + 2.4f * index;
+    const float hue = 6.0f * std::fmod(0.618034f * index, 1.0f);
+    const glm::vec3 color = glm::clamp(
+        glm::abs(glm::mod(glm::vec3(hue, hue + 4.0f, hue + 2.0f), 6.0f) - 3.0f) - 1.0f, 0.0f, 1.0f);
+    lights[i] = {.position = glm::vec4(radius * std::cos(angle),
+                                       radius * std::sin(angle),
+                                       -2.2f + 0.6f * std::sin(0.7f * seconds + index),
+                                       intensity),
+                 .color = glm::vec4(glm::mix(glm::vec3(1.0f), color, 0.6f), 0.0f)};
+  }
+  return lights;
 }
 
 // A unit sphere with tangents along the parallels, for anisotropic highlights.
@@ -232,6 +272,53 @@ Dimensions workgroupSize(const iglu::slang::Program& program, const char* entryP
   return entry != nullptr ? iglu::slang::workgroupSize(*entry) : Dimensions(1, 1, 1);
 }
 
+// Chapter 5 renders into the G-buffer and the image, and a pipeline used in a subpass declares
+// every color attachment of the render pass.
+std::shared_ptr<IRenderPipelineState> createDeferredPipeline(
+    IDevice& device,
+    const char* vertexEntryPoint,
+    const char* fragmentEntryPoint,
+    const std::vector<TextureFormat>& colorFormats,
+    const std::shared_ptr<IVertexInputState>& vertexInput) {
+  RenderPipelineDesc::TargetDesc targetDesc{.depthAttachmentFormat = TextureFormat::Z_UNorm32};
+  for (const TextureFormat format : colorFormats) {
+    targetDesc.colorAttachments.push_back({.textureFormat = format});
+  }
+  Result ret;
+  const RenderPipelineDesc desc{
+      .vertexInputState = vertexInput,
+      .shaderStages = iglu::slang::createRenderStages(
+          device, slang::kShowcaseDeferredProgram, vertexEntryPoint, fragmentEntryPoint, &ret),
+      .targetDesc = std::move(targetDesc),
+      .cullMode = CullMode::Disabled,
+  };
+  std::shared_ptr<IRenderPipelineState> pipeline;
+  if (ret.isOk()) {
+    pipeline = device.createRenderPipeline(desc, &ret);
+  }
+  if (!ret.isOk() || pipeline == nullptr) {
+    IGL_LOG_INFO("SlangShowcaseSession: %s: %s\n", fragmentEntryPoint, ret.message.c_str());
+    return nullptr;
+  }
+  return pipeline;
+}
+
+// A size-dependent attachment of chapter 5.
+std::shared_ptr<ITexture> createAttachment(IDevice& device,
+                                           const Dimensions& size,
+                                           TextureFormat format,
+                                           TextureDesc::TextureUsage usage,
+                                           ResourceStorage storage,
+                                           Result* outResult) {
+  return device.createTexture(TextureDesc{.width = size.width,
+                                          .height = size.height,
+                                          .usage = usage,
+                                          .type = TextureType::TwoD,
+                                          .format = format,
+                                          .storage = storage},
+                              outResult);
+}
+
 const char* modeName(SlangShowcaseSession::ShadingMode mode) {
   switch (mode) {
   case SlangShowcaseSession::ShadingMode::Specialized:
@@ -301,6 +388,7 @@ void SlangShowcaseSession::initialize() noexcept {
   vertexInput_ = device.createVertexInputState(inputDesc, nullptr);
 
   createInverseResources(device);
+  createDeferredResources(device);
   postSampler_ = device.createSamplerState(SamplerStateDesc::newLinear(), nullptr);
   terrainUniforms_ =
       device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Uniform,
@@ -352,6 +440,34 @@ void SlangShowcaseSession::createInverseResources(IDevice& device) {
     gradientsPipeline_ =
         createComputePipeline(device, slang::kShowcaseInverseProgram, "inverseGradients");
     adamPipeline_ = createComputePipeline(device, slang::kShowcaseInverseProgram, "inverseAdam");
+  }
+}
+
+void SlangShowcaseSession::createDeferredResources(IDevice& device) {
+  const auto check = [](const Result& ret, const char* what) {
+    if (!ret.isOk()) {
+      IGL_LOG_INFO("SlangShowcaseSession: %s: %s\n", what, ret.message.c_str());
+    }
+  };
+  Result ret;
+  lights_ = device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Storage,
+                                           .length = kMaxLights * sizeof(PointLight),
+                                           .storage = ResourceStorage::Shared,
+                                           .storageStride = sizeof(PointLight)},
+                                &ret);
+  check(ret, "lights");
+  deferredUniforms_ =
+      device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Uniform,
+                                     .length = sizeof(DeferredUniforms),
+                                     .storage = ResourceStorage::Shared,
+                                     .hint = BufferDesc::BufferAPIHintBits::UniformBlock},
+                          &ret);
+  check(ret, "light count");
+  lightingDepthState_ = device.createDepthStencilState(
+      {.compareFunction = CompareFunction::AlwaysPass, .isDepthWriteEnabled = false}, &ret);
+  check(ret, "lighting depth state");
+  if (!device.hasFeature(DeviceFeatures::Subpasses)) {
+    noSubpassesReason_ = "the device does not support them";
   }
 }
 
@@ -454,6 +570,21 @@ bool SlangShowcaseSession::createPipelines(TextureFormat format) {
     postPipelines_[chain] =
         create(slang::kShowcasePostProgram, "postVertex", kPostEntryPoints[chain], format, nullptr);
   }
+  gbufferStoredPipeline_ = createDeferredPipeline(device,
+                                                  "deferredVertex",
+                                                  "gbufferStored",
+                                                  {kGBufferFormat, kGBufferFormat, kGBufferFormat},
+                                                  vertexInput_);
+  lightingStoredPipeline_ =
+      createDeferredPipeline(device, "lightingVertex", "lightingStored", {format}, nullptr);
+  if (device.hasFeature(DeviceFeatures::Subpasses)) {
+    const std::vector<TextureFormat> formats = {
+        format, kGBufferFormat, kGBufferFormat, kGBufferFormat};
+    gbufferSubpassPipeline_ =
+        createDeferredPipeline(device, "deferredVertex", "gbufferSubpass", formats, vertexInput_);
+    lightingSubpassPipeline_ =
+        createDeferredPipeline(device, "lightingVertex", "lightingSubpass", formats, nullptr);
+  }
   return dynamicPipeline_ != nullptr && inversePipeline_ != nullptr &&
          sensitivityPipeline_ != nullptr && radiancePipeline_ != nullptr &&
          postPipelines_[0] != nullptr;
@@ -525,11 +656,145 @@ void SlangShowcaseSession::drawTerrain(IRenderCommandEncoder& encoder,
   }
 }
 
+// The stored path, which needs no subpasses.
+bool SlangShowcaseSession::canRenderDeferred() const {
+  return lights_ && deferredUniforms_ && lightingDepthState_ && gbufferStoredPipeline_ &&
+         lightingStoredPipeline_;
+}
+
+void SlangShowcaseSession::bindLightingResources(IRenderCommandEncoder& encoder) const {
+  encoder.bindDepthStencilState(lightingDepthState_);
+  encoder.bindBuffer(1, sceneUniforms_.get());
+  encoder.bindBuffer(2, spheres_.get());
+  encoder.bindBuffer(3, lights_.get());
+  encoder.bindBuffer(4, deferredUniforms_.get());
+}
+
+// One render pass keeps the G-buffer in tile memory: the first subpass writes it, and the second
+// reads it as input attachments to light the image. Returns false, and stops trying subpasses, if
+// the device cannot run them.
+bool SlangShowcaseSession::renderInTileMemory(ICommandBuffer& commandBuffer,
+                                              const std::shared_ptr<ITexture>& surface) {
+  if (!gbufferSubpassPipeline_ || !lightingSubpassPipeline_) {
+    return disableSubpasses("cannot create the pipelines");
+  }
+  if (!subpassFramebuffer_) {
+    IDevice& device = getPlatform().getDevice();
+    const Dimensions size = surface->getDimensions();
+    FramebufferDesc desc{.colorAttachments = {{.texture = surface}}};
+    Result ret;
+    for (size_t i = 1; i <= gbuffer_.size(); ++i) {
+      desc.colorAttachments[i].texture = createAttachment(
+          device, size, kGBufferFormat, kTileGBufferUsage, ResourceStorage::Memoryless, &ret);
+      if (!ret.isOk() || !desc.colorAttachments[i].texture) {
+        return disableSubpasses("cannot create the memoryless G-buffer: " + ret.message);
+      }
+    }
+    desc.depthAttachment.texture = createAttachment(device,
+                                                    size,
+                                                    TextureFormat::Z_UNorm32,
+                                                    TextureDesc::TextureUsageBits::Attachment,
+                                                    ResourceStorage::Memoryless,
+                                                    &ret);
+    if (!ret.isOk() || !desc.depthAttachment.texture) {
+      return disableSubpasses("cannot create the memoryless depth: " + ret.message);
+    }
+    subpassFramebuffer_ = device.createFramebuffer(desc, &ret);
+    if (!ret.isOk() || !subpassFramebuffer_) {
+      return disableSubpasses("cannot create the framebuffer: " + ret.message);
+    }
+  } else {
+    subpassFramebuffer_->updateDrawable(surface);
+  }
+
+  // The G-buffer is cleared to zero, which marks the background, and never stored.
+  const RenderPassDesc::AttachmentDesc tile{.loadAction = LoadAction::Clear,
+                                            .storeAction = StoreAction::DontCare};
+  const RenderPassDesc renderPass{
+      .colorAttachments = {{.loadAction = LoadAction::Clear,
+                            .storeAction = StoreAction::Store,
+                            .clearColor = kClearColor},
+                           tile,
+                           tile,
+                           tile},
+      .depthAttachment = {.loadAction = LoadAction::Clear,
+                          .storeAction = StoreAction::DontCare,
+                          .clearDepth = 1.0f},
+      .subpasses = {{.colorAttachmentMask = 0b1110},
+                    {.colorAttachmentMask = 0b0001, .inputAttachmentMask = 0b1110}},
+  };
+  Result ret;
+  const auto encoder =
+      commandBuffer.createRenderCommandEncoder(renderPass, subpassFramebuffer_, &ret);
+  if (!encoder) {
+    return disableSubpasses(ret.message);
+  }
+  bindSphereResources(*encoder);
+  encoder->bindRenderPipelineState(gbufferSubpassPipeline_);
+  encoder->drawIndexed(indexCount_, kSpheres);
+  encoder->nextSubpass();
+  encoder->bindRenderPipelineState(lightingSubpassPipeline_);
+  bindLightingResources(*encoder);
+  encoder->draw(3);
+  encoder->endEncoding();
+  return true;
+}
+
+// The classic path stores the G-buffer for the final encoder to sample.
+bool SlangShowcaseSession::renderGBuffer(ICommandBuffer& commandBuffer) {
+  if (!gbufferFramebuffer_) {
+    IDevice& device = getPlatform().getDevice();
+    const Dimensions size = framebuffer_->getColorAttachment(0)->getDimensions();
+    FramebufferDesc desc{.depthAttachment = {.texture = framebuffer_->getDepthAttachment()}};
+    Result ret;
+    for (size_t i = 0; i < gbuffer_.size(); ++i) {
+      gbuffer_[i] = createAttachment(
+          device, size, kGBufferFormat, kStoredGBufferUsage, ResourceStorage::Private, &ret);
+      if (!ret.isOk() || !gbuffer_[i]) {
+        IGL_LOG_INFO("SlangShowcaseSession: G-buffer: %s\n", ret.message.c_str());
+        return false;
+      }
+      desc.colorAttachments[i].texture = gbuffer_[i];
+    }
+    gbufferFramebuffer_ = device.createFramebuffer(desc, &ret);
+    if (!ret.isOk() || !gbufferFramebuffer_) {
+      IGL_LOG_INFO("SlangShowcaseSession: G-buffer framebuffer: %s\n", ret.message.c_str());
+      gbufferFramebuffer_ = nullptr;
+      return false;
+    }
+  }
+  const RenderPassDesc::AttachmentDesc stored{.loadAction = LoadAction::Clear,
+                                              .storeAction = StoreAction::Store};
+  Result ret;
+  const auto encoder = commandBuffer.createRenderCommandEncoder(
+      RenderPassDesc{.colorAttachments = {stored, stored, stored},
+                     .depthAttachment = {.loadAction = LoadAction::Clear, .clearDepth = 1.0f}},
+      gbufferFramebuffer_,
+      &ret);
+  if (!encoder) {
+    IGL_LOG_INFO("SlangShowcaseSession: G-buffer pass: %s\n", ret.message.c_str());
+    return false;
+  }
+  bindSphereResources(*encoder);
+  encoder->bindRenderPipelineState(gbufferStoredPipeline_);
+  encoder->drawIndexed(indexCount_, kSpheres);
+  encoder->endEncoding();
+  return true;
+}
+
+bool SlangShowcaseSession::disableSubpasses(const std::string& reason) {
+  IGL_LOG_INFO("SlangShowcaseSession: no subpasses (%s); storing the G-buffer\n", reason.c_str());
+  noSubpassesReason_ = reason.empty() ? "cannot begin the render pass" : reason;
+  subpassFramebuffer_ = nullptr;
+  return false;
+}
+
 void SlangShowcaseSession::drawOverlay(ShadingMode mode, PostChain chain) {
-  constexpr std::array<const char*, 4> kTitles = {"Slang showcase 1/5: materials",
+  constexpr std::array<const char*, 5> kTitles = {"Slang showcase 1/5: materials",
                                                   "Slang showcase 2/5: inverse rendering",
                                                   "Slang showcase 3/5: post effects",
-                                                  "Slang showcase 4/5: GPU-driven terrain"};
+                                                  "Slang showcase 4/5: GPU-driven terrain",
+                                                  "Slang showcase 5/5: tile memory"};
   ImGui::SetNextWindowPos(ImVec2(10, 10));
   ImGui::Begin("##SlangShowcase",
                nullptr,
@@ -563,6 +828,20 @@ void SlangShowcaseSession::drawOverlay(ShadingMode mode, PostChain chain) {
                     ? "task shader culls, mesh shader expands"
                     : "vertex shader, no culling");
     break;
+  case Chapter::TileMemory:
+    if (!canRenderDeferred()) {
+      ImGui::Text("Cannot create the deferred resources; see the log");
+      break;
+    }
+    ImGui::Text("%u point lights, G-buffer %s",
+                std::min(lightCount_, kMaxLights),
+                tileSubpasses_ && noSubpassesReason_.empty()
+                    ? "in tile memory, read as input attachments"
+                    : "stored, then sampled");
+    if (tileSubpasses_ && !noSubpassesReason_.empty()) {
+      ImGui::Text("No subpasses: %s", noSubpassesReason_.c_str());
+    }
+    break;
   }
   if (timer_ != nullptr) {
     ImGui::Text("GPU frame: %.3f ms", gpuMilliseconds_);
@@ -583,6 +862,8 @@ void SlangShowcaseSession::drawOverlay(ShadingMode mode, PostChain chain) {
   ImGui::RadioButton("Post effects", &chapter, 2);
   ImGui::SameLine();
   ImGui::RadioButton("Terrain", &chapter, 3);
+  ImGui::SameLine();
+  ImGui::RadioButton("Tile memory", &chapter, 4);
   const auto previous = chapter_;
   chapter_ = static_cast<Chapter>(chapter);
   switch (previous) {
@@ -622,6 +903,18 @@ void SlangShowcaseSession::drawOverlay(ShadingMode mode, PostChain chain) {
     }
     break;
   }
+  case Chapter::TileMemory: {
+    int path = tileSubpasses_ ? 0 : 1;
+    ImGui::RadioButton("Tile memory (subpasses)", &path, 0);
+    ImGui::SameLine();
+    ImGui::RadioButton("Stored G-buffer", &path, 1);
+    tileSubpasses_ = path == 0;
+    int lights = static_cast<int>(std::min(lightCount_, kMaxLights));
+    if (ImGui::SliderInt("Lights", &lights, 1, static_cast<int>(kMaxLights))) {
+      lightCount_ = static_cast<uint32_t>(lights);
+    }
+    break;
+  }
   }
   ImGui::End();
 }
@@ -644,6 +937,8 @@ void SlangShowcaseSession::update(SurfaceTextures surfaceTextures) noexcept {
                         .depthAttachment = {.texture = depth}},
         nullptr);
     radianceFramebuffer_ = nullptr;
+    subpassFramebuffer_ = nullptr;
+    gbufferFramebuffer_ = nullptr;
   } else {
     framebuffer_->updateDrawable(surfaceTextures.color);
   }
@@ -655,6 +950,7 @@ void SlangShowcaseSession::update(SurfaceTextures surfaceTextures) noexcept {
   const ShadingMode mode = currentMode();
   const PostChain chain = currentPostChain();
   const bool post = supported_ && chapter_ == Chapter::PostEffects;
+  const bool deferred = supported_ && chapter_ == Chapter::TileMemory && canRenderDeferred();
   if (supported_) {
     const bool encode = !surfaceTextures.color->getProperties().isSRGB();
     const SceneUniforms scene{
@@ -667,6 +963,14 @@ void SlangShowcaseSession::update(SurfaceTextures surfaceTextures) noexcept {
     const PostUniforms postParams{
         .params = glm::vec4(static_cast<float>(frame_) / 60.0f, encode ? 1.0f : 0.0f, 0.0f, 0.0f)};
     postUniforms_->upload(&postParams, BufferRange(sizeof(postParams)));
+  }
+  if (deferred) {
+    const uint32_t count = std::min(lightCount_, kMaxLights);
+    const std::array<PointLight, kMaxLights> lights =
+        pointLights(static_cast<float>(frame_) / 60.0f, count);
+    lights_->upload(lights.data(), BufferRange(sizeof(lights)));
+    const DeferredUniforms uniforms{.lightCount = {count, 0, 0, 0}};
+    deferredUniforms_->upload(&uniforms, BufferRange(sizeof(uniforms)));
   }
   if (post && !radianceFramebuffer_) {
     radianceTexture_ =
@@ -689,10 +993,15 @@ void SlangShowcaseSession::update(SurfaceTextures surfaceTextures) noexcept {
       encodeInverseStep(*commandBuffer);
     }
   }
+  // Chapter 5 lights the image in tile memory, and the final encoder draws only the overlay over
+  // it, or stores the G-buffer for the final encoder to light.
+  const bool litInTileMemory = deferred && tileSubpasses_ && noSubpassesReason_.empty() &&
+                               renderInTileMemory(*commandBuffer, surfaceTextures.color);
+  const bool gbufferStored = deferred && !litInTileMemory && renderGBuffer(*commandBuffer);
   const RenderPassDesc renderPass{
-      .colorAttachments = {{.loadAction = LoadAction::Clear,
+      .colorAttachments = {{.loadAction = litInTileMemory ? LoadAction::Load : LoadAction::Clear,
                             .storeAction = StoreAction::Store,
-                            .clearColor = {0.02f, 0.02f, 0.03f, 1.0f}}},
+                            .clearColor = kClearColor}},
       .depthAttachment = {.loadAction = LoadAction::Clear, .clearDepth = 1.0f},
   };
   if (post) {
@@ -707,6 +1016,10 @@ void SlangShowcaseSession::update(SurfaceTextures surfaceTextures) noexcept {
   Dependencies dependencies{.buffers = {fitted_.get()}};
   if (post) {
     dependencies.textures[0] = radianceTexture_.get();
+  } else if (gbufferStored) {
+    for (size_t i = 0; i < gbuffer_.size(); ++i) {
+      dependencies.textures[i] = gbuffer_[i].get();
+    }
   }
   auto encoder = commandBuffer->createRenderCommandEncoder(renderPass, framebuffer_, dependencies);
   if (post) {
@@ -719,6 +1032,17 @@ void SlangShowcaseSession::update(SurfaceTextures surfaceTextures) noexcept {
   } else if (supported_ && chapter_ == Chapter::Terrain) {
     drawTerrain(
         *encoder, size.width / size.height, !surfaceTextures.color->getProperties().isSRGB());
+  } else if (supported_ && chapter_ == Chapter::TileMemory) {
+    if (gbufferStored) {
+      encoder->bindRenderPipelineState(lightingStoredPipeline_);
+      bindLightingResources(*encoder);
+      for (size_t i = 0; i < gbuffer_.size(); ++i) {
+        encoder->bindTexture(i, BindTarget::kFragment, gbuffer_[i].get());
+        // Vulkan reads textures through combined samplers; loads ignore the filter.
+        encoder->bindSamplerState(i, BindTarget::kFragment, postSampler_.get());
+      }
+      encoder->draw(3);
+    }
   } else if (supported_) {
     bindSphereResources(*encoder);
     if (chapter_ == Chapter::InverseRendering) {
