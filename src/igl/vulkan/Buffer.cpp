@@ -252,10 +252,16 @@ uint64_t Buffer::gpuAddress(size_t offset) const {
   IGL_DEBUG_ASSERT((offset & 7) == 0,
                    "Buffer offset must be 8 bytes aligned as per GLSL_EXT_buffer_reference spec.");
 
+  if (isRingBuffer_) {
+    device_.getVulkanContext().markRingBufferRead();
+  }
   return static_cast<uint64_t>(currentVulkanBuffer()->getVkDeviceAddress()) + offset;
 }
 
 VkBuffer Buffer::getVkBuffer() const {
+  if (isRingBuffer_) {
+    device_.getVulkanContext().markRingBufferRead();
+  }
   return currentVulkanBuffer()->getVkBuffer();
 }
 

@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <cstring>
 #include <vector>
 #include <igl/CommandBuffer.h>
 #include <igl/Shader.h>
@@ -24,6 +25,7 @@
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/HWDevice.h>
 #include <igl/vulkan/PlatformDevice.h>
+#include <igl/vulkan/ResourcesBinder.h>
 #include <igl/vulkan/SamplerState.h>
 #include <igl/vulkan/Texture.h>
 #include <igl/vulkan/VulkanBuffer.h>
@@ -559,15 +561,14 @@ TEST_F(DeviceVulkanTest, UniformBlockRingBufferTest) {
 
   std::vector<VkBuffer> bufferHandles;
   // By default the VulkanContextConfig.maxResourceCount is 3, so we should create at most 3 unique
-  // VkBuffers
+  // VkBuffers. getVkBuffer() is the read that makes each submit move to the next copy.
   for (int i = 0; i < 4; i++) {
     auto cmdBuf = cmdQueue->createCommandBuffer({}, &ret);
     ASSERT_TRUE(ret.isOk());
 
     auto* vulkanBufferCast = static_cast<vulkan::Buffer*>(buffer.get());
-    const auto& vulkanBuffer = vulkanBufferCast->currentVulkanBuffer();
-    bufferHandles.push_back(vulkanBuffer->getVkBuffer());
-    ASSERT_EQ(vulkanBuffer->getSize(), bufferSize);
+    bufferHandles.push_back(vulkanBufferCast->getVkBuffer());
+    ASSERT_EQ(vulkanBufferCast->currentVulkanBuffer()->getSize(), bufferSize);
 
     cmdQueue->submit(*cmdBuf);
   }
@@ -644,7 +645,7 @@ TEST_F(DeviceVulkanTest, ManagedUniformBufferRotatesItsRingBuffer) {
     auto cmdBuf = cmdQueue->createCommandBuffer({}, &ret);
     ASSERT_TRUE(ret.isOk());
 
-    bufferHandles.push_back(vulkanBuffer->currentVulkanBuffer()->getVkBuffer());
+    bufferHandles.push_back(vulkanBuffer->getVkBuffer());
 
     cmdQueue->submit(*cmdBuf);
   }
@@ -656,6 +657,224 @@ TEST_F(DeviceVulkanTest, ManagedUniformBufferRotatesItsRingBuffer) {
   EXPECT_NE(bufferHandles[0], bufferHandles[2]);
   EXPECT_NE(bufferHandles[1], bufferHandles[2]);
   EXPECT_EQ(bufferHandles[3], bufferHandles[0]);
+}
+
+namespace {
+
+std::shared_ptr<IBuffer> createRingUniformBuffer(IDevice& device, Result* outResult) {
+  return device.createBuffer(
+      BufferDesc{
+          .type = BufferDesc::BufferTypeBits::Uniform,
+          .length = 256,
+          .storage = ResourceStorage::Shared,
+          .hint = BufferDesc::BufferAPIHintBits::Ring | BufferDesc::BufferAPIHintBits::UniformBlock,
+      },
+      outResult);
+}
+
+// Observes the current copy without marking it as read.
+VkBuffer currentCopy(const IBuffer& buffer) {
+  return static_cast<const vulkan::Buffer&>(buffer).currentVulkanBuffer()->getVkBuffer();
+}
+
+} // namespace
+
+// A submit that read no Ring buffer copy must not move to the next copy, even while a Ring buffer
+// is alive.
+TEST_F(DeviceVulkanTest, SubmitsWithoutRingReadsDoNotRotate) {
+  if (!iglDev_->hasFeature(DeviceFeatures::BufferRing)) {
+    GTEST_SKIP() << "Device does not report DeviceFeatures::BufferRing";
+  }
+  Result ret;
+  auto buffer = createRingUniformBuffer(*iglDev_, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(buffer, nullptr);
+  auto cmdQueue = iglDev_->createCommandQueue({}, &ret);
+  ASSERT_TRUE(ret.isOk());
+
+  const VkBuffer firstCopy = currentCopy(*buffer);
+  for (int i = 0; i < 5; i++) {
+    auto cmdBuf = cmdQueue->createCommandBuffer({}, &ret);
+    ASSERT_TRUE(ret.isOk());
+    cmdQueue->submit(*cmdBuf);
+    EXPECT_EQ(currentCopy(*buffer), firstCopy) << "submit " << i;
+  }
+}
+
+// Only submits that read a Ring buffer copy advance the ring; submits in between leave it alone.
+TEST_F(DeviceVulkanTest, MixedSubmitsRotateOnlyOnRingReads) {
+  if (!iglDev_->hasFeature(DeviceFeatures::BufferRing)) {
+    GTEST_SKIP() << "Device does not report DeviceFeatures::BufferRing";
+  }
+  Result ret;
+  auto buffer = createRingUniformBuffer(*iglDev_, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(buffer, nullptr);
+  auto cmdQueue = iglDev_->createCommandQueue({}, &ret);
+  ASSERT_TRUE(ret.isOk());
+
+  const VkBuffer firstCopy = currentCopy(*buffer);
+  VkBuffer previousCopy = firstCopy;
+  constexpr std::array<bool, 6> kReadsRing = {true, false, false, true, false, true};
+  for (size_t i = 0; i < kReadsRing.size(); i++) {
+    auto cmdBuf = cmdQueue->createCommandBuffer({}, &ret);
+    ASSERT_TRUE(ret.isOk());
+    if (kReadsRing[i]) {
+      EXPECT_EQ(static_cast<vulkan::Buffer&>(*buffer).getVkBuffer(), previousCopy);
+    }
+    cmdQueue->submit(*cmdBuf);
+
+    const VkBuffer copy = currentCopy(*buffer);
+    if (kReadsRing[i]) {
+      EXPECT_NE(copy, previousCopy) << "submit " << i;
+    } else {
+      EXPECT_EQ(copy, previousCopy) << "submit " << i;
+    }
+    previousCopy = copy;
+  }
+  // Three Ring reads with maxResourceCount = 3 make a full lap.
+  EXPECT_EQ(previousCopy, firstCopy);
+}
+
+// upload() writes the current copy but does not read it on the GPU, so a following submit keeps
+// the copy, and the uploaded data is still what the next read sees.
+TEST_F(DeviceVulkanTest, UploadOnlySubmitDoesNotRotate) {
+  if (!iglDev_->hasFeature(DeviceFeatures::BufferRing)) {
+    GTEST_SKIP() << "Device does not report DeviceFeatures::BufferRing";
+  }
+  Result ret;
+  auto buffer = createRingUniformBuffer(*iglDev_, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(buffer, nullptr);
+  auto cmdQueue = iglDev_->createCommandQueue({}, &ret);
+  ASSERT_TRUE(ret.isOk());
+
+  std::array<uint32_t, 64> data{};
+  for (size_t i = 0; i < data.size(); i++) {
+    data[i] = 0x12345678u + static_cast<uint32_t>(i);
+  }
+  const VkBuffer firstCopy = currentCopy(*buffer);
+  ASSERT_TRUE(buffer->upload(data.data(), BufferRange(sizeof(data), 0)).isOk());
+
+  auto cmdBuf = cmdQueue->createCommandBuffer({}, &ret);
+  ASSERT_TRUE(ret.isOk());
+  cmdQueue->submit(*cmdBuf);
+
+  EXPECT_EQ(currentCopy(*buffer), firstCopy);
+  const auto& copy = static_cast<vulkan::Buffer&>(*buffer).currentVulkanBuffer();
+  if (copy->isMapped()) {
+    EXPECT_EQ(std::memcmp(copy->getMappedPtr(), data.data(), sizeof(data)), 0);
+  }
+}
+
+// bindBuffer() on an encoder's binder is how uniform blocks reach a draw; it must count as a read.
+TEST_F(DeviceVulkanTest, BindBufferMarksRingRead) {
+  if (!iglDev_->hasFeature(DeviceFeatures::BufferRing)) {
+    GTEST_SKIP() << "Device does not report DeviceFeatures::BufferRing";
+  }
+  Result ret;
+  auto buffer = createRingUniformBuffer(*iglDev_, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(buffer, nullptr);
+  auto cmdQueue = iglDev_->createCommandQueue({}, &ret);
+  ASSERT_TRUE(ret.isOk());
+
+  auto& ctx = static_cast<vulkan::Device&>(*iglDev_).getVulkanContext();
+  const VkBuffer firstCopy = currentCopy(*buffer);
+  auto cmdBuf = cmdQueue->createCommandBuffer({}, &ret);
+  ASSERT_TRUE(ret.isOk());
+  {
+    vulkan::ResourcesBinder binder(nullptr, ctx, VK_PIPELINE_BIND_POINT_GRAPHICS);
+    binder.bindBuffer(0, static_cast<vulkan::Buffer*>(buffer.get()), 0, 0);
+  }
+  cmdQueue->submit(*cmdBuf);
+
+  EXPECT_NE(currentCopy(*buffer), firstCopy);
+}
+
+// gpuAddress() hands the current copy to shaders through buffer device addresses, so it counts as
+// a read too.
+TEST_F(DeviceVulkanTest, GpuAddressMarksRingRead) {
+  if (!iglDev_->hasFeature(DeviceFeatures::BufferRing)) {
+    GTEST_SKIP() << "Device does not report DeviceFeatures::BufferRing";
+  }
+  const auto& ctx = static_cast<const vulkan::Device&>(*iglDev_).getVulkanContext();
+  if (!ctx.features().has_VK_KHR_buffer_device_address) {
+    GTEST_SKIP() << "VK_KHR_buffer_device_address is not available";
+  }
+  Result ret;
+  auto buffer = createRingUniformBuffer(*iglDev_, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  ASSERT_NE(buffer, nullptr);
+  auto cmdQueue = iglDev_->createCommandQueue({}, &ret);
+  ASSERT_TRUE(ret.isOk());
+
+  const VkBuffer firstCopy = currentCopy(*buffer);
+  auto cmdBuf = cmdQueue->createCommandBuffer({}, &ret);
+  ASSERT_TRUE(ret.isOk());
+  EXPECT_NE(buffer->gpuAddress(), 0u);
+  cmdQueue->submit(*cmdBuf);
+
+  EXPECT_NE(currentCopy(*buffer), firstCopy);
+}
+
+namespace {
+bool sBindGroupDebugAbortFired = false;
+} // namespace
+
+// A bind group writes its descriptors once, so it would pin one Ring buffer copy. Creating one with
+// a Ring buffer must fail, and trip the debug check where debug aborts are enabled.
+TEST_F(DeviceVulkanTest, RingBufferInBindGroupIsRejected) {
+  if (!iglDev_->hasFeature(DeviceFeatures::BufferRing)) {
+    GTEST_SKIP() << "Device does not report DeviceFeatures::BufferRing";
+  }
+  Result ret;
+  auto ringBuffer = createRingUniformBuffer(*iglDev_, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  const std::shared_ptr<IBuffer> plainBuffer = iglDev_->createBuffer(
+      BufferDesc{
+          .type = BufferDesc::BufferTypeBits::Uniform,
+          .length = 256,
+          .storage = ResourceStorage::Shared,
+          .hint = BufferDesc::BufferAPIHintBits::UniformBlock,
+      },
+      &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+
+  sBindGroupDebugAbortFired = false;
+  iglSetDebugAbortListener([](const char* /*category*/,
+                              const char* /*reason*/,
+                              const char* /*file*/,
+                              const char* /*func*/,
+                              int /*line*/,
+                              const char* /*format*/,
+                              va_list /*ap*/) { sBindGroupDebugAbortFired = true; });
+
+  BindGroupBufferDesc plainDesc;
+  plainDesc.buffers[0] = plainBuffer;
+  plainDesc.debugName = "plain";
+  {
+    auto plainGroup = iglDev_->createBindGroup(plainDesc, &ret);
+    EXPECT_TRUE(ret.isOk()) << ret.message.c_str();
+    EXPECT_FALSE(plainGroup.empty());
+  }
+  EXPECT_FALSE(sBindGroupDebugAbortFired) << "A bind group without a Ring buffer must be accepted";
+
+  BindGroupBufferDesc ringDesc;
+  ringDesc.buffers[0] = plainBuffer;
+  ringDesc.buffers[1] = ringBuffer;
+  ringDesc.debugName = "ring";
+  {
+    auto ringGroup = iglDev_->createBindGroup(ringDesc, &ret);
+    EXPECT_EQ(ret.code, Result::Code::ArgumentInvalid);
+    EXPECT_TRUE(ringGroup.empty());
+  }
+#if IGL_DEBUG_ABORT_ENABLED
+  EXPECT_TRUE(sBindGroupDebugAbortFired)
+      << "A Ring buffer in a bind group must trip the debug check";
+#endif
+
+  iglSetDebugAbortListener(nullptr);
 }
 #endif
 

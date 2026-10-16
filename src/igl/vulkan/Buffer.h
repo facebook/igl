@@ -43,6 +43,9 @@ class Buffer final : public IBuffer {
     return desc_.type;
   }
 
+  /// @brief Returns the current VkBuffer. For a Ring buffer, this and gpuAddress() mark the current
+  /// copy as read by GPU work (see VulkanContext::markRingBufferRead()), so GPU work must get the
+  /// buffer through one of them.
   [[nodiscard]] VkBuffer getVkBuffer() const;
   [[nodiscard]] VkBufferUsageFlags getBufferUsageFlags() const;
 
@@ -52,6 +55,7 @@ class Buffer final : public IBuffer {
 
   /// @brief Returns the current active VulkanBuffer object managed by this class. Since this class
   /// may be used as a Ring Buffer, the active buffer is the buffer currently being accessed.
+  /// Unlike getVkBuffer(), this does not mark a Ring buffer copy as read.
   [[nodiscard]] const std::unique_ptr<VulkanBuffer>& currentVulkanBuffer() const;
 
  private:

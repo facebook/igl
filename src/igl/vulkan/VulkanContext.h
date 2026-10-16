@@ -191,7 +191,16 @@ class VulkanContext final {
     return syncCurrentIndex;
   }
   void syncAcquireNext() noexcept;
+  /// @brief Called after every submit. Advances the sync index and waits for the submit that last
+  /// used the new index, but only if a Ring buffer copy was read since the previous submit.
   void syncMarkSubmitted(VulkanImmediateCommands::SubmitHandle handle) noexcept;
+
+  /// @brief Records that GPU work being encoded reads the current copy of a Ring buffer. Called by
+  /// Buffer::getVkBuffer() and Buffer::gpuAddress(). The next submit is assumed to be the one that
+  /// contains this work, i.e. one command buffer reading Ring buffers is encoded at a time.
+  void markRingBufferRead() const noexcept {
+    ringBufferReadSinceSubmit = true;
+  }
 
   const VkPhysicalDeviceProperties& getVkPhysicalDeviceProperties() const {
     return vkPhysicalDeviceProperties2_.properties;
@@ -520,6 +529,7 @@ class VulkanContext final {
   // sync resources
   uint32_t syncCurrentIndex = 0u;
   std::vector<SubmitHandle> syncSubmitHandles;
+  mutable bool ringBufferReadSinceSubmit = false;
 
   VkPhysicalDeviceMemoryProperties memoryProperties{};
 

@@ -3068,6 +3068,18 @@ BindGroupBufferHandle VulkanContext::createBindGroup(const BindGroupBufferDesc& 
       continue;
     }
     auto* buf = static_cast<Buffer*>(desc.buffers[loc].get());
+    // The descriptor set is written once, below, with the Ring buffer copy current at creation.
+    // Uploads go to the other copies and reads through the bind group are not tracked, so Ring
+    // buffers must be bound with bindBuffer() instead.
+    if (!IGL_DEBUG_VERIFY(!buf->isRingBuffer(),
+                          "Ring buffers are not supported in bind groups (binding location %u)",
+                          loc)) {
+      IGL_LOG_ERROR_ONCE("[IGL] Ring buffers are not supported in bind groups; use bindBuffer()\n");
+      Result::setResult(outResult,
+                        Result::Code::ArgumentInvalid,
+                        "Ring buffers are not supported in bind groups");
+      return {};
+    }
     const bool isDynamic = (desc.isDynamicBufferMask & (1UL << loc)) != 0;
     const bool isUniform = ((buf->getBufferType() & BufferDesc::BufferTypeBits::Uniform) != 0);
     const VkDescriptorType type =
@@ -3301,6 +3313,14 @@ void VulkanContext::syncAcquireNext() noexcept {
 
 void VulkanContext::syncMarkSubmitted(VulkanImmediateCommands::SubmitHandle handle) noexcept {
   IGL_PROFILER_FUNCTION();
+
+  // The sync index selects the Ring buffer copy that GPU work reads and Buffer::upload() writes.
+  // A copy must not be written while a submit that read it is in flight, so only submits that read
+  // a Ring buffer copy record their handle and move to the next copy; other submits change nothing.
+  if (!ringBufferReadSinceSubmit) {
+    return;
+  }
+  ringBufferReadSinceSubmit = false;
 
   syncSubmitHandles[syncCurrentIndex] = handle;
 
