@@ -119,6 +119,20 @@ TEST_F(RenderSnapshotTests, SlangShowcaseSensitivity) {
   render(session, "SlangShowcaseSensitivity", 60);
 }
 
+TEST_F(RenderSnapshotTests, SlangShowcasePostFilm) {
+  SlangShowcaseSession session(platform_);
+  session.setChapter(SlangShowcaseSession::Chapter::PostEffects);
+  session.setPostChain(SlangShowcaseSession::PostChain::Film);
+  render(session, "SlangShowcasePostFilm", 2);
+}
+
+TEST_F(RenderSnapshotTests, SlangShowcasePostNoir) {
+  SlangShowcaseSession session(platform_);
+  session.setChapter(SlangShowcaseSession::Chapter::PostEffects);
+  session.setPostChain(SlangShowcaseSession::PostChain::Noir);
+  render(session, "SlangShowcasePostNoir", 2);
+}
+
 TEST_F(RenderSnapshotTests, TQMultiRenderPassSession) {
   TQMultiRenderPassSession session(platform_);
   render(session, "TQMultiRenderPassSession");

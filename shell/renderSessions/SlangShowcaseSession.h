@@ -24,16 +24,24 @@ namespace igl::shell {
 // 2. Inverse rendering: the same materials, differentiated with bwd_diff, recover every sphere's
 //    parameters from images rendered with hidden ones; fwd_diff shows how the fit responds to
 //    roughness.
+// 3. Post effects composed at compile time: a variadic generic chains effects, and each chain of
+//    effects compiles to its own pipeline.
 class SlangShowcaseSession : public RenderSession {
  public:
   enum class Chapter : uint8_t {
     Materials,
     InverseRendering,
+    PostEffects,
   };
   enum class ShadingMode : uint8_t {
     Specialized,
     Dynamic,
     Half,
+  };
+  enum class PostChain : uint8_t {
+    Neutral,
+    Film,
+    Noir,
   };
 
   explicit SlangShowcaseSession(std::shared_ptr<Platform> platform) :
@@ -53,14 +61,21 @@ class SlangShowcaseSession : public RenderSession {
   void setShowSensitivity(bool show) noexcept {
     showSensitivity_ = show;
   }
+  // Fixes the post chain of chapter 3; otherwise it changes every few seconds.
+  void setPostChain(PostChain chain) noexcept {
+    fixedPostChain_ = chain;
+    hasFixedPostChain_ = true;
+  }
 
  private:
   bool createPipelines(TextureFormat format);
   void createInverseResources(IDevice& device);
   void restartFit();
   void encodeInverseStep(ICommandBuffer& commandBuffer);
-  void drawOverlay(ShadingMode mode);
+  void bindSphereResources(IRenderCommandEncoder& encoder) const;
+  void drawOverlay(ShadingMode mode, PostChain chain);
   [[nodiscard]] ShadingMode currentMode() const;
+  [[nodiscard]] PostChain currentPostChain() const;
 
   std::shared_ptr<IBuffer> vertexBuffer_;
   std::shared_ptr<IBuffer> indexBuffer_;
@@ -73,6 +88,12 @@ class SlangShowcaseSession : public RenderSession {
   std::array<std::shared_ptr<IRenderPipelineState>, 4> halfPipelines_;
   std::shared_ptr<IRenderPipelineState> inversePipeline_;
   std::shared_ptr<IRenderPipelineState> sensitivityPipeline_;
+  std::shared_ptr<IRenderPipelineState> radiancePipeline_;
+  std::array<std::shared_ptr<IRenderPipelineState>, 3> postPipelines_;
+  std::shared_ptr<ITexture> radianceTexture_;
+  std::shared_ptr<IFramebuffer> radianceFramebuffer_;
+  std::shared_ptr<ISamplerState> postSampler_;
+  std::shared_ptr<IBuffer> postUniforms_;
   std::shared_ptr<IBuffer> fitted_;
   std::shared_ptr<IBuffer> adam_;
   std::shared_ptr<IBuffer> pixelGradients_;
@@ -88,6 +109,8 @@ class SlangShowcaseSession : public RenderSession {
   Chapter chapter_ = Chapter::Materials;
   ShadingMode fixedMode_ = ShadingMode::Specialized;
   bool hasFixedMode_ = false;
+  PostChain fixedPostChain_ = PostChain::Neutral;
+  bool hasFixedPostChain_ = false;
   bool showSensitivity_ = false;
   bool supported_ = false;
 };

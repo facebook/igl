@@ -8,7 +8,8 @@
 // Shades a grid of spheres. Chapter 1 shades them three ways from one generic function: a pipeline
 // per material type (static specialization), one pipeline for all types (dynamic dispatch on a type
 // id), and a pipeline per type with every lobe evaluated in half precision. Chapter 2 splits each
-// sphere into the target and the fit, or shows how its color changes with roughness.
+// sphere into the target and the fit, or shows how its color changes with roughness. Chapter 3
+// writes linear radiance for its post chain.
 #include "igl_abi.slangh"
 import ShowcaseMaterials;
 
@@ -83,6 +84,14 @@ float4 fragmentDynamic(ShadedVarying input) : SV_Target0 {
   const SphereInstance sphere = spheres[input.instance];
   IMaterial material = createDynamicObject<IMaterial>(sphere.type.x, sphere.material);
   return shadePixel(material, input);
+}
+
+// Linear radiance, for chapter 3 to tone-map in its post chain.
+[shader("fragment")]
+float4 fragmentRadiance(ShadedVarying input) : SV_Target0 {
+  const SphereInstance sphere = spheres[input.instance];
+  IMaterial material = createDynamicObject<IMaterial>(sphere.type.x, sphere.material);
+  return float4(material.shade(surfaceSample(input), input.world, scene.lighting), 1.0);
 }
 
 [shader("fragment")]

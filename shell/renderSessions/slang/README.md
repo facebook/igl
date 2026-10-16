@@ -27,12 +27,15 @@ A grid of physically based spheres, one chapter at a time:
    material, with one pipeline dispatching on a type id, or in half precision.
 2. Inverse rendering: recovers every sphere's parameters from images rendered with hidden ones,
    back-propagating through the same materials, and shows how the fit responds to roughness.
+3. Post effects: three chains of effects (neutral, film, noir) composed at compile time, each its
+   own pipeline.
 
 | Program | Stage | What it does |
 |---|---|---|
 | `ShowcaseMaterials` | module | Material models, generic over the float type and differentiable |
-| `ShowcaseMaterialsPass` | vertex, fragment | Draws the spheres in every mode of both chapters |
+| `ShowcaseMaterialsPass` | vertex, fragment | Draws the spheres in every mode, and their linear radiance for chapter 3 |
 | `ShowcaseInverse` | compute | Per-pixel gradients against the hidden parameters, then Adam per sphere |
+| `ShowcasePost` | vertex, fragment | Post chains over the linear radiance of chapter 3 |
 
 ## Slang features used
 
@@ -42,12 +45,13 @@ A grid of physically based spheres, one chapter at a time:
 | Interfaces and generics, specialized at compile time | `ISplatKernel`, `ILoss`, `IMaterialModel` |
 | Generics over the float type (`__BuiltinFloatingPointType`) | `ShowcaseMaterials` lobes in `float` and `half` |
 | Static interface requirements | `IMaterialModel` |
-| Dynamic dispatch (`createDynamicObject`, `[anyValueSize]`) | `IMaterial` in chapter 1 |
+| Dynamic dispatch (`createDynamicObject`, `[anyValueSize]`) | `IMaterial` in chapters 1 and 3 |
 | Reverse-mode autodiff (`bwd_diff`, `DifferentialPair`) | `SplatForward`, `SplatBackward`, `ShowcaseInverse` |
 | Forward-mode autodiff (`fwd_diff`) | `SplatRender`, `ShowcaseMaterialsPass` |
 | `no_diff` and a custom `[BackwardDerivative]` | `SplatCommon` |
 | `IDifferentiable` structs | `Splat`, `MaterialData` |
 | `Atomic<T>` | `SplatBin` |
 | `groupshared` with fixed-order reductions | `SplatBackward`, `ShowcaseInverse` |
+| Variadic generics (`each`, `expand`) | `PostChain` in `ShowcasePost` |
 | `[ForceUnroll]`, `nointerpolation` | `ShowcaseMaterials`, `ShowcaseMaterialsPass` |
-| Several entry points per program | `SplatRender`, `ShowcaseMaterialsPass`, `ShowcaseInverse` |
+| Several entry points per program | `SplatRender`, `ShowcaseMaterialsPass`, `ShowcaseInverse`, `ShowcasePost` |

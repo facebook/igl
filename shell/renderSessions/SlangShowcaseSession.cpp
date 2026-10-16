@@ -14,9 +14,11 @@
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/glm.hpp>
+#include <string_view>
 #include <vector>
 #include <shell/renderSessions/slang/generated/ShowcaseInverseSlang.h>
 #include <shell/renderSessions/slang/generated/ShowcaseMaterialsPassSlang.h>
+#include <shell/renderSessions/slang/generated/ShowcasePostSlang.h>
 #include <shell/shared/platform/DisplayContext.h>
 #include <shell/shared/renderSession/ShellParams.h>
 #include <igl/Timer.h>
@@ -43,6 +45,11 @@ constexpr std::array<const char*, kMaterialTypes> kHalfEntryPoints = {"fragmentM
                                                                       "fragmentClearcoatHalf",
                                                                       "fragmentSheenHalf",
                                                                       "fragmentAnisotropicHalf"};
+constexpr std::array<const char*, 3> kPostEntryPoints = {"postNeutral", "postFilm", "postNoir"};
+constexpr std::array<const char*, 3> kPostChainNames = {
+    "Neutral: exposure, ACES",
+    "Film: chromatic aberration, exposure, ACES, vignette, grain",
+    "Noir: exposure, ACES, monochrome, posterize, tint, vignette"};
 
 struct Vertex {
   std::array<float, 3> position;
@@ -85,6 +92,11 @@ struct InverseUniforms {
   glm::mat4 inverseViewProjection;
   glm::vec4 camera;
   Lighting lighting;
+};
+
+// Mirrors ShowcasePost.slang.
+struct PostUniforms {
+  glm::vec4 params;
 };
 
 glm::mat4 viewProjection(float aspect) {
@@ -252,6 +264,13 @@ void SlangShowcaseSession::initialize() noexcept {
   vertexInput_ = device.createVertexInputState(inputDesc, nullptr);
 
   createInverseResources(device);
+  postSampler_ = device.createSamplerState(SamplerStateDesc::newLinear(), nullptr);
+  postUniforms_ =
+      device.createBuffer(BufferDesc{.type = BufferDesc::BufferTypeBits::Uniform,
+                                     .length = sizeof(PostUniforms),
+                                     .storage = ResourceStorage::Shared,
+                                     .hint = BufferDesc::BufferAPIHintBits::UniformBlock},
+                          nullptr);
 
   Result ret;
   timer_ = device.createTimer(&ret);
@@ -333,13 +352,18 @@ void SlangShowcaseSession::encodeInverseStep(ICommandBuffer& commandBuffer) {
 
 bool SlangShowcaseSession::createPipelines(TextureFormat format) {
   IDevice& device = getPlatform().getDevice();
-  const auto create = [&](const char* fragmentEntryPoint) -> std::shared_ptr<IRenderPipelineState> {
+  const auto create = [&](const iglu::slang::Program& program,
+                          const char* vertexEntryPoint,
+                          const char* fragmentEntryPoint,
+                          TextureFormat colorFormat,
+                          const std::shared_ptr<IVertexInputState>& vertexInput)
+      -> std::shared_ptr<IRenderPipelineState> {
     Result ret;
     RenderPipelineDesc desc{
-        .vertexInputState = vertexInput_,
+        .vertexInputState = vertexInput,
         .shaderStages = iglu::slang::createRenderStages(
-            device, slang::kShowcaseMaterialsPassProgram, "sphereVertex", fragmentEntryPoint, &ret),
-        .targetDesc = {.colorAttachments = {{.textureFormat = format}},
+            device, program, vertexEntryPoint, fragmentEntryPoint, &ret),
+        .targetDesc = {.colorAttachments = {{.textureFormat = colorFormat}},
                        .depthAttachmentFormat = TextureFormat::Z_UNorm32},
         .cullMode = CullMode::Disabled,
     };
@@ -349,15 +373,25 @@ bool SlangShowcaseSession::createPipelines(TextureFormat format) {
     }
     return device.createRenderPipeline(desc, nullptr);
   };
-  dynamicPipeline_ = create("fragmentDynamic");
+  const iglu::slang::Program& pass = slang::kShowcaseMaterialsPassProgram;
+  dynamicPipeline_ = create(pass, "sphereVertex", "fragmentDynamic", format, vertexInput_);
   for (uint32_t type = 0; type < kMaterialTypes; ++type) {
-    specializedPipelines_[type] = create(kSpecializedEntryPoints[type]);
-    halfPipelines_[type] = create(kHalfEntryPoints[type]);
+    specializedPipelines_[type] =
+        create(pass, "sphereVertex", kSpecializedEntryPoints[type], format, vertexInput_);
+    halfPipelines_[type] =
+        create(pass, "sphereVertex", kHalfEntryPoints[type], format, vertexInput_);
   }
-  inversePipeline_ = create("fragmentInverse");
-  sensitivityPipeline_ = create("fragmentSensitivity");
+  inversePipeline_ = create(pass, "sphereVertex", "fragmentInverse", format, vertexInput_);
+  sensitivityPipeline_ = create(pass, "sphereVertex", "fragmentSensitivity", format, vertexInput_);
+  radiancePipeline_ =
+      create(pass, "sphereVertex", "fragmentRadiance", TextureFormat::RGBA_F16, vertexInput_);
+  for (size_t chain = 0; chain < kPostEntryPoints.size(); ++chain) {
+    postPipelines_[chain] =
+        create(slang::kShowcasePostProgram, "postVertex", kPostEntryPoints[chain], format, nullptr);
+  }
   return dynamicPipeline_ != nullptr && inversePipeline_ != nullptr &&
-         sensitivityPipeline_ != nullptr;
+         sensitivityPipeline_ != nullptr && radiancePipeline_ != nullptr &&
+         postPipelines_[0] != nullptr;
 }
 
 SlangShowcaseSession::ShadingMode SlangShowcaseSession::currentMode() const {
@@ -369,26 +403,49 @@ SlangShowcaseSession::ShadingMode SlangShowcaseSession::currentMode() const {
   return mode == ShadingMode::Half && !halfPipelines_[0] ? ShadingMode::Specialized : mode;
 }
 
-void SlangShowcaseSession::drawOverlay(ShadingMode mode) {
-  const bool inverse = chapter_ == Chapter::InverseRendering;
+SlangShowcaseSession::PostChain SlangShowcaseSession::currentPostChain() const {
+  return hasFixedPostChain_ ? fixedPostChain_
+                            : static_cast<PostChain>((frame_ / kFramesPerMode) % 3);
+}
+
+void SlangShowcaseSession::bindSphereResources(IRenderCommandEncoder& encoder) const {
+  encoder.bindDepthStencilState(depthState_);
+  encoder.bindVertexBuffer(0, *vertexBuffer_);
+  encoder.bindIndexBuffer(*indexBuffer_, IndexFormat::UInt16);
+  encoder.bindBuffer(1, sceneUniforms_.get());
+  encoder.bindBuffer(2, spheres_.get());
+  encoder.bindBuffer(3, fitted_.get());
+}
+
+void SlangShowcaseSession::drawOverlay(ShadingMode mode, PostChain chain) {
+  constexpr std::array<const char*, 3> kTitles = {"Slang showcase 1/5: materials",
+                                                  "Slang showcase 2/5: inverse rendering",
+                                                  "Slang showcase 3/5: post effects"};
   ImGui::SetNextWindowPos(ImVec2(10, 10));
   ImGui::Begin("##SlangShowcase",
                nullptr,
                ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |
                    ImGuiWindowFlags_NoBackground);
-  ImGui::TextUnformatted(inverse ? "Slang showcase 2/5: inverse rendering"
-                                 : "Slang showcase 1/5: materials");
+  ImGui::TextUnformatted(kTitles[static_cast<size_t>(chapter_)]);
   if (!supported_) {
     ImGui::Text("Needs Metal or Vulkan");
     ImGui::End();
     return;
   }
-  if (!inverse) {
+  switch (chapter_) {
+  case Chapter::Materials:
     ImGui::Text("Shading: %s", modeName(mode));
-  } else if (showSensitivity_) {
-    ImGui::Text("d color / d roughness of the fit after %u steps", steps_);
-  } else {
-    ImGui::Text("Left halves: hidden parameters. Right: fit, step %u", steps_);
+    break;
+  case Chapter::InverseRendering:
+    if (showSensitivity_) {
+      ImGui::Text("d color / d roughness of the fit after %u steps", steps_);
+    } else {
+      ImGui::Text("Left halves: hidden parameters. Right: fit, step %u", steps_);
+    }
+    break;
+  case Chapter::PostEffects:
+    ImGui::Text("%s", kPostChainNames[static_cast<size_t>(chain)]);
+    break;
   }
   if (timer_ != nullptr) {
     ImGui::Text("GPU frame: %.3f ms", gpuMilliseconds_);
@@ -405,14 +462,12 @@ void SlangShowcaseSession::drawOverlay(ShadingMode mode) {
   ImGui::RadioButton("Materials", &chapter, 0);
   ImGui::SameLine();
   ImGui::RadioButton("Inverse rendering", &chapter, 1);
+  ImGui::SameLine();
+  ImGui::RadioButton("Post effects", &chapter, 2);
+  const auto previous = chapter_;
   chapter_ = static_cast<Chapter>(chapter);
-  if (inverse) {
-    ImGui::Checkbox("d/d roughness", &showSensitivity_);
-    ImGui::SameLine();
-    if (ImGui::Button("Restart")) {
-      restartFit();
-    }
-  } else {
+  switch (previous) {
+  case Chapter::Materials: {
     const std::array<const char*, 4> modes = {"Cycle", "Specialized", "Dynamic", "Half"};
     int selected = hasFixedMode_ ? static_cast<int>(fixedMode_) + 1 : 0;
     if (ImGui::Combo("Shading", &selected, modes.data(), static_cast<int>(modes.size()))) {
@@ -420,6 +475,25 @@ void SlangShowcaseSession::drawOverlay(ShadingMode mode) {
       fixedMode_ = hasFixedMode_ ? static_cast<ShadingMode>(selected - 1)
                                  : ShadingMode::Specialized;
     }
+    break;
+  }
+  case Chapter::InverseRendering:
+    ImGui::Checkbox("d/d roughness", &showSensitivity_);
+    ImGui::SameLine();
+    if (ImGui::Button("Restart")) {
+      restartFit();
+    }
+    break;
+  case Chapter::PostEffects: {
+    const std::array<const char*, 4> chains = {"Cycle", "Neutral", "Film", "Noir"};
+    int selected = hasFixedPostChain_ ? static_cast<int>(fixedPostChain_) + 1 : 0;
+    if (ImGui::Combo("Chain", &selected, chains.data(), static_cast<int>(chains.size()))) {
+      hasFixedPostChain_ = selected > 0;
+      fixedPostChain_ = hasFixedPostChain_ ? static_cast<PostChain>(selected - 1)
+                                           : PostChain::Neutral;
+    }
+    break;
+  }
   }
   ImGui::End();
 }
@@ -441,6 +515,7 @@ void SlangShowcaseSession::update(SurfaceTextures surfaceTextures) noexcept {
         FramebufferDesc{.colorAttachments = {{.texture = surfaceTextures.color}},
                         .depthAttachment = {.texture = depth}},
         nullptr);
+    radianceFramebuffer_ = nullptr;
   } else {
     framebuffer_->updateDrawable(surfaceTextures.color);
   }
@@ -449,21 +524,39 @@ void SlangShowcaseSession::update(SurfaceTextures surfaceTextures) noexcept {
     supported_ = false;
   }
 
-  const bool inverse = chapter_ == Chapter::InverseRendering;
   const ShadingMode mode = currentMode();
+  const PostChain chain = currentPostChain();
+  const bool post = supported_ && chapter_ == Chapter::PostEffects;
   if (supported_) {
+    const bool encode = !surfaceTextures.color->getProperties().isSRGB();
     const SceneUniforms scene{
         .viewProjection = viewProjection(size.width / size.height),
         .camera = glm::vec4(0.0f, 0.0f, -kEyeDistance, 1.0f),
         .lighting = lighting(static_cast<float>(frame_) / 60.0f),
-        .display = glm::vec4(surfaceTextures.color->getProperties().isSRGB() ? 0.0f : 1.0f),
+        .display = glm::vec4(encode ? 1.0f : 0.0f),
     };
     sceneUniforms_->upload(&scene, BufferRange(sizeof(scene)));
+    const PostUniforms postParams{
+        .params = glm::vec4(static_cast<float>(frame_) / 60.0f, encode ? 1.0f : 0.0f, 0.0f, 0.0f)};
+    postUniforms_->upload(&postParams, BufferRange(sizeof(postParams)));
+  }
+  if (post && !radianceFramebuffer_) {
+    radianceTexture_ =
+        device.createTexture(TextureDesc::new2D(TextureFormat::RGBA_F16,
+                                                static_cast<size_t>(size.width),
+                                                static_cast<size_t>(size.height),
+                                                TextureDesc::TextureUsageBits::Attachment |
+                                                    TextureDesc::TextureUsageBits::Sampled),
+                             nullptr);
+    radianceFramebuffer_ = device.createFramebuffer(
+        FramebufferDesc{.colorAttachments = {{.texture = radianceTexture_}},
+                        .depthAttachment = {.texture = framebuffer_->getDepthAttachment()}},
+        nullptr);
   }
 
   auto commandBuffer =
       commandQueue_->createCommandBuffer(CommandBufferDesc{.timer = timer_}, nullptr);
-  if (supported_ && inverse && gradientsPipeline_ && adamPipeline_) {
+  if (supported_ && chapter_ == Chapter::InverseRendering && gradientsPipeline_ && adamPipeline_) {
     for (uint32_t i = 0; i < kStepsPerFrame; ++i) {
       encodeInverseStep(*commandBuffer);
     }
@@ -474,16 +567,30 @@ void SlangShowcaseSession::update(SurfaceTextures surfaceTextures) noexcept {
                             .clearColor = {0.02f, 0.02f, 0.03f, 1.0f}}},
       .depthAttachment = {.loadAction = LoadAction::Clear, .clearDepth = 1.0f},
   };
-  auto encoder = commandBuffer->createRenderCommandEncoder(
-      renderPass, framebuffer_, {.buffers = {fitted_.get()}});
-  if (supported_) {
-    encoder->bindDepthStencilState(depthState_);
-    encoder->bindVertexBuffer(0, *vertexBuffer_);
-    encoder->bindIndexBuffer(*indexBuffer_, IndexFormat::UInt16);
-    encoder->bindBuffer(1, sceneUniforms_.get());
-    encoder->bindBuffer(2, spheres_.get());
-    encoder->bindBuffer(3, fitted_.get());
-    if (inverse) {
+  if (post) {
+    auto radianceEncoder =
+        commandBuffer->createRenderCommandEncoder(renderPass, radianceFramebuffer_);
+    bindSphereResources(*radianceEncoder);
+    radianceEncoder->bindRenderPipelineState(radiancePipeline_);
+    radianceEncoder->drawIndexed(indexCount_, kSpheres);
+    radianceEncoder->endEncoding();
+  }
+
+  Dependencies dependencies{.buffers = {fitted_.get()}};
+  if (post) {
+    dependencies.textures[0] = radianceTexture_.get();
+  }
+  auto encoder = commandBuffer->createRenderCommandEncoder(renderPass, framebuffer_, dependencies);
+  if (post) {
+    const auto& pipeline = postPipelines_[static_cast<size_t>(chain)];
+    encoder->bindRenderPipelineState(pipeline ? pipeline : postPipelines_[0]);
+    encoder->bindTexture(0, BindTarget::kFragment, radianceTexture_.get());
+    encoder->bindSamplerState(0, BindTarget::kFragment, postSampler_.get());
+    encoder->bindBuffer(1, postUniforms_.get());
+    encoder->draw(3);
+  } else if (supported_) {
+    bindSphereResources(*encoder);
+    if (chapter_ == Chapter::InverseRendering) {
       encoder->bindRenderPipelineState(showSensitivity_ ? sensitivityPipeline_ : inversePipeline_);
       encoder->drawIndexed(indexCount_, kSpheres);
     } else if (mode == ShadingMode::Dynamic) {
@@ -502,7 +609,7 @@ void SlangShowcaseSession::update(SurfaceTextures surfaceTextures) noexcept {
       FramebufferDesc{.colorAttachments = {{.texture = surfaceTextures.color}},
                       .depthAttachment = {.texture = framebuffer_->getDepthAttachment()}},
       getPlatform().getDisplayContext().pixelsPerPoint);
-  drawOverlay(mode);
+  drawOverlay(mode, chain);
   imgui_->endFrame(device, *encoder);
   encoder->endEncoding();
 
