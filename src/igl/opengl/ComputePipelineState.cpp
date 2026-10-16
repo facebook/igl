@@ -13,7 +13,9 @@
 #include <igl/opengl/Texture.h>
 
 namespace igl::opengl {
-ComputePipelineState::ComputePipelineState(IContext& context) : WithContext(context) {}
+ComputePipelineState::ComputePipelineState(IContext& context) : WithContext(context) {
+  samplerUnitMap_.fill(-1);
+}
 ComputePipelineState::~ComputePipelineState() = default;
 
 Result ComputePipelineState::create(const ComputePipelineDesc& desc) {
@@ -50,6 +52,25 @@ Result ComputePipelineState::create(const ComputePipelineDesc& desc) {
       }
     } else {
       IGL_LOG_ERROR("Image uniform (%s) not found in shader.\n", imageName.c_str());
+    }
+  }
+
+  for (const auto& unitSampler : desc.samplersMap) {
+    const auto textureUnit = unitSampler.first;
+    const auto& samplerName = unitSampler.second;
+
+    IGL_DEBUG_ASSERT(!samplerName.toString().empty());
+    const int loc = reflection_->getIndexByName(samplerName);
+    if (loc >= 0) {
+      GLint unit = 0;
+      getContext().getUniformiv(shaderStages_->getProgramID(), loc, &unit);
+      if (IGL_DEBUG_VERIFY(unit >= 0)) {
+        samplerUnitMap_[textureUnit] = unit;
+      } else {
+        IGL_LOG_ERROR("Sampler uniform unit (%s) not found in shader.\n", samplerName.c_str());
+      }
+    } else {
+      IGL_LOG_ERROR("Sampler uniform (%s) not found in shader.\n", samplerName.c_str());
     }
   }
 
