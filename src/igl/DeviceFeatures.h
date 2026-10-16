@@ -28,6 +28,7 @@ namespace igl {
  * Compute                    Supports compute
  * CopyBuffer                 Supports ICommandBuffer::copyBuffer()
  * FillBuffer                 Supports ICommandBuffer::fillBuffer()
+ * UpdateBuffer               Supports ICommandBuffer::updateBuffer()
  * DepthCompare               Supports setting depth compare function
  * DepthShaderRead            Supports reading depth texture from a shader
  * DrawFirstIndexFirstVertex  Supports firstIndex/firstVertex parameters in IRenderCommandEncoder::drawIndexed()
@@ -145,6 +146,7 @@ enum class DeviceFeatures {
   Subpasses,
   MemorylessAttachments,
   MultiviewSubpasses,
+  UpdateBuffer,
 };
 // clang-format on
 

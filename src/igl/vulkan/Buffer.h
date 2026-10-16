@@ -46,6 +46,10 @@ class Buffer final : public IBuffer {
   [[nodiscard]] VkBuffer getVkBuffer() const;
   [[nodiscard]] VkBufferUsageFlags getBufferUsageFlags() const;
 
+  [[nodiscard]] bool isRingBuffer() const noexcept {
+    return isRingBuffer_;
+  }
+
   /// @brief Returns the current active VulkanBuffer object managed by this class. Since this class
   /// may be used as a Ring Buffer, the active buffer is the buffer currently being accessed.
   [[nodiscard]] const std::unique_ptr<VulkanBuffer>& currentVulkanBuffer() const;

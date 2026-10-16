@@ -207,6 +207,7 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::DrawInstanced:
     return gpuFamily_ >= 3;
   case DeviceFeatures::CopyBuffer:
+  case DeviceFeatures::UpdateBuffer:
     return false; // not implemented (yet)
   case DeviceFeatures::Indices8Bit:
     return false;

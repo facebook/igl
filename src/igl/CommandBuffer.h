@@ -161,6 +161,21 @@ class ICommandBuffer {
   }
 
   /**
+   * @brief Write `range.size` bytes from `data` into a buffer at `range.offset`, in command order.
+   *
+   * `data` is copied when the command is recorded and can be reused right after the call. Commands
+   * recorded earlier in this command buffer, and command buffers submitted earlier, read the old
+   * contents; commands recorded later, and command buffers submitted later, read the new contents.
+   * Must be called while no encoder of this command buffer is open. The offset and size must be
+   * multiples of four. Requires DeviceFeatures::UpdateBuffer.
+   */
+  virtual void updateBuffer(IBuffer& /*buffer*/,
+                            const BufferRange& /*range*/,
+                            const void* IGL_NONNULL /*data*/) {
+    IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+  }
+
+  /**
    * @brief Copy texture data into a buffer.
    */
   virtual void copyTextureToBuffer(ITexture& src,

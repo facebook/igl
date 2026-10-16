@@ -160,6 +160,7 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::TextureBindless:
   case DeviceFeatures::TextureExternalImage:
   case DeviceFeatures::TextureFormatRGB:
+  case DeviceFeatures::UpdateBuffer:
     return false;
   case DeviceFeatures::MemorylessAttachments:
 #if IGL_WEBGPU_HEADER_V2

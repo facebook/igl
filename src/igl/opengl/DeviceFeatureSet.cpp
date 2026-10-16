@@ -685,6 +685,7 @@ bool DeviceFeatureSet::isFeatureSupported(DeviceFeatures feature) const {
   switch (feature) {
   case DeviceFeatures::CopyBuffer:
   case DeviceFeatures::FillBuffer:
+  case DeviceFeatures::UpdateBuffer:
   case DeviceFeatures::MultiSampleResolve:
   case DeviceFeatures::MeshShaders:
   case DeviceFeatures::TextureViews:

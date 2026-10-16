@@ -9,11 +9,13 @@
 
 #include "../util/TestDevice.h"
 
+#include <vector>
 #include <igl/ComputeCommandEncoder.h>
 #include <igl/Framebuffer.h>
 #include <igl/RenderCommandEncoder.h>
 #include <igl/RenderPass.h>
 #include <igl/Texture.h>
+#include <igl/vulkan/Buffer.h>
 #include <igl/vulkan/CommandBuffer.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/VulkanContext.h>
@@ -131,6 +133,150 @@ TEST_F(CommandBufferVulkanTest, FillBuffer) {
   EXPECT_EQ(mapped[2], 0x7F7F7F7Fu);
   EXPECT_EQ(mapped[3], 0xFFFFFFFFu);
   buffer->unmap();
+}
+
+namespace {
+std::shared_ptr<IBuffer> createStorageBuffer(IDevice& device, size_t length, uint32_t fill) {
+  const std::vector<uint32_t> initialData(length / sizeof(uint32_t), fill);
+  const BufferDesc desc{
+      .type = BufferDesc::BufferTypeBits::Storage,
+      .data = initialData.data(),
+      .length = length,
+      .storage = ResourceStorage::Shared,
+  };
+  Result ret;
+  auto buffer = device.createBuffer(desc, &ret);
+  EXPECT_TRUE(ret.isOk()) << ret.message.c_str();
+  return buffer;
+}
+
+std::vector<uint32_t> readBuffer(IBuffer& buffer) {
+  Result ret;
+  const size_t length = buffer.getSizeInBytes();
+  const auto* mapped = static_cast<const uint32_t*>(buffer.map(BufferRange(length, 0), &ret));
+  EXPECT_TRUE(ret.isOk()) << ret.message.c_str();
+  if (mapped == nullptr) {
+    return {};
+  }
+  std::vector<uint32_t> contents(mapped, mapped + length / sizeof(uint32_t));
+  buffer.unmap();
+  return contents;
+}
+} // namespace
+
+TEST_F(CommandBufferVulkanTest, UpdateBuffer) {
+  ASSERT_TRUE(iglDev_->hasFeature(DeviceFeatures::UpdateBuffer));
+  auto buffer = createStorageBuffer(*iglDev_, 4 * sizeof(uint32_t), 0xFFFFFFFFu);
+  ASSERT_NE(buffer, nullptr);
+
+  Result ret;
+  auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  const uint32_t data[] = {0x11111111u, 0x22222222u};
+  cmdBuf->updateBuffer(*buffer, BufferRange(sizeof(data), sizeof(uint32_t)), data);
+  cmdQueue_->submit(*cmdBuf);
+  cmdBuf->waitUntilCompleted();
+
+  EXPECT_EQ(readBuffer(*buffer),
+            (std::vector<uint32_t>{0xFFFFFFFFu, 0x11111111u, 0x22222222u, 0xFFFFFFFFu}));
+}
+
+// vkCmdUpdateBuffer() takes at most 64 KB per call, so larger ranges are split.
+TEST_F(CommandBufferVulkanTest, UpdateBufferLargerThan64KB) {
+  constexpr size_t kLength = 2 * 65536 + 16;
+  auto buffer = createStorageBuffer(*iglDev_, kLength, 0u);
+  ASSERT_NE(buffer, nullptr);
+
+  std::vector<uint32_t> data(kLength / sizeof(uint32_t));
+  for (size_t i = 0; i < data.size(); ++i) {
+    data[i] = static_cast<uint32_t>(i) * 0x01000193u;
+  }
+
+  Result ret;
+  auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  cmdBuf->updateBuffer(*buffer, BufferRange(kLength, 0), data.data());
+  cmdQueue_->submit(*cmdBuf);
+  cmdBuf->waitUntilCompleted();
+
+  EXPECT_EQ(readBuffer(*buffer), data);
+}
+
+// Commands recorded before an update read the old contents; commands recorded after read the new.
+TEST_F(CommandBufferVulkanTest, UpdateBufferIsOrderedWithOtherCommands) {
+  constexpr size_t kLength = 4 * sizeof(uint32_t);
+  auto buffer = createStorageBuffer(*iglDev_, kLength, 0u);
+  auto copyBefore = createStorageBuffer(*iglDev_, kLength, 0u);
+  auto copyAfter = createStorageBuffer(*iglDev_, kLength, 0u);
+  ASSERT_NE(buffer, nullptr);
+  ASSERT_NE(copyBefore, nullptr);
+  ASSERT_NE(copyAfter, nullptr);
+
+  const std::vector<uint32_t> first(4, 0xAAAAAAAAu);
+  const std::vector<uint32_t> second(4, 0x55555555u);
+
+  Result ret;
+  auto cmdBuf = cmdQueue_->createCommandBuffer({}, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  cmdBuf->updateBuffer(*buffer, BufferRange(kLength, 0), first.data());
+  cmdBuf->copyBuffer(*buffer, *copyBefore, 0, 0, kLength);
+  cmdBuf->updateBuffer(*buffer, BufferRange(kLength, 0), second.data());
+  cmdBuf->copyBuffer(*buffer, *copyAfter, 0, 0, kLength);
+  cmdQueue_->submit(*cmdBuf);
+  cmdBuf->waitUntilCompleted();
+
+  EXPECT_EQ(readBuffer(*copyBefore), first);
+  EXPECT_EQ(readBuffer(*copyAfter), second);
+}
+
+// A command buffer submitted while an earlier one is still pending writes the same buffer without
+// changing what the earlier one reads.
+TEST_F(CommandBufferVulkanTest, UpdateBufferAcrossCommandBuffersInFlight) {
+  constexpr size_t kLength = 4 * sizeof(uint32_t);
+  auto buffer = createStorageBuffer(*iglDev_, kLength, 0u);
+  auto copy1 = createStorageBuffer(*iglDev_, kLength, 0u);
+  auto copy2 = createStorageBuffer(*iglDev_, kLength, 0u);
+  ASSERT_NE(buffer, nullptr);
+  ASSERT_NE(copy1, nullptr);
+  ASSERT_NE(copy2, nullptr);
+
+  const std::vector<uint32_t> first(4, 0x01020304u);
+  const std::vector<uint32_t> second(4, 0x0A0B0C0Du);
+
+  Result ret;
+  auto cmdBuf1 = cmdQueue_->createCommandBuffer({}, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  cmdBuf1->updateBuffer(*buffer, BufferRange(kLength, 0), first.data());
+  cmdBuf1->copyBuffer(*buffer, *copy1, 0, 0, kLength);
+  cmdQueue_->submit(*cmdBuf1);
+
+  auto cmdBuf2 = cmdQueue_->createCommandBuffer({}, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+  cmdBuf2->updateBuffer(*buffer, BufferRange(kLength, 0), second.data());
+  cmdBuf2->copyBuffer(*buffer, *copy2, 0, 0, kLength);
+  cmdQueue_->submit(*cmdBuf2);
+
+  cmdBuf1->waitUntilCompleted();
+  cmdBuf2->waitUntilCompleted();
+
+  EXPECT_EQ(readBuffer(*copy1), first);
+  EXPECT_EQ(readBuffer(*copy2), second);
+}
+
+// Uniform buffers get TRANSFER_DST so updateBuffer() can write them whatever their storage.
+TEST_F(CommandBufferVulkanTest, UniformBuffersAcceptUpdateBuffer) {
+  for (const ResourceStorage storage : {ResourceStorage::Shared, ResourceStorage::Private}) {
+    const BufferDesc desc{
+        .type = BufferDesc::BufferTypeBits::Uniform,
+        .length = 64,
+        .storage = storage,
+    };
+    Result ret;
+    auto buffer = iglDev_->createBuffer(desc, &ret);
+    ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+    const auto& vulkanBuffer = static_cast<vulkan::Buffer&>(*buffer);
+    EXPECT_NE(vulkanBuffer.getBufferUsageFlags() & VK_BUFFER_USAGE_TRANSFER_DST_BIT, 0u);
+  }
 }
 
 TEST_F(CommandBufferVulkanTest, WaitUntilCompleted) {

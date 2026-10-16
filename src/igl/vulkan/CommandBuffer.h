@@ -60,6 +60,9 @@ class CommandBuffer final : public ICommandBuffer,
                   uint64_t dstOffset,
                   uint64_t size) override;
   void fillBuffer(IBuffer& buffer, const BufferRange& range, uint8_t value) override;
+  /// @brief Records the write with vkCmdUpdateBuffer() (in chunks of up to 64 KB), between
+  /// barriers against all earlier and later commands. The buffer must not be a Ring buffer.
+  void updateBuffer(IBuffer& buffer, const BufferRange& range, const void* data) override;
   void copyTextureToBuffer(ITexture& src,
                            IBuffer& dst,
                            uint64_t dstOffset,

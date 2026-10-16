@@ -7,6 +7,7 @@
 
 #include <igl/vulkan/CommandBuffer.h>
 
+#include <algorithm>
 #include <igl/Framebuffer.h>
 #include <igl/RenderPass.h>
 #include <igl/vulkan/Buffer.h>
@@ -234,6 +235,48 @@ void CommandBuffer::fillBuffer(IBuffer& buffer, const BufferRange& range, uint8_
   const uint32_t fillValue = static_cast<uint32_t>(value) * 0x01010101u;
   ctx_.vf_.vkCmdFillBuffer(
       wrapper_.cmdBuf, vulkanBuffer.getVkBuffer(), range.offset, range.size, fillValue);
+
+  ivkBufferBarrier(&ctx_.vf_,
+                   wrapper_.cmdBuf,
+                   vulkanBuffer.getVkBuffer(),
+                   vulkanBuffer.getBufferUsageFlags(),
+                   VK_PIPELINE_STAGE_TRANSFER_BIT,
+                   VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+}
+
+void CommandBuffer::updateBuffer(IBuffer& buffer, const BufferRange& range, const void* data) {
+  IGL_PROFILER_FUNCTION();
+  IGL_DEBUG_ASSERT(data != nullptr);
+  IGL_DEBUG_ASSERT(range.offset % 4u == 0u && range.size % 4u == 0u);
+  IGL_DEBUG_ASSERT(range.offset + range.size <= buffer.getSizeInBytes());
+
+  const auto& vulkanBuffer = static_cast<Buffer&>(buffer);
+  IGL_DEBUG_ASSERT((vulkanBuffer.getBufferUsageFlags() & VK_BUFFER_USAGE_TRANSFER_DST_BIT) != 0u);
+  // A Ring buffer has one VkBuffer per in-flight index; the write would land in only one of them.
+  IGL_DEBUG_ASSERT(!vulkanBuffer.isRingBuffer(), "updateBuffer() cannot write into a Ring buffer");
+
+  if (data == nullptr || range.size == 0) {
+    return;
+  }
+
+  ivkBufferBarrier(&ctx_.vf_,
+                   wrapper_.cmdBuf,
+                   vulkanBuffer.getVkBuffer(),
+                   vulkanBuffer.getBufferUsageFlags(),
+                   VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                   VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+  // vkCmdUpdateBuffer() takes at most 65536 bytes per call (VUID-vkCmdUpdateBuffer-dataSize-00037).
+  constexpr size_t kMaxUpdateSize = 65536;
+  const auto* bytes = static_cast<const uint8_t*>(data);
+  for (size_t done = 0; done < range.size; done += kMaxUpdateSize) {
+    const size_t size = std::min(kMaxUpdateSize, range.size - done);
+    ctx_.vf_.vkCmdUpdateBuffer(wrapper_.cmdBuf,
+                               vulkanBuffer.getVkBuffer(),
+                               static_cast<VkDeviceSize>(range.offset + done),
+                               static_cast<VkDeviceSize>(size),
+                               bytes + done);
+  }
 
   ivkBufferBarrier(&ctx_.vf_,
                    wrapper_.cmdBuf,

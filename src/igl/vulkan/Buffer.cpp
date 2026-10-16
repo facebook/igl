@@ -60,7 +60,10 @@ Result Buffer::create(const BufferDesc& desc) {
     usageFlags |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
   }
   if ((desc_.type & BufferDesc::BufferTypeBits::Uniform) != 0) {
-    usageFlags |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | optionalBDA;
+    // TRANSFER_DST lets ICommandBuffer::updateBuffer() write any uniform buffer, including host
+    // visible ones.
+    usageFlags |=
+        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | optionalBDA;
   }
 
   if ((desc_.type & BufferDesc::BufferTypeBits::Storage) != 0) {
