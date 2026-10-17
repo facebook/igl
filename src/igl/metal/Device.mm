@@ -79,6 +79,21 @@ MTLResourceOptions toBufferResourceStorageMode(ResourceStorage storage) {
       storage == ResourceStorage::Memoryless ? ResourceStorage::Managed : storage;
   return Device::toMTLResourceStorageMode(bufferStorage, /*supportsMemoryless=*/false);
 }
+
+// The dynamic libraries that pipelines created from `stages` link, or nil when there are none.
+NSArray<id<MTLDynamicLibrary>>* preloadedLibraries(const IShaderStages& stages)
+    API_AVAILABLE(macos(12.0), ios(15.0)) {
+  const auto& libraries = static_cast<const ShaderStages&>(stages).getLinkedLibraries();
+  if (libraries.empty()) {
+    return nil;
+  }
+  NSMutableArray<id<MTLDynamicLibrary>>* metalLibraries =
+      [NSMutableArray arrayWithCapacity:libraries.size()];
+  for (const auto& library : libraries) {
+    [metalLibraries addObject:library->get()];
+  }
+  return metalLibraries;
+}
 } // namespace
 
 std::unique_ptr<IBuffer> Device::createBuffer( // NOLINT(bugprone-exception-escape)
@@ -487,6 +502,11 @@ std::shared_ptr<IComputePipelineState> Device::createComputePipeline(
   MTLComputePipelineDescriptor* descriptor = [[MTLComputePipelineDescriptor alloc] init];
   descriptor.computeFunction =
       static_cast<ShaderModule*>(desc.shaderStages->getComputeModule().get())->get();
+  if (@available(macOS 12.0, iOS 15.0, *)) {
+    if (NSArray<id<MTLDynamicLibrary>>* libraries = preloadedLibraries(*desc.shaderStages)) {
+      descriptor.preloadedLibraries = libraries;
+    }
+  }
   MTLComputePipelineReflection* reflection = nil;
   id<MTLComputePipelineState> metalObject =
       [device_ newComputePipelineStateWithDescriptor:descriptor
@@ -600,6 +620,13 @@ std::shared_ptr<IRenderPipelineState> Device::createTraditionalRenderPipeline(
     metalDesc.fragmentFunction = fragmentFunc->get();
   }
 
+  if (@available(macOS 12.0, iOS 15.0, *)) {
+    if (NSArray<id<MTLDynamicLibrary>>* libraries = preloadedLibraries(*desc.shaderStages)) {
+      metalDesc.vertexPreloadedLibraries = libraries;
+      metalDesc.fragmentPreloadedLibraries = libraries;
+    }
+  }
+
   // Framebuffer
   for (uint32_t i = 0; i < desc.targetDesc.colorAttachments.size(); ++i) {
     const auto& src = desc.targetDesc.colorAttachments[i];
@@ -698,6 +725,12 @@ std::shared_ptr<IRenderPipelineState> Device::createMeshRenderPipeline(
     if (!IGL_DEBUG_VERIFY(desc.shaderStages->getType() == ShaderStagesType::RenderMeshShader)) {
       Result::setResult(
           outResult, Result::Code::ArgumentInvalid, "Shader stages not for mesh render");
+      return nullptr;
+    }
+    // MTLMeshRenderPipelineDescriptor has no preloaded libraries.
+    if (!static_cast<const ShaderStages&>(*desc.shaderStages).getLinkedLibraries().empty()) {
+      Result::setResult(
+          outResult, Result::Code::Unsupported, "Mesh pipelines cannot link dynamic libraries");
       return nullptr;
     }
 

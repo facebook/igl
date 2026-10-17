@@ -15,12 +15,17 @@
 #include <igl/metal/DepthStencilState.h>
 #include <igl/metal/Device.h>
 #include <igl/metal/Framebuffer.h>
+#include <igl/metal/Result.h>
 #include <igl/metal/SamplerState.h>
+#include <igl/metal/Shader.h>
 #include <igl/metal/Texture.h>
 
 namespace igl::metal {
 
 namespace {
+constexpr const char* kDynamicLibrariesUnsupported =
+    "This device cannot link Metal dynamic libraries";
+
 // Infer the IGL TextureFormat from a CVPixelBuffer's pixel format type and plane index.
 // This mirrors the automatic format inference that the OpenGL iOS backend performs
 // in its TextureBuffer (opengl/ios/TextureBuffer.mm), making the Metal path support
@@ -338,6 +343,78 @@ void PlatformDevice::flushNativeTextureCache() const {
     CVMetalTextureCacheFlush(textureCache_, 0);
   }
 #endif
+}
+
+bool PlatformDevice::supportsDynamicLibraries() const noexcept {
+  // The pipeline descriptors' preloaded-library properties start at macOS 12 / iOS 15.
+  if (@available(macOS 12.0, iOS 15.0, *)) {
+    return device_.get().supportsDynamicLibraries && device_.get().supportsRenderDynamicLibraries;
+  }
+  return false;
+}
+
+std::shared_ptr<DynamicLibrary> PlatformDevice::createDynamicLibrary(const void* data,
+                                                                     size_t length,
+                                                                     const std::string& debugName,
+                                                                     Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  if (data == nullptr || length == 0) {
+    Result::setResult(outResult, Result::Code::ArgumentNull, "No dynamic library data");
+    return nullptr;
+  }
+  if (@available(macOS 12.0, iOS 15.0, *)) {
+    if (supportsDynamicLibraries()) {
+      // A null destructor is DISPATCH_DATA_DESTRUCTOR_DEFAULT, which copies the bytes.
+      dispatch_data_t dispatchData = dispatch_data_create(data, length, nullptr, nullptr);
+      NSError* error = nil;
+      id<MTLLibrary> library = [device_.get() newLibraryWithData:dispatchData error:&error];
+      if (library == nil) {
+        const char* message = error.localizedDescription.UTF8String;
+        Result::setResult(
+            outResult, Result::Code::ArgumentInvalid, message ? message : "Not a Metal library");
+        return nullptr;
+      }
+      if (library.type != MTLLibraryTypeDynamic) {
+        Result::setResult(outResult,
+                          Result::Code::ArgumentInvalid,
+                          "Not a dynamic library; build it with `metal -dynamiclib`");
+        return nullptr;
+      }
+      id<MTLDynamicLibrary> dynamicLibrary = [device_.get() newDynamicLibrary:library error:&error];
+      if (dynamicLibrary == nil) {
+        setResultFrom(outResult, error);
+        return nullptr;
+      }
+      dynamicLibrary.label = [NSString stringWithUTF8String:debugName.c_str()];
+      Result::setOk(outResult);
+      return std::make_shared<DynamicLibrary>(dynamicLibrary);
+    }
+  }
+  Result::setResult(outResult, Result::Code::Unsupported, kDynamicLibrariesUnsupported);
+  return nullptr;
+}
+
+std::unique_ptr<IShaderStages> PlatformDevice::createShaderStages(
+    const ShaderStagesDesc& desc,
+    std::vector<std::shared_ptr<DynamicLibrary>> linkedLibraries,
+    Result* outResult) const {
+  IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  if (!linkedLibraries.empty() && !supportsDynamicLibraries()) {
+    Result::setResult(outResult, Result::Code::Unsupported, kDynamicLibrariesUnsupported);
+    return nullptr;
+  }
+  for (const auto& library : linkedLibraries) {
+    if (library == nullptr) {
+      Result::setResult(outResult, Result::Code::ArgumentNull, "Null dynamic library");
+      return nullptr;
+    }
+  }
+  auto stages = std::make_unique<ShaderStages>(desc, std::move(linkedLibraries));
+  if (auto resourceTracker = device_.getResourceTracker()) {
+    stages->initResourceTracker(resourceTracker, desc.debugName);
+  }
+  Result::setOk(outResult);
+  return stages;
 }
 
 } // namespace igl::metal

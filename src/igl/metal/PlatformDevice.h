@@ -20,10 +20,13 @@
 namespace igl {
 
 struct FramebufferDesc;
+struct ShaderStagesDesc;
+class IShaderStages;
 
 namespace metal {
 
 class Device;
+class DynamicLibrary;
 class Framebuffer;
 
 class PlatformDevice final : public IPlatformDevice {
@@ -117,6 +120,42 @@ class PlatformDevice final : public IPlatformDevice {
   void flushNativeTextureCache() const;
 
   CVMetalTextureCacheRef getTextureCache();
+
+  /**
+   * @brief Whether render and compute pipelines on this device can link dynamic libraries: macOS
+   * 12 / iOS 15, and a GPU with MTLDevice.supportsDynamicLibraries and
+   * supportsRenderDynamicLibraries.
+   */
+  [[nodiscard]] bool supportsDynamicLibraries() const noexcept;
+
+  /**
+   * @brief Creates a dynamic library from a dynamic .metallib, as `metal -dynamiclib` builds one.
+   * When Metal links a pipeline, it still looks the library up at its install name, so a dynamic
+   * library has to exist at that path, typically a default copy shipped with the app at an
+   * `@executable_path/...` install name. A pipeline that links this library uses it instead of
+   * that copy.
+   * @return The library, or nullptr: with Result::Code::Unsupported when supportsDynamicLibraries()
+   * is false, or Result::Code::ArgumentInvalid when `data` is not a dynamic library.
+   */
+  std::shared_ptr<DynamicLibrary> createDynamicLibrary(const void* data,
+                                                       size_t length,
+                                                       const std::string& debugName,
+                                                       Result* outResult) const;
+
+  /**
+   * @brief Creates shader stages whose pipelines link `linkedLibraries` in place of the libraries
+   * with the same install names that the stages' functions were built against. A pipeline can so
+   * switch to another library without recompiling its functions. The stages go to
+   * IDevice::createRenderPipeline() and IDevice::createComputePipeline() as usual; mesh pipelines
+   * cannot link dynamic libraries.
+   * @return The stages, or nullptr: with Result::Code::Unsupported when supportsDynamicLibraries()
+   * is false and `linkedLibraries` is not empty, or Result::Code::ArgumentNull when one of them is
+   * null.
+   */
+  std::unique_ptr<IShaderStages> createShaderStages(
+      const ShaderStagesDesc& desc,
+      std::vector<std::shared_ptr<DynamicLibrary>> linkedLibraries,
+      Result* outResult) const;
 
  protected:
   [[nodiscard]] bool isType(PlatformDeviceType t) const noexcept override {
