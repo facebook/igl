@@ -133,12 +133,14 @@ void ComputeCommandEncoder::bindTexture(uint32_t index, ITexture* texture) {
 void ComputeCommandEncoder::bindImageTexture(uint32_t index,
                                              ITexture* texture,
                                              TextureFormat format) {
+  IGL_PROFILER_FUNCTION();                                            
   if (IGL_DEBUG_VERIFY(adapter_) && texture) {
     adapter_->setImageTexture(texture, index, format);
   }
 }
 
 void ComputeCommandEncoder::bindSamplerState(uint32_t index, ISamplerState* samplerState) {
+  IGL_PROFILER_FUNCTION();
   if (IGL_DEBUG_VERIFY(adapter_) && samplerState) {
     adapter_->setSamplerState(samplerState, index);
   }
