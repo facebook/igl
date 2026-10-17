@@ -98,17 +98,23 @@ bool RenderPipelineReflection::createArgDesc(MTLArgument* arg, ShaderStage sh) {
       // NOLINTNEXTLINE(cppcoreguidelines-init-variables)
       for (MTLStructMember* uniform = nullptr in arg.bufferStructType.members) {
         MTLDataType elementType = uniform.dataType;
+        MTLArrayType* arrayType = uniform.arrayType;
+        // metal::array<T, N> reflects as a struct whose only member is the C array `__elems`.
+        if (elementType == MTLDataTypeStruct && uniform.structType.members.count == 1 &&
+            uniform.structType.members.firstObject.dataType == MTLDataTypeArray) {
+          elementType = MTLDataTypeArray;
+          arrayType = uniform.structType.members.firstObject.arrayType;
+        }
         if (elementType == MTLDataTypeArray) {
-          elementType = uniform.arrayType.elementType;
+          elementType = arrayType.elementType;
         }
         const char* uniformNameCStr = uniform.name.UTF8String;
         igl::BufferArgDesc::BufferMemberDesc iglMemberDesc{
             .name = igl::genNameHandle(uniformNameCStr ? uniformNameCStr : ""),
             .type = metalDataTypeToIGLUniformType(elementType),
             .offset = static_cast<size_t>(uniform.offset),
-            .arrayLength = uniform.arrayType ? static_cast<size_t>(uniform.arrayType.arrayLength)
-                                             : 1,
-            .arrayStride = uniform.arrayType ? static_cast<size_t>(uniform.arrayType.stride) : 0};
+            .arrayLength = arrayType ? static_cast<size_t>(arrayType.arrayLength) : 1,
+            .arrayStride = arrayType ? static_cast<size_t>(arrayType.stride) : 0};
         bufferDesc.members.push_back(std::move(iglMemberDesc));
       }
     } else {

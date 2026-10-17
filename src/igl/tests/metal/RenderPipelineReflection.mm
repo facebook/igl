@@ -155,6 +155,7 @@ TEST_F(RenderPipelineReflectionMTLTest, VerifySamplers) {
 // emits for `uniform vec3 x[N]` (a native MSL C-array `float3 x[N]`), which
 // reflects as MTLDataTypeArray with a mappable element type and a real stride
 // (16 for float3/float4, 4 for float). See D-plan iglu_metal_array_uniforms.
+// The struct also holds `metal::array<T, N>` members, which Slang emits for arrays.
 class RenderPipelineReflectionMTLArrayTest : public ::testing::Test {
  public:
   void SetUp() override {
@@ -173,6 +174,8 @@ class RenderPipelineReflectionMTLArrayTest : public ::testing::Test {
         float3 palette[5];
         float4 rects[3];
         float weights[4];
+        array<float4, 2> slots;
+        array<float, 3> scalars;
       } ArrayUniforms;
 
       typedef struct {
@@ -194,7 +197,7 @@ class RenderPipelineReflectionMTLArrayTest : public ::testing::Test {
         float3 c = u.palette[0] + u.palette[4];
         float4 r = u.rects[1];
         float w = u.weights[2];
-        return float4(c * w, r.w);
+        return float4(c * w, r.w) + u.slots[1] * u.scalars[2];
       })";
 
     auto shaderLibrary = ShaderLibraryCreator::fromStringInput(
@@ -312,6 +315,36 @@ TEST_F(RenderPipelineReflectionMTLArrayTest, VerifyArrayStrides) {
   EXPECT_EQ(weights->type, UniformType::Float);
   EXPECT_EQ(weights->arrayLength, 4u);
   EXPECT_EQ(weights->arrayStride, 4u);
+}
+
+// `metal::array<T, N>` reflects as a struct wrapping a C array, and maps to the C array's element
+// type, length and stride.
+TEST_F(RenderPipelineReflectionMTLArrayTest, VerifyMetalArrayTemplateMembers) {
+  const BufferArgDesc::BufferMemberDesc* slots = nullptr;
+  const BufferArgDesc::BufferMemberDesc* scalars = nullptr;
+  for (const auto& buffer : pipeRef_->allUniformBuffers()) {
+    if (buffer.shaderStage != ShaderStage::Fragment) {
+      continue;
+    }
+    for (const auto& member : buffer.members) {
+      const auto name = member.name.toString();
+      if (name == "slots") {
+        slots = &member;
+      } else if (name == "scalars") {
+        scalars = &member;
+      }
+    }
+  }
+
+  ASSERT_NE(slots, nullptr);
+  EXPECT_EQ(slots->type, UniformType::Float4);
+  EXPECT_EQ(slots->arrayLength, 2u);
+  EXPECT_EQ(slots->arrayStride, 16u);
+
+  ASSERT_NE(scalars, nullptr);
+  EXPECT_EQ(scalars->type, UniformType::Float);
+  EXPECT_EQ(scalars->arrayLength, 3u);
+  EXPECT_EQ(scalars->arrayStride, 4u);
 }
 
 } // namespace igl::tests
