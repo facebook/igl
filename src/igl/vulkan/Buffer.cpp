@@ -67,8 +67,8 @@ Result Buffer::create(const BufferDesc& desc) {
   }
 
   if ((desc_.type & BufferDesc::BufferTypeBits::Storage) != 0) {
-    usageFlags |=
-        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | optionalBDA;
+    usageFlags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                  VK_BUFFER_USAGE_TRANSFER_SRC_BIT | optionalBDA;
   }
 
   if ((desc_.type & BufferDesc::BufferTypeBits::Indirect) != 0) {

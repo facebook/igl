@@ -16,15 +16,17 @@ namespace igl::metal {
 BufferSynchronizationManager::BufferSynchronizationManager(size_t maxInFlightBuffers) :
   maxInFlightBuffers_(maxInFlightBuffers) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
-  // To manage the pool of buffers, we would normally initialize the semaphore with the pool size
-  // (i.e. 'maxInFlightBuffers'). However, semaphore crashes at destruction time, if its current
-  // value is less than its initial value. This seems to Apple's libdispatch's idiosyncrasy.
+  // To manage the pool of buffers, we would normally initialize the semaphore with one less than
+  // the pool size (i.e. 'maxInFlightBuffers - 1'): CommandQueue skips the wait for the first frame,
+  // so each later frame waits until the last frame that used its buffer has completed. However,
+  // semaphore crashes at destruction time, if its current value is less than its initial value.
+  // This seems to Apple's libdispatch's idiosyncrasy.
   // https://opensource.apple.com/source/libdispatch/libdispatch-187.7/src/semaphore.c
 
   // To workaround this, we init semaphore to 0 and then call dispatch_semaphore_signal() to
-  // increase the value up to the size of buffer pool
+  // increase the value up to one less than the size of buffer pool
   frameBoundarySemaphore_ = dispatch_semaphore_create(0);
-  for (size_t i = 0; i < maxInFlightBuffers_; i++) {
+  for (size_t i = 1; i < maxInFlightBuffers_; i++) {
     dispatch_semaphore_signal(frameBoundarySemaphore_);
   }
 }

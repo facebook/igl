@@ -11,6 +11,9 @@
 
 #include "../util/Common.h"
 
+#include <chrono>
+#include <future>
+#include <thread>
 #include <igl/IGL.h>
 #include <igl/metal/CommandBuffer.h>
 
@@ -57,6 +60,47 @@ TEST_F(BufferSynchronizationManagerMTLTest, BufferSynchronizationManagerCreation
 TEST_F(BufferSynchronizationManagerMTLTest, BufferSynchronizationManagerEndOfFrameSync) {
   bufferSyncManager_->manageEndOfFrameSync();
   ASSERT_EQ(bufferSyncManager_->getCurrentInFlightBufferIndex(), 1);
+}
+
+//
+// ThirdEndOfFrameSyncWaitsForCompletedFrame
+//
+// CommandQueue skips the first frame's wait, so the third call is frame 3's, which reuses frame 0's
+// buffer: it must block until an end-of-frame command buffer completes.
+//
+TEST_F(BufferSynchronizationManagerMTLTest, ThirdEndOfFrameSyncWaitsForCompletedFrame) {
+  Result ret;
+  auto cmdBuffer = commandQueue_->createCommandBuffer({}, &ret);
+  ASSERT_TRUE(ret.isOk()) << ret.message;
+  ASSERT_NE(cmdBuffer, nullptr);
+
+  bufferSyncManager_->manageEndOfFrameSync();
+  bufferSyncManager_->manageEndOfFrameSync();
+
+  std::promise<void> thirdSyncReturned;
+  std::future<void> thirdSync = thirdSyncReturned.get_future();
+  std::thread waiter(
+      [manager = bufferSyncManager_, returned = std::move(thirdSyncReturned)]() mutable {
+        manager->manageEndOfFrameSync();
+        returned.set_value();
+      });
+
+  const bool heldBack =
+      thirdSync.wait_for(std::chrono::milliseconds(200)) == std::future_status::timeout;
+
+  bufferSyncManager_->markCommandBufferAsEndOfFrame(*cmdBuffer);
+  commandQueue_->submit(*cmdBuffer, /*endOfFrame=*/false);
+
+  const bool released = thirdSync.wait_for(std::chrono::seconds(5)) == std::future_status::ready;
+  if (released) {
+    waiter.join();
+    EXPECT_EQ(bufferSyncManager_->getCurrentInFlightBufferIndex(), 0u);
+  } else {
+    // The waiter owns a reference to the manager, so detaching cannot destroy a semaphore in use.
+    waiter.detach();
+  }
+  EXPECT_TRUE(heldBack);
+  EXPECT_TRUE(released);
 }
 
 } // namespace igl::tests

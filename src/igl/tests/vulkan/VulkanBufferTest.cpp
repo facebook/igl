@@ -13,6 +13,7 @@
 
 #include <array>
 #include <igl/Buffer.h>
+#include <igl/vulkan/Buffer.h>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/VulkanContext.h>
 
@@ -39,6 +40,25 @@ class VulkanBufferTest : public ::testing::Test {
   igl::vulkan::VulkanContext& getVulkanContext() {
     auto& device = static_cast<igl::vulkan::Device&>(*iglDev_);
     return device.getVulkanContext();
+  }
+
+  void expectSharedStorageBufferIsTransferSource(BufferDesc::BufferAPIHint hint) {
+    Result ret;
+    auto buffer = iglDev_->createBuffer(
+        BufferDesc{
+            .type = BufferDesc::BufferTypeBits::Storage,
+            .length = 64,
+            .storage = ResourceStorage::Shared,
+            .hint = hint,
+        },
+        &ret);
+
+    ASSERT_TRUE(ret.isOk()) << ret.message.c_str();
+    ASSERT_NE(buffer, nullptr);
+
+    const VkBufferUsageFlags usageFlags =
+        static_cast<igl::vulkan::Buffer&>(*buffer).getBufferUsageFlags();
+    EXPECT_NE(usageFlags & VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 0u);
   }
 };
 
@@ -160,6 +180,15 @@ TEST_F(VulkanBufferTest, GetBufferUsageFlags) {
 
   EXPECT_TRUE(buffer->getBufferUsageFlags() & VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
   EXPECT_TRUE(buffer->getBufferUsageFlags() & VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+}
+
+// A Shared storage buffer can be the source of ICommandBuffer::copyBuffer(), ring or not.
+TEST_F(VulkanBufferTest, SharedStorageBufferIsTransferSource) {
+  expectSharedStorageBufferIsTransferSource(0);
+}
+
+TEST_F(VulkanBufferTest, SharedStorageRingBufferIsTransferSource) {
+  expectSharedStorageBufferIsTransferSource(BufferDesc::BufferAPIHintBits::Ring);
 }
 
 TEST_F(VulkanBufferTest, DeviceLocalBufferIsNotMapped) {
