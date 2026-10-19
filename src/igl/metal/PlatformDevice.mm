@@ -7,10 +7,11 @@
 
 #include <igl/metal/PlatformDevice.h>
 
+#import <CoreGraphics/CGGeometry.h>
 #import <CoreVideo/CVPixelBuffer.h>
 #import <Foundation/Foundation.h>
+#import <QuartzCore/CALayer.h>
 #import <QuartzCore/CAMetalLayer.h>
-#import <QuartzCore/QuartzCore.h>
 #include <igl/Macros.h>
 #include <igl/metal/DepthStencilState.h>
 #include <igl/metal/Device.h>
