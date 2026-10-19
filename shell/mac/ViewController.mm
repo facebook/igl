@@ -121,10 +121,18 @@ using namespace igl;
   return self;
 }
 
+- (void)dealloc {
+  // dealloc may run on the headless thread itself (its lambda retains self), where join() throws.
+  if (_headlessThread.joinable()) {
+    _headlessThread.detach();
+  }
+}
+
 - (void)initModule {
 }
 
 - (void)teardown {
+  [self stopHeadlessRendering];
   if (_session) {
     _session->teardown();
   }
@@ -141,6 +149,10 @@ using namespace igl;
 }
 
 - (void)render {
+  // In headless mode only the render thread renders; AppKit still calls this on the main thread.
+  if (_shellParams.isHeadless && [NSThread isMainThread]) {
+    return;
+  }
   if (_session == nullptr) {
     return;
   }
@@ -486,8 +498,6 @@ using namespace igl;
   }
   }
 
-  _session = _factory->createRenderSession(_shellPlatform);
-  IGL_DEBUG_ASSERT(_session, "createDefaultRenderSession() must return a valid session");
   // Get initial native surface dimensions
   _shellParams.nativeSurfaceDimensions = glm::ivec2(2048, 1536);
   auto args =
@@ -503,6 +513,12 @@ using namespace igl;
     metalView.paused = YES;
   }
 
+  if (_shellParams.isHeadless) {
+    // The headless render thread creates, runs and destroys the session.
+    return;
+  }
+  _session = _factory->createRenderSession(_shellPlatform);
+  IGL_DEBUG_ASSERT(_session, "createDefaultRenderSession() must return a valid session");
   _session->setShellParams(_shellParams);
   _session->initialize();
 }
@@ -538,15 +554,34 @@ static CVReturn metalDisplayLinkCallback(CVDisplayLinkRef /*displayLink*/,
       MetalView* v = (MetalView*)self.view;
       v.paused = YES;
     }
-    _headlessRunning = YES;
-    _headlessThread = std::thread([self]() {
-      pthread_setname_np("IGL Headless Render");
-      while (self->_headlessRunning) {
+    [self stopHeadlessRendering];
+    if (_shellPlatform != nullptr) {
+      _headlessRunning = YES;
+      _headlessThread = std::thread([self]() {
+        pthread_setname_np("IGL Headless Render");
+        [self makeDeviceCurrentOnThisThread];
         @autoreleasepool {
-          [self render];
+          self->_session = self->_factory->createRenderSession(self->_shellPlatform);
+          IGL_DEBUG_ASSERT(self->_session,
+                           "createDefaultRenderSession() must return a valid session");
+          if (self->_session == nullptr) {
+            IGLLog(IGLLogError, "Headless render thread could not create a render session\n");
+            return;
+          }
+          self->_session->setShellParams(self->_shellParams);
+          self->_session->initialize();
         }
-      }
-    });
+        while (self->_headlessRunning) {
+          @autoreleasepool {
+            [self render];
+          }
+        }
+        @autoreleasepool {
+          self->_session->teardown();
+          self->_session = nullptr;
+        }
+      });
+    }
   } else if ([self.view isKindOfClass:[MetalView class]]) {
     if (_shellParams.useTimerRendering) {
       // Use a CVDisplayLink to drive Metal rendering, synced to the display refresh
@@ -579,12 +614,27 @@ static CVReturn metalDisplayLinkCallback(CVDisplayLinkRef /*displayLink*/,
   [self.view.window makeFirstResponder:self];
 }
 
+- (void)stopHeadlessRendering {
+  _headlessRunning = NO;
+  if (_headlessThread.joinable()) {
+    _headlessThread.join();
+    [self makeDeviceCurrentOnThisThread];
+  }
+}
+
+/// GL contexts are current per thread, and Vulkan checks the owning thread.
+- (void)makeDeviceCurrentOnThisThread {
+  if (_shellPlatform == nullptr) {
+    return;
+  }
+  if (const auto device = _shellPlatform->getDevicePtr()) {
+    device->setCurrentThread();
+  }
+}
+
 - (void)viewWillDisappear {
-  if (_headlessRunning) {
-    _headlessRunning = NO;
-    if (_headlessThread.joinable()) {
-      _headlessThread.join();
-    }
+  if (_shellParams.isHeadless) {
+    [self stopHeadlessRendering];
     return;
   }
   if ([self.view isKindOfClass:[MetalView class]]) {
