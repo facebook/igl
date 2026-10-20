@@ -224,20 +224,6 @@ TEST_F(VulkanImmediateCommandsTest, StoreFDAndCachedFDFromSubmitHandle) {
   ctx.immediate_->wait(handle);
 }
 
-TEST_F(VulkanImmediateCommandsTest, AcquireLastSubmitSemaphore) {
-  auto& ctx = getVulkanContext();
-  ASSERT_NE(ctx.immediate_, nullptr);
-
-  const auto& wrapper = ctx.immediate_->acquire();
-  ctx.immediate_->submit(wrapper);
-
-  VkSemaphore semaphore = ctx.immediate_->acquireLastSubmitSemaphore();
-  EXPECT_NE(semaphore, VK_NULL_HANDLE);
-
-  VkSemaphore secondCall = ctx.immediate_->acquireLastSubmitSemaphore();
-  EXPECT_EQ(secondCall, VK_NULL_HANDLE);
-}
-
 TEST_F(VulkanImmediateCommandsTest, InjectedSemaphoreCapacityFailureIsReported) {
   auto& ctx = getVulkanContext();
   ASSERT_NE(ctx.immediate_, nullptr);
@@ -325,17 +311,15 @@ TEST_F(VulkanImmediateCommandsTest, InjectedWaitSemaphoreReachesSubmit) {
   auto& ctx = getVulkanContext();
   ASSERT_NE(ctx.immediate_, nullptr);
 
-  // Submit once to obtain a real, GPU-signaled semaphore to wait on. Waiting on a semaphore that
-  // nothing signals would deadlock, so we reuse the previous submission's signal semaphore.
+  vulkan::VulkanSemaphore signal(ctx.vf_, ctx.getVkDevice(), false, "Injected wait test");
   const auto& first = ctx.immediate_->acquire();
+  ASSERT_TRUE(ctx.immediate_->signalSemaphore(signal.getVkSemaphore(), 0));
   ctx.immediate_->submit(first);
-  const VkSemaphore signaled = ctx.immediate_->acquireLastSubmitSemaphore();
-  ASSERT_NE(signaled, VK_NULL_HANDLE);
 
   // Inject the real semaphore so the array-building path is exercised end-to-end through
   // vkQueueSubmit(2KHR) with a non-null handle, not just the counting/discard path.
   const auto& second = ctx.immediate_->acquire();
-  EXPECT_TRUE(ctx.immediate_->waitSemaphore(signaled));
+  EXPECT_TRUE(ctx.immediate_->waitSemaphore(signal.getVkSemaphore()));
   const auto handle = ctx.immediate_->submit(second);
   EXPECT_FALSE(handle.empty());
   EXPECT_EQ(ctx.immediate_->wait(handle), VK_SUCCESS);

@@ -161,10 +161,6 @@ class VulkanImmediateCommands final {
     }
   }
 
-  /// @brief Returns the last semaphore (`lastSubmitSemaphore_`) and reset the member variable to
-  /// `VK_NULL_HANDLE`
-  VkSemaphore acquireLastSubmitSemaphore();
-
   /// @brief Returns the last SubmitHandle, which was submitted when `submit()` was last called
   [[nodiscard]] SubmitHandle getLastSubmitHandle() const;
   [[nodiscard]] SubmitHandle getNextSubmitHandle() const;

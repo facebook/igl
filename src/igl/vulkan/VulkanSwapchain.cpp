@@ -326,6 +326,7 @@ VulkanSwapchain::~VulkanSwapchain() {
 
 Result VulkanSwapchain::acquireNextImage() {
   IGL_PROFILER_FUNCTION();
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(&ctx_);
 
   const uint32_t acquireSemaphoreIndex = currentImageIndex_;
   uint32_t nextImageIndex = currentImageIndex_;
@@ -382,17 +383,17 @@ Result VulkanSwapchain::acquireNextImage() {
     IGL_LOG_INFO_ONCE(
         "vkAcquireNextImageKHR returned VK_SUBOPTIMAL_KHR. The Vulkan swapchain is no longer "
         "compatible with the surface");
-  } else {
-    if (acquireResult != VK_SUCCESS && ctx_.timelineSemaphore_) {
+  } else if (acquireResult != VK_SUCCESS) {
+    if (ctx_.timelineSemaphore_) {
       // A failed acquire (e.g. VK_ERROR_OUT_OF_DATE_KHR) does not signal the acquire semaphore, but
       // the timeline path already reserved a wait on it above. Drop that wait so the next
       // submission does not block forever on a semaphore that will never be signaled.
       ctx_.immediate_->cancelLastWaitSemaphore();
-    } else if (acquireResult != VK_SUCCESS) {
+    } else {
       // A failed acquire leaves the reset fence unsignaled, with no pending operation to signal it.
       acquireFences[acquireSemaphoreIndex] = createAcquireFence(acquireSemaphoreIndex);
     }
-    VK_ASSERT_RETURN(acquireResult);
+    return getResultFromVkResult(acquireResult);
   }
 
   currentImageIndex_ = nextImageIndex;

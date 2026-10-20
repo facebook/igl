@@ -183,7 +183,6 @@ class VulkanContext final {
   }
 
   Result waitIdle() const;
-  Result present() const;
 
   /// @brief Returns the index of the current resource being used.
   ///        Its range is [0, config.maxResourceCount).
@@ -350,6 +349,7 @@ class VulkanContext final {
   }
 
  private:
+  Result present() const;
   void createInstance();
   VkResult checkAndUpdateDescriptorSets();
   void pruneTextures();
