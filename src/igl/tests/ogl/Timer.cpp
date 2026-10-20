@@ -11,11 +11,29 @@
 
 #include "../util/Common.h"
 
+#include <igl/CommandBuffer.h>
+#include <igl/Framebuffer.h>
+#include <igl/RenderCommandEncoder.h>
+#include <igl/RenderPass.h>
 #include <igl/opengl/Device.h>
 #include <igl/opengl/IContext.h>
 #include <igl/opengl/TimestampQueries.h>
 
 namespace igl::tests {
+
+namespace {
+// Exercise encoder retention on drivers without GL_TIME_ELAPSED support.
+class NoElapsedTimestampQueries final : public opengl::TimestampQueries {
+ public:
+  using TimestampQueries::TimestampQueries;
+  void beginElapsedQuery(uint32_t /*slotIndex*/) override {
+    ++beginCalls;
+  }
+  void endElapsedQuery() override {}
+
+  uint32_t beginCalls = 0;
+};
+} // namespace
 
 //
 // TimerOGLTest
@@ -53,6 +71,39 @@ class TimerOGLTest : public ::testing::Test {
       *value = 123;
     };
     return queries;
+  }
+
+  void createFramebuffer(std::shared_ptr<IFramebuffer>& framebuffer) {
+    Result result;
+    const auto textureDesc = TextureDesc::new2D(TextureFormat::RGBA_UNorm8,
+                                                4,
+                                                4,
+                                                TextureDesc::TextureUsageBits::Attachment |
+                                                    TextureDesc::TextureUsageBits::Sampled);
+    const auto texture = iglDev_->createTexture(textureDesc, &result);
+    ASSERT_TRUE(result.isOk()) << result.message;
+    ASSERT_NE(texture, nullptr);
+    const FramebufferDesc desc = {.colorAttachments = {{.texture = texture}}};
+    framebuffer = iglDev_->createFramebuffer(desc, &result);
+    ASSERT_TRUE(result.isOk()) << result.message;
+    ASSERT_NE(framebuffer, nullptr);
+  }
+
+  void encodeTimedPass(const std::shared_ptr<ITimestampQueries>& queries,
+                       const std::shared_ptr<IFramebuffer>& framebuffer,
+                       uint32_t slotIndex = 0) {
+    Result result;
+    auto commandBuffer = cmdQueue_->createCommandBuffer({}, &result);
+    ASSERT_TRUE(result.isOk()) << result.message;
+    ASSERT_NE(commandBuffer, nullptr);
+    const RenderPassDesc renderPass = {
+        .colorAttachments = {{.loadAction = LoadAction::Clear, .storeAction = StoreAction::Store}},
+        .timestampQuery = {.queries = queries, .slotIndex = slotIndex}};
+    auto encoder = commandBuffer->createRenderCommandEncoder(renderPass, framebuffer, {}, &result);
+    ASSERT_TRUE(result.isOk()) << result.message;
+    ASSERT_NE(encoder, nullptr);
+    encoder->endEncoding();
+    cmdQueue_->submit(*commandBuffer);
   }
 
   inline static uint32_t availabilityReadCount = 0;
@@ -185,6 +236,108 @@ TEST_F(TimerOGLTest, BasicTimerQuery) {
     // Elapsed time should be non-negative (it's uint64_t so always >= 0)
     (void)elapsed;
   }
+}
+
+TEST_F(TimerOGLTest, FramebufferSurvivesCallerReleaseUntilReset) {
+  auto queries = std::make_shared<NoElapsedTimestampQueries>(*context_, 1);
+  if (!queries->isValid()) {
+    GTEST_SKIP() << "Timer query objects are unavailable";
+  }
+  EXPECT_TRUE(queries->requiresFramebufferRetention());
+  std::shared_ptr<IFramebuffer> framebuffer;
+  ASSERT_NO_FATAL_FAILURE(createFramebuffer(framebuffer));
+  const std::weak_ptr<IFramebuffer> weakFramebuffer = framebuffer;
+  const std::weak_ptr<ITexture> weakTexture = framebuffer->getColorAttachment(0);
+
+  ASSERT_NO_FATAL_FAILURE(encodeTimedPass(queries, framebuffer));
+  EXPECT_EQ(queries->beginCalls, 1u);
+  framebuffer.reset();
+  EXPECT_FALSE(weakFramebuffer.expired());
+  EXPECT_FALSE(weakTexture.expired());
+
+  queries->reset();
+  EXPECT_TRUE(weakFramebuffer.expired());
+  EXPECT_TRUE(weakTexture.expired());
+}
+
+TEST_F(TimerOGLTest, AttachmentSnapshotSurvivesDrawableReplacement) {
+  auto queries = std::make_shared<NoElapsedTimestampQueries>(*context_, 1);
+  if (!queries->isValid()) {
+    GTEST_SKIP() << "Timer query objects are unavailable";
+  }
+  std::shared_ptr<IFramebuffer> framebuffer;
+  std::shared_ptr<IFramebuffer> replacement;
+  ASSERT_NO_FATAL_FAILURE(createFramebuffer(framebuffer));
+  ASSERT_NO_FATAL_FAILURE(createFramebuffer(replacement));
+  const std::weak_ptr<ITexture> originalTexture = framebuffer->getColorAttachment(0);
+
+  ASSERT_NO_FATAL_FAILURE(encodeTimedPass(queries, framebuffer));
+  framebuffer->updateDrawable(replacement->getColorAttachment(0));
+  EXPECT_FALSE(originalTexture.expired());
+
+  queries->reset();
+  EXPECT_TRUE(originalTexture.expired());
+}
+
+TEST_F(TimerOGLTest, SlotOverwriteAndDestructionReleaseFramebuffers) {
+  auto queries = std::make_shared<NoElapsedTimestampQueries>(*context_, 1);
+  if (!queries->isValid()) {
+    GTEST_SKIP() << "Timer query objects are unavailable";
+  }
+  std::shared_ptr<IFramebuffer> first;
+  std::shared_ptr<IFramebuffer> second;
+  ASSERT_NO_FATAL_FAILURE(createFramebuffer(first));
+  ASSERT_NO_FATAL_FAILURE(createFramebuffer(second));
+  const std::weak_ptr<IFramebuffer> weakFirst = first;
+  const std::weak_ptr<IFramebuffer> weakSecond = second;
+
+  ASSERT_NO_FATAL_FAILURE(encodeTimedPass(queries, first));
+  first.reset();
+  EXPECT_FALSE(weakFirst.expired());
+  ASSERT_NO_FATAL_FAILURE(encodeTimedPass(queries, second));
+  EXPECT_TRUE(weakFirst.expired());
+  second.reset();
+  EXPECT_FALSE(weakSecond.expired());
+
+  queries.reset();
+  EXPECT_TRUE(weakSecond.expired());
+}
+
+TEST_F(TimerOGLTest, OutOfBoundsSlotDoesNotRetainFramebuffer) {
+  auto queries = std::make_shared<NoElapsedTimestampQueries>(*context_, 1);
+  if (!queries->isValid()) {
+    GTEST_SKIP() << "Timer query objects are unavailable";
+  }
+  std::shared_ptr<IFramebuffer> framebuffer;
+  ASSERT_NO_FATAL_FAILURE(createFramebuffer(framebuffer));
+  const std::weak_ptr<IFramebuffer> weakFramebuffer = framebuffer;
+
+  ASSERT_NO_FATAL_FAILURE(encodeTimedPass(queries, framebuffer, queries->capacity()));
+  framebuffer.reset();
+  EXPECT_EQ(queries->beginCalls, 0u);
+  EXPECT_TRUE(weakFramebuffer.expired());
+}
+
+TEST_F(TimerOGLTest, RealElapsedQueryRetainsFramebufferUntilReset) {
+  if (!iglDev_->hasFeature(DeviceFeatures::TimestampQueries)) {
+    GTEST_SKIP() << "Elapsed timestamp queries not supported; lifetime coverage uses virtual hooks";
+  }
+  Result result;
+  auto queries = iglDev_->createTimestampQueries(1, &result);
+  if (!queries || !queries->isValid()) {
+    GTEST_SKIP() << "Elapsed timestamp query objects are unavailable: " << result.message;
+  }
+  ASSERT_TRUE(result.isOk()) << result.message;
+  std::shared_ptr<IFramebuffer> framebuffer;
+  ASSERT_NO_FATAL_FAILURE(createFramebuffer(framebuffer));
+  const std::weak_ptr<IFramebuffer> weakFramebuffer = framebuffer;
+
+  ASSERT_NO_FATAL_FAILURE(encodeTimedPass(queries, framebuffer));
+  ASSERT_EQ(context_->checkForErrors(__FILE__, __LINE__), GL_NO_ERROR);
+  framebuffer.reset();
+  EXPECT_FALSE(weakFramebuffer.expired());
+  queries->reset();
+  EXPECT_TRUE(weakFramebuffer.expired());
 }
 
 } // namespace igl::tests

@@ -8,6 +8,7 @@
 #pragma once
 
 #include <vector>
+#include <igl/Framebuffer.h>
 #include <igl/TimestampQueries.h>
 #include <igl/opengl/GLFunc.h>
 #include <igl/opengl/IContext.h>
@@ -39,9 +40,9 @@ class TimestampQueries : public ITimestampQueries, public WithContext {
 
   [[nodiscard]] bool isValid() const override;
 
-  /// True: the Mali OpenGL driver internally references FBOs active during a GL_TIME_ELAPSED query,
-  /// so callers must retain them until results are consumed to avoid a use-after-free (SEV
-  /// S638750).
+  /// True: the Mali OpenGL driver internally references FBOs during a GL_TIME_ELAPSED query.
+  /// Direct callers of slot-only beginElapsedQuery() must retain framebuffers and attachments
+  /// until results are consumed; encoder-issued queries retain them internally until reset().
   [[nodiscard]] bool requiresFramebufferRetention() const override;
 
   /// Start a GL_TIME_ELAPSED query for the given timing slot.
@@ -57,12 +58,20 @@ class TimestampQueries : public ITimestampQueries, public WithContext {
 
  private:
   friend class igl::tests::TimerOGLTest;
+  friend class RenderCommandEncoder;
+  void beginElapsedQuery(uint32_t slotIndex, const std::shared_ptr<IFramebuffer>& framebuffer);
+
+  struct RetainedFramebuffer {
+    std::shared_ptr<IFramebuffer> framebuffer;
+    FramebufferDesc attachments;
+  };
 
   PFNIGLBEGINQUERYPROC beginQuery_ = iglBeginQuery;
   PFNIGLGETQUERYOBJECTIVPROC getQueryObjectiv_ = iglGetQueryObjectiv;
   PFNIGLGETQUERYOBJECTUI64VPROC getQueryObjectui64v_ = iglGetQueryObjectui64v;
   std::vector<GLuint> queryIds_;
   std::vector<bool> begun_;
+  std::vector<RetainedFramebuffer> retainedFramebuffers_;
   uint32_t maxSlots_ = 0;
   uint32_t currentIndex_ = 0;
   bool valid_ = true; // set once in constructor

@@ -146,7 +146,7 @@ void RenderCommandEncoder::beginEncoding(const RenderPassDesc& renderPass,
   if (renderPass.timestampQuery.queries) {
     timestampQueries_ = renderPass.timestampQuery.queries;
     static_cast<TimestampQueries&>(*timestampQueries_)
-        .beginElapsedQuery(renderPass.timestampQuery.slotIndex);
+        .beginElapsedQuery(renderPass.timestampQuery.slotIndex, framebuffer);
   }
 
   Result::setOk(outResult);

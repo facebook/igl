@@ -1048,6 +1048,7 @@ void CustomFramebuffer::bind(const RenderPassDesc& renderPass) const {
   IGL_PROFILER_FUNCTION();
   // Cache renderPass for unbind
   renderPass_ = renderPass;
+  renderPass_.timestampQuery = {};
   IGL_DEBUG_ASSERT(renderTarget_.mode != FramebufferMode::Multiview,
                    "FramebufferMode::Multiview not supported");
 

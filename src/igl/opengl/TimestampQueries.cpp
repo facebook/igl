@@ -8,6 +8,7 @@
 #include <igl/opengl/TimestampQueries.h>
 
 #include <algorithm>
+#include <utility>
 #include <igl/Macros.h>
 #include <igl/opengl/DeviceFeatureSet.h>
 #include <igl/opengl/GLFunc.h>
@@ -35,6 +36,7 @@ TimestampQueries::TimestampQueries(IContext& context, uint32_t maxSlots) :
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   queryIds_.resize(maxSlots);
   begun_.resize(maxSlots);
+  retainedFramebuffers_.resize(maxSlots);
   iglGenQueries(maxSlots, queryIds_.data());
 
   // Validate: broken Mali budget GPU drivers silently fail iglGenQueries,
@@ -72,8 +74,12 @@ bool TimestampQueries::wasBegun(uint32_t slotIndex) const {
 }
 
 void TimestampQueries::reset() {
+  IGL_PROFILER_FUNCTION();
   currentIndex_ = 0;
   std::fill(begun_.begin(), begun_.end(), false);
+  for (auto& framebuffer : retainedFramebuffers_) {
+    framebuffer = {};
+  }
 }
 
 bool TimestampQueries::isValid() const {
@@ -130,6 +136,27 @@ bool TimestampQueries::readAndClearDisjoint() {
   GLint disjoint = 0;
   getContext().getIntegerv(GL_GPU_DISJOINT_EXT, &disjoint);
   return disjoint != 0;
+}
+
+void TimestampQueries::beginElapsedQuery(uint32_t slotIndex,
+                                         const std::shared_ptr<IFramebuffer>& framebuffer) {
+  IGL_PROFILER_FUNCTION();
+  if (!valid_ || slotIndex >= maxSlots_ || queryIds_[slotIndex] == 0) {
+    return;
+  }
+  IGL_DEBUG_ASSERT(framebuffer);
+  RetainedFramebuffer retained = {.framebuffer = framebuffer};
+  for (const size_t index : framebuffer->getColorAttachmentIndices()) {
+    retained.attachments.colorAttachments[index] = {
+        .texture = framebuffer->getColorAttachment(index),
+        .resolveTexture = framebuffer->getResolveColorAttachment(index)};
+  }
+  retained.attachments.depthAttachment = {.texture = framebuffer->getDepthAttachment(),
+                                          .resolveTexture =
+                                              framebuffer->getResolveDepthAttachment()};
+  retained.attachments.stencilAttachment.texture = framebuffer->getStencilAttachment();
+  beginElapsedQuery(slotIndex);
+  retainedFramebuffers_[slotIndex] = std::move(retained);
 }
 
 void TimestampQueries::beginElapsedQuery(uint32_t slotIndex) {
