@@ -235,13 +235,19 @@ bool VulkanImmediateCommands::isReady(const SubmitHandle handle) const {
 
 VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(
     const CommandBufferWrapper& wrapper) {
+  return submit(wrapper, VK_NULL_HANDLE);
+}
+
+VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(
+    const CommandBufferWrapper& wrapper,
+    VkSemaphore presentationSemaphore) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_SUBMIT);
 
   IGL_DEBUG_ASSERT(wrapper.isEncoding);
   VK_ASSERT(vf_.vkEndCommandBuffer(wrapper.cmdBuf));
 
-  // Reserve one backend-owned wait/signal slot in addition to injected semaphores.
-  constexpr size_t kSubmitSemaphoreCapacity = kMaxInjectedSemaphores + 1;
+  // The submission chain and presentation signals have capacity separate from injected signals.
+  constexpr size_t kSubmitSemaphoreCapacity = kMaxInjectedSemaphores + 2;
   if (useTimelineSemaphoreAndSynchronization2_) {
     // @lint-ignore CLANGTIDY
     VkSemaphoreSubmitInfo waitSemaphores[kSubmitSemaphoreCapacity] = {};
@@ -263,6 +269,13 @@ VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(
         .semaphore = wrapper.semaphore.getVkSemaphore(),
         .stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
     };
+    if (presentationSemaphore != VK_NULL_HANDLE) {
+      signalSemaphores[numSignalSemaphores++] = VkSemaphoreSubmitInfo{
+          .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+          .semaphore = presentationSemaphore,
+          .stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+      };
+    }
 
     const VkCommandBufferSubmitInfo bufferSI = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
@@ -306,6 +319,9 @@ VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(
     }
     uint32_t numSignalSemaphores = numSignalSemaphores_;
     signalSemaphores[numSignalSemaphores++] = wrapper.semaphore.vkSemaphore_;
+    if (presentationSemaphore != VK_NULL_HANDLE) {
+      signalSemaphores[numSignalSemaphores++] = presentationSemaphore;
+    }
     const VkSubmitInfo si = {
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
         .waitSemaphoreCount = numWaitSemaphores,

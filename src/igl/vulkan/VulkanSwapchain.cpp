@@ -236,6 +236,10 @@ VulkanSwapchain::VulkanSwapchain(VulkanContext& ctx, uint32_t width, uint32_t he
                                    ctx_.getVkDevice(),
                                    false,
                                    IGL_FORMAT("Semaphore: swapchain-acquire #{}", i).c_str());
+    presentSemaphores_.emplace_back(ctx_.vf_,
+                                    ctx_.getVkDevice(),
+                                    false,
+                                    IGL_FORMAT("Semaphore: swapchain-present #{}", i).c_str());
     if (!ctx_.timelineSemaphore_) {
       // this can be removed once we switch to timeline semaphores
       acquireFences.push_back(createAcquireFence(i));
@@ -305,6 +309,11 @@ void VulkanSwapchain::lazyAllocateDepthBuffer() const {
 
 VkSemaphore VulkanSwapchain::getSemaphore() const noexcept {
   return acquireSemaphores[currentSemaphoreIndex_].vkSemaphore_;
+}
+
+VkSemaphore VulkanSwapchain::getPresentSemaphore() const noexcept {
+  IGL_ENSURE_VULKAN_CONTEXT_THREAD(&ctx_);
+  return presentSemaphores_[currentImageIndex_].getVkSemaphore();
 }
 
 VulkanSwapchain::~VulkanSwapchain() {

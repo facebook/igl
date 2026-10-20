@@ -98,7 +98,10 @@ class VulkanSwapchain final {
   }
 
  private:
+  friend class CommandQueue;
+  friend class VulkanContext;
   [[nodiscard]] VulkanFence createAcquireFence(uint32_t index) const;
+  [[nodiscard]] VkSemaphore getPresentSemaphore() const noexcept;
   void lazyAllocateDepthBuffer() const;
 
  public:
@@ -124,6 +127,7 @@ class VulkanSwapchain final {
   uint64_t frameNumber_ = 0; // increasing continuously without bound
   bool getNextImage_ = true;
   VkSwapchainKHR swapchain_{};
+  std::vector<VulkanSemaphore> presentSemaphores_;
   std::unique_ptr<std::shared_ptr<VulkanTexture>[]> swapchainTextures_;
   mutable std::shared_ptr<VulkanTexture> depthTexture_;
   VkSurfaceFormatKHR surfaceFormat_{};

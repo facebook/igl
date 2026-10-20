@@ -121,7 +121,11 @@ SubmitHandle CommandQueue::endCommandBuffer(VulkanContext& ctx,
   if (timer) {
     timer->end(cmdBuffer->wrapper_.cmdBuf, cmdBuffer->timerSlot_);
   }
-  const auto submitHandle = ctx.immediate_->submit(cmdBuffer->wrapper_);
+  // Presentation can outlive the submit fence. Its semaphore is reusable only after the same
+  // swapchain image is reacquired and does not consume the caller's injected-signal capacity.
+  const VkSemaphore presentationSemaphore = shouldPresent ? ctx.swapchain_->getPresentSemaphore()
+                                                          : VK_NULL_HANDLE;
+  const auto submitHandle = ctx.immediate_->submit(cmdBuffer->wrapper_, presentationSemaphore);
   if (timer) {
     timer->submitted(cmdBuffer->timerSlot_, submitHandle);
   }

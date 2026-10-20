@@ -11,6 +11,7 @@
 
 #include "../util/TestDevice.h"
 
+#include <memory>
 #include <set>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/VulkanContext.h>
@@ -38,6 +39,13 @@ class VulkanImmediateCommandsTest : public ::testing::Test {
   igl::vulkan::VulkanContext& getVulkanContext() {
     auto& device = static_cast<igl::vulkan::Device&>(*iglDev_);
     return device.getVulkanContext();
+  }
+
+  igl::vulkan::VulkanImmediateCommands::SubmitHandle submitForPresentation(
+      igl::vulkan::VulkanImmediateCommands& commands,
+      const igl::vulkan::VulkanImmediateCommands::CommandBufferWrapper& wrapper,
+      VkSemaphore semaphore) {
+    return commands.submit(wrapper, semaphore);
   }
 };
 
@@ -249,6 +257,68 @@ TEST_F(VulkanImmediateCommandsTest, InjectedSemaphoreCapacityFailureIsReported) 
   const auto& recoveredWrapper = ctx.immediate_->acquire();
   EXPECT_TRUE(ctx.immediate_->waitSemaphore(VK_NULL_HANDLE));
   ctx.immediate_->discard(recoveredWrapper);
+}
+
+TEST_F(VulkanImmediateCommandsTest, PresentationSignalPreservesInjectedSignalCapacity) {
+  auto& ctx = getVulkanContext();
+  if (!ctx.features().has_VK_KHR_timeline_semaphore ||
+      !ctx.features().has_VK_KHR_synchronization2) {
+    GTEST_SKIP() << "Timeline presentation is unavailable on this device";
+  }
+  std::vector<std::unique_ptr<vulkan::VulkanSemaphore>> signals;
+  vulkan::VulkanSemaphore presentation(ctx.vf_, ctx.getVkDevice(), false, "Presentation test");
+  const auto& wrapper = ctx.immediate_->acquire();
+  for (uint32_t index = 0; index < vulkan::VulkanImmediateCommands::kMaxInjectedSemaphores;
+       ++index) {
+    signals.push_back(std::make_unique<vulkan::VulkanSemaphore>(
+        ctx.vf_, ctx.getVkDevice(), uint64_t{0}, false, "Injected signal test"));
+    EXPECT_TRUE(ctx.immediate_->signalSemaphore(signals.back()->getVkSemaphore(), index + 1));
+  }
+  const auto handle =
+      submitForPresentation(*ctx.immediate_, wrapper, presentation.getVkSemaphore());
+  ASSERT_EQ(ctx.immediate_->wait(handle), VK_SUCCESS);
+  for (size_t index = 0; index < signals.size(); ++index) {
+    uint64_t value = 0;
+    ASSERT_EQ(ctx.vf_.vkGetSemaphoreCounterValueKHR(
+                  ctx.getVkDevice(), signals[index]->getVkSemaphore(), &value),
+              VK_SUCCESS);
+    EXPECT_EQ(value, index + 1);
+  }
+  const auto& consumer = ctx.immediate_->acquire();
+  EXPECT_TRUE(ctx.immediate_->waitSemaphore(presentation.getVkSemaphore()));
+  const auto consumerHandle = ctx.immediate_->submit(consumer);
+  EXPECT_EQ(ctx.immediate_->wait(consumerHandle), VK_SUCCESS);
+}
+
+TEST_F(VulkanImmediateCommandsTest, LegacyPresentationSignalPreservesInjectedSignalCapacity) {
+  auto& ctx = getVulkanContext();
+  vulkan::VulkanImmediateCommands commands(ctx.vf_,
+                                           ctx.getVkDevice(),
+                                           ctx.deviceQueues_.graphicsQueueFamilyIndex,
+                                           false,
+                                           false,
+                                           "Legacy presentation test");
+  std::vector<std::unique_ptr<vulkan::VulkanSemaphore>> signals;
+  vulkan::VulkanSemaphore presentation(ctx.vf_, ctx.getVkDevice(), false, "Presentation test");
+  const auto& wrapper = commands.acquire();
+  for (uint32_t index = 0; index < vulkan::VulkanImmediateCommands::kMaxInjectedSemaphores;
+       ++index) {
+    signals.push_back(std::make_unique<vulkan::VulkanSemaphore>(
+        ctx.vf_, ctx.getVkDevice(), false, "Injected legacy signal test"));
+    EXPECT_TRUE(commands.signalSemaphore(signals.back()->getVkSemaphore(), 0));
+  }
+  const auto handle = submitForPresentation(commands, wrapper, presentation.getVkSemaphore());
+  ASSERT_EQ(commands.wait(handle), VK_SUCCESS);
+  const auto& consumer = commands.acquire();
+  for (const auto& signal : signals) {
+    EXPECT_TRUE(commands.waitSemaphore(signal->getVkSemaphore()));
+  }
+  const auto consumerHandle = commands.submit(consumer);
+  ASSERT_EQ(commands.wait(consumerHandle), VK_SUCCESS);
+  const auto& presentationConsumer = commands.acquire();
+  EXPECT_TRUE(commands.waitSemaphore(presentation.getVkSemaphore()));
+  const auto presentationHandle = commands.submit(presentationConsumer);
+  EXPECT_EQ(commands.wait(presentationHandle), VK_SUCCESS);
 }
 
 TEST_F(VulkanImmediateCommandsTest, InjectedWaitSemaphoreReachesSubmit) {

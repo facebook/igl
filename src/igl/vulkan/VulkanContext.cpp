@@ -1645,7 +1645,7 @@ Result VulkanContext::present() const {
     return Result(Result::Code::InvalidOperation, "No swapchain available");
   }
 
-  return swapchain_->present(immediate_->acquireLastSubmitSemaphore());
+  return swapchain_->present(swapchain_->getPresentSemaphore());
 }
 
 std::unique_ptr<VulkanBuffer> VulkanContext::createBuffer(VkDeviceSize bufferSize,

@@ -13,6 +13,10 @@
 #include <igl/vulkan/VulkanHelpers.h>
 #include <igl/vulkan/VulkanSemaphore.h>
 
+namespace igl::tests {
+class VulkanImmediateCommandsTest;
+}
+
 namespace igl::vulkan {
 
 /// @brief This class provides a simplified interface for obtaining and submitting Command Buffers,
@@ -196,6 +200,10 @@ class VulkanImmediateCommands final {
   [[nodiscard]] int cachedFDFromSubmitHandle(SubmitHandle handle) const noexcept;
 
  private:
+  friend class CommandQueue;
+  friend class igl::tests::VulkanImmediateCommandsTest;
+  SubmitHandle submit(const CommandBufferWrapper& wrapper, VkSemaphore presentationSemaphore);
+
   /// @brief Resets all commands buffers and their associated fences that are valid, are not being
   /// encoded, and have completed execution by the GPU (their fences have been signaled). Resets the
   /// number of available command buffers.
