@@ -55,8 +55,9 @@ class VulkanSwapchain final {
 
   std::shared_ptr<VulkanTexture> getCurrentVulkanTexture() {
     if (getNextImage_) {
-      acquireNextImage();
-      getNextImage_ = false;
+      if (const Result result = acquireNextImage(); !result.isOk()) {
+        return nullptr;
+      }
     }
 
     if (IGL_DEBUG_VERIFY(currentImageIndex_ < numSwapchainImages_)) {
@@ -97,6 +98,7 @@ class VulkanSwapchain final {
   }
 
  private:
+  [[nodiscard]] VulkanFence createAcquireFence(uint32_t index) const;
   void lazyAllocateDepthBuffer() const;
 
  public:
