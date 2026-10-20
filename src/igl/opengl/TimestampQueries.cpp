@@ -7,6 +7,7 @@
 
 #include <igl/opengl/TimestampQueries.h>
 
+#include <algorithm>
 #include <igl/Macros.h>
 #include <igl/opengl/DeviceFeatureSet.h>
 #include <igl/opengl/GLFunc.h>
@@ -33,6 +34,7 @@ TimestampQueries::TimestampQueries(IContext& context, uint32_t maxSlots) :
   WithContext(context), maxSlots_(maxSlots) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
   queryIds_.resize(maxSlots);
+  begun_.resize(maxSlots);
   iglGenQueries(maxSlots, queryIds_.data());
 
   // Validate: broken Mali budget GPU drivers silently fail iglGenQueries,
@@ -65,8 +67,13 @@ uint32_t TimestampQueries::count() const {
   return currentIndex_;
 }
 
+bool TimestampQueries::wasBegun(uint32_t slotIndex) const {
+  return slotIndex < currentIndex_ && begun_[slotIndex];
+}
+
 void TimestampQueries::reset() {
   currentIndex_ = 0;
+  std::fill(begun_.begin(), begun_.end(), false);
 }
 
 bool TimestampQueries::isValid() const {
@@ -82,11 +89,11 @@ bool TimestampQueries::resultsAvailable() const {
   if (!valid_ || currentIndex_ == 0) {
     return false;
   }
-  if (queryIds_[currentIndex_ - 1] == 0) {
+  if (queryIds_[currentIndex_ - 1] == 0 || !begun_[currentIndex_ - 1]) {
     return false;
   }
   GLint available = 0;
-  iglGetQueryObjectiv(queryIds_[currentIndex_ - 1], GL_QUERY_RESULT_AVAILABLE, &available);
+  getQueryObjectiv_(queryIds_[currentIndex_ - 1], GL_QUERY_RESULT_AVAILABLE, &available);
   return available != 0;
 }
 
@@ -100,18 +107,18 @@ TimestampQueryResult TimestampQueries::getElapsedNanosResult(uint32_t slotIndex)
   if (!valid_ || slotIndex >= currentIndex_) {
     return {};
   }
-  if (queryIds_[slotIndex] == 0) {
+  if (queryIds_[slotIndex] == 0 || !begun_[slotIndex]) {
     return {};
   }
 
   GLint available = 0;
-  iglGetQueryObjectiv(queryIds_[slotIndex], GL_QUERY_RESULT_AVAILABLE, &available);
+  getQueryObjectiv_(queryIds_[slotIndex], GL_QUERY_RESULT_AVAILABLE, &available);
   if (!available) {
     return {};
   }
 
   GLuint64 result = 0;
-  iglGetQueryObjectui64v(queryIds_[slotIndex], GL_QUERY_RESULT, &result);
+  getQueryObjectui64v_(queryIds_[slotIndex], GL_QUERY_RESULT, &result);
   return {.elapsedNanos = result, .valid = true};
 }
 
@@ -133,7 +140,8 @@ void TimestampQueries::beginElapsedQuery(uint32_t slotIndex) {
   if (queryIds_[slotIndex] == 0) {
     return; // guard against zero query ID - invalid per GL spec
   }
-  iglBeginQuery(GL_TIME_ELAPSED, queryIds_[slotIndex]);
+  beginQuery_(GL_TIME_ELAPSED, queryIds_[slotIndex]);
+  begun_[slotIndex] = true;
   if (slotIndex >= currentIndex_) {
     currentIndex_ = slotIndex + 1;
   }

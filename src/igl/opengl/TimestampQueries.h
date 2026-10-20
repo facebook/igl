@@ -9,8 +9,13 @@
 
 #include <vector>
 #include <igl/TimestampQueries.h>
+#include <igl/opengl/GLFunc.h>
 #include <igl/opengl/IContext.h>
 #include <igl/opengl/WithContext.h>
+
+namespace igl::tests {
+class TimerOGLTest;
+}
 
 namespace igl::opengl {
 
@@ -25,6 +30,7 @@ class TimestampQueries : public ITimestampQueries, public WithContext {
 
   [[nodiscard]] uint32_t capacity() const override;
   [[nodiscard]] uint32_t count() const override;
+  [[nodiscard]] bool wasBegun(uint32_t slotIndex) const override;
   void reset() override;
   [[nodiscard]] bool resultsAvailable() const override;
   [[nodiscard]] uint64_t getElapsedNanos(uint32_t slotIndex) const override;
@@ -50,7 +56,13 @@ class TimestampQueries : public ITimestampQueries, public WithContext {
   virtual void endElapsedQuery();
 
  private:
+  friend class igl::tests::TimerOGLTest;
+
+  PFNIGLBEGINQUERYPROC beginQuery_ = iglBeginQuery;
+  PFNIGLGETQUERYOBJECTIVPROC getQueryObjectiv_ = iglGetQueryObjectiv;
+  PFNIGLGETQUERYOBJECTUI64VPROC getQueryObjectui64v_ = iglGetQueryObjectui64v;
   std::vector<GLuint> queryIds_;
+  std::vector<bool> begun_;
   uint32_t maxSlots_ = 0;
   uint32_t currentIndex_ = 0;
   bool valid_ = true; // set once in constructor
