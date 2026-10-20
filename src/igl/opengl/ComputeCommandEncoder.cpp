@@ -133,18 +133,17 @@ void ComputeCommandEncoder::bindTexture(uint32_t index, ITexture* texture) {
 void ComputeCommandEncoder::bindImageTexture(uint32_t index,
                                              ITexture* texture,
                                              TextureFormat format) {
-  (void)index;
-  (void)texture;
-  (void)format;
-
-  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+  IGL_PROFILER_FUNCTION();
+  if (IGL_DEBUG_VERIFY(adapter_) && texture) {
+    adapter_->setImageTexture(texture, index, format);
+  }
 }
 
 void ComputeCommandEncoder::bindSamplerState(uint32_t index, ISamplerState* samplerState) {
-  (void)index;
-  (void)samplerState;
-
-  IGL_DEBUG_ASSERT_NOT_IMPLEMENTED();
+  IGL_PROFILER_FUNCTION();
+  if (IGL_DEBUG_VERIFY(adapter_) && samplerState) {
+    adapter_->setSamplerState(samplerState, index);
+  }
 }
 
 // NOLINTBEGIN(bugprone-easily-swappable-parameters)
