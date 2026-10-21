@@ -183,12 +183,14 @@ VkFormat textureFormatToVkFormat(TextureFormat format) {
     return VK_FORMAT_R16G16_SFLOAT;
   case TextureFormat::RG_UInt16:
     return VK_FORMAT_R16G16_UINT;
+  // Vulkan names packed components from the most significant bit, so the formats with R in bits
+  // 0-9 (GL_UNSIGNED_INT_2_10_10_10_REV, MTLPixelFormatRGB10A2Unorm) are A2B10G10R10.
   case TextureFormat::RGB10_A2_UNorm_Rev:
-    return VK_FORMAT_A2R10G10B10_UNORM_PACK32;
-  case TextureFormat::RGB10_A2_Uint_Rev:
-    return VK_FORMAT_A2R10G10B10_UINT_PACK32;
-  case TextureFormat::BGR10_A2_Unorm:
     return VK_FORMAT_A2B10G10R10_UNORM_PACK32;
+  case TextureFormat::RGB10_A2_Uint_Rev:
+    return VK_FORMAT_A2B10G10R10_UINT_PACK32;
+  case TextureFormat::BGR10_A2_Unorm:
+    return VK_FORMAT_A2R10G10B10_UNORM_PACK32;
   case TextureFormat::B10G11R11_UFloat:
     return VK_FORMAT_B10G11R11_UFLOAT_PACK32;
   case TextureFormat::R_F32:
@@ -325,12 +327,12 @@ VkFormat textureFormatToVkFormat(TextureFormat format) {
 
 bool isTextureFormatRGB(VkFormat format) {
   return format == VK_FORMAT_R8G8B8A8_UNORM || format == VK_FORMAT_R8G8B8A8_SRGB ||
-         format == VK_FORMAT_A2R10G10B10_UNORM_PACK32;
+         format == VK_FORMAT_A2B10G10R10_UNORM_PACK32;
 }
 
 bool isTextureFormatBGR(VkFormat format) {
   return format == VK_FORMAT_B8G8R8A8_UNORM || format == VK_FORMAT_B8G8R8A8_SRGB ||
-         format == VK_FORMAT_A2B10G10R10_UNORM_PACK32;
+         format == VK_FORMAT_A2R10G10B10_UNORM_PACK32;
 }
 
 // Single source of truth for sRGB <-> UNORM VkFormat pairs. isSrgbFormat(), srgbToUnorm() and
