@@ -22,6 +22,15 @@
 namespace igl::tests {
 
 namespace {
+class StubTimestampQueries final : public opengl::TimestampQueries {
+ public:
+  using TimestampQueries::QueryFunctions;
+  StubTimestampQueries(opengl::IContext& context,
+                       uint32_t capacity,
+                       QueryFunctions queryFunctions) :
+    TimestampQueries(context, capacity, queryFunctions) {}
+};
+
 // Exercise encoder retention on drivers without GL_TIME_ELAPSED support.
 class NoElapsedTimestampQueries final : public opengl::TimestampQueries {
  public:
@@ -60,17 +69,20 @@ class TimerOGLTest : public ::testing::Test {
 
  protected:
   std::unique_ptr<opengl::TimestampQueries> createTimestampQueries(uint32_t capacity) {
-    auto queries = std::make_unique<opengl::TimestampQueries>(*context_, capacity);
-    queries->beginQuery_ = [](GLenum, GLuint) {};
-    queries->getQueryObjectiv_ = [](GLuint, GLenum, GLint* value) {
-      ++availabilityReadCount;
-      *value = available;
-    };
-    queries->getQueryObjectui64v_ = [](GLuint, GLenum, GLuint64* value) {
-      ++resultReadCount;
-      *value = 123;
-    };
-    return queries;
+    return std::make_unique<StubTimestampQueries>(
+        *context_,
+        capacity,
+        StubTimestampQueries::QueryFunctions{.beginQuery = [](GLenum, GLuint) {},
+                                             .getQueryObjectiv =
+                                                 [](GLuint, GLenum, GLint* value) {
+                                                   ++availabilityReadCount;
+                                                   *value = available;
+                                                 },
+                                             .getQueryObjectui64v =
+                                                 [](GLuint, GLenum, GLuint64* value) {
+                                                   ++resultReadCount;
+                                                   *value = 123;
+                                                 }});
   }
 
   void createFramebuffer(std::shared_ptr<IFramebuffer>& framebuffer) {
@@ -113,6 +125,21 @@ class TimerOGLTest : public ::testing::Test {
   std::shared_ptr<ICommandQueue> cmdQueue_;
   opengl::IContext* context_ = nullptr;
 };
+
+TEST_F(TimerOGLTest, NullQueryFunctionsAreInvalid) {
+  for (const auto& queryFunctions :
+       {StubTimestampQueries::QueryFunctions{.beginQuery = nullptr},
+        StubTimestampQueries::QueryFunctions{.getQueryObjectiv = nullptr},
+        StubTimestampQueries::QueryFunctions{.getQueryObjectui64v = nullptr}}) {
+    const StubTimestampQueries queries(*context_, 1, queryFunctions);
+    EXPECT_FALSE(queries.isValid());
+    EXPECT_EQ(queries.capacity(), 1u);
+    EXPECT_EQ(queries.count(), 0u);
+    EXPECT_FALSE(queries.wasBegun(0));
+    EXPECT_FALSE(queries.resultsAvailable());
+    EXPECT_FALSE(queries.getElapsedNanosResult(0).valid);
+  }
+}
 
 TEST_F(TimerOGLTest, UnbegunGapDoesNotReadQuery) {
   auto queries = createTimestampQueries(2);

@@ -32,8 +32,18 @@
 namespace igl::opengl {
 
 TimestampQueries::TimestampQueries(IContext& context, uint32_t maxSlots) :
-  WithContext(context), maxSlots_(maxSlots) {
+  TimestampQueries(context, maxSlots, QueryFunctions{}) {}
+
+TimestampQueries::TimestampQueries(IContext& context,
+                                   uint32_t maxSlots,
+                                   QueryFunctions queryFunctions) :
+  WithContext(context), queryFunctions_(queryFunctions), maxSlots_(maxSlots) {
   IGL_PROFILER_FUNCTION_COLOR(IGL_PROFILER_COLOR_CREATE);
+  if (!queryFunctions_.beginQuery || !queryFunctions_.getQueryObjectiv ||
+      !queryFunctions_.getQueryObjectui64v) {
+    valid_ = false;
+    return;
+  }
   queryIds_.resize(maxSlots);
   begun_.resize(maxSlots);
   retainedFramebuffers_.resize(maxSlots);
@@ -99,7 +109,8 @@ bool TimestampQueries::resultsAvailable() const {
     return false;
   }
   GLint available = 0;
-  getQueryObjectiv_(queryIds_[currentIndex_ - 1], GL_QUERY_RESULT_AVAILABLE, &available);
+  queryFunctions_.getQueryObjectiv(
+      queryIds_[currentIndex_ - 1], GL_QUERY_RESULT_AVAILABLE, &available);
   return available != 0;
 }
 
@@ -118,13 +129,13 @@ TimestampQueryResult TimestampQueries::getElapsedNanosResult(uint32_t slotIndex)
   }
 
   GLint available = 0;
-  getQueryObjectiv_(queryIds_[slotIndex], GL_QUERY_RESULT_AVAILABLE, &available);
+  queryFunctions_.getQueryObjectiv(queryIds_[slotIndex], GL_QUERY_RESULT_AVAILABLE, &available);
   if (!available) {
     return {};
   }
 
   GLuint64 result = 0;
-  getQueryObjectui64v_(queryIds_[slotIndex], GL_QUERY_RESULT, &result);
+  queryFunctions_.getQueryObjectui64v(queryIds_[slotIndex], GL_QUERY_RESULT, &result);
   return {.elapsedNanos = result, .valid = true};
 }
 
@@ -167,7 +178,7 @@ void TimestampQueries::beginElapsedQuery(uint32_t slotIndex) {
   if (queryIds_[slotIndex] == 0) {
     return; // guard against zero query ID - invalid per GL spec
   }
-  beginQuery_(GL_TIME_ELAPSED, queryIds_[slotIndex]);
+  queryFunctions_.beginQuery(GL_TIME_ELAPSED, queryIds_[slotIndex]);
   begun_[slotIndex] = true;
   if (slotIndex >= currentIndex_) {
     currentIndex_ = slotIndex + 1;

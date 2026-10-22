@@ -14,10 +14,6 @@
 #include <igl/opengl/IContext.h>
 #include <igl/opengl/WithContext.h>
 
-namespace igl::tests {
-class TimerOGLTest;
-}
-
 namespace igl::opengl {
 
 class TimestampQueries : public ITimestampQueries, public WithContext {
@@ -56,8 +52,16 @@ class TimestampQueries : public ITimestampQueries, public WithContext {
   /// Virtual for the same reason as beginElapsedQuery() above.
   virtual void endElapsedQuery();
 
+ protected:
+  struct QueryFunctions {
+    PFNIGLBEGINQUERYPROC beginQuery = iglBeginQuery;
+    PFNIGLGETQUERYOBJECTIVPROC getQueryObjectiv = iglGetQueryObjectiv;
+    PFNIGLGETQUERYOBJECTUI64VPROC getQueryObjectui64v = iglGetQueryObjectui64v;
+  };
+
+  TimestampQueries(IContext& context, uint32_t maxSlots, QueryFunctions queryFunctions);
+
  private:
-  friend class igl::tests::TimerOGLTest;
   friend class RenderCommandEncoder;
   void beginElapsedQuery(uint32_t slotIndex, const std::shared_ptr<IFramebuffer>& framebuffer);
 
@@ -66,9 +70,7 @@ class TimestampQueries : public ITimestampQueries, public WithContext {
     FramebufferDesc attachments;
   };
 
-  PFNIGLBEGINQUERYPROC beginQuery_ = iglBeginQuery;
-  PFNIGLGETQUERYOBJECTIVPROC getQueryObjectiv_ = iglGetQueryObjectiv;
-  PFNIGLGETQUERYOBJECTUI64VPROC getQueryObjectui64v_ = iglGetQueryObjectui64v;
+  const QueryFunctions queryFunctions_;
   std::vector<GLuint> queryIds_;
   std::vector<bool> begun_;
   std::vector<RetainedFramebuffer> retainedFramebuffers_;

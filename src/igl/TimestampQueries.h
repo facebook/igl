@@ -46,7 +46,7 @@ class ITimestampQueries : public ITrackedResource<ITimestampQueries> {
   [[nodiscard]] virtual uint32_t count() const = 0;
 
   /// Whether begin was issued for this slot since reset(), not whether the driver accepted it.
-  /// Backends without per-slot tracking preserve the recorded-range behavior.
+  /// The default preserves recorded-range behavior; override to identify unbegun gaps.
   [[nodiscard]] virtual bool wasBegun(uint32_t slotIndex) const {
     return slotIndex < count();
   }
