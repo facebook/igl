@@ -74,7 +74,7 @@ constexpr WGPUFeatureName kOptionalFeatures[] = {
     WGPUFeatureName_TextureCompressionETC2,
     WGPUFeatureName_TextureCompressionASTC,
     compat::kUnorm16TextureFormatsFeature,
-#if !IGL_WEBGPU_HEADER_V2
+#if !IGL_PLATFORM_EMSCRIPTEN
     WGPUFeatureName_TransientAttachments,
 #endif
 };
@@ -444,7 +444,7 @@ Result WebGPUContext::initDevice() {
   deviceDesc.requiredFeatureCount = features.size();
   deviceDesc.requiredFeatures = features.data();
   deviceDesc.requiredLimits = desc_.requestAdapterLimits ? &limits : nullptr;
-#if !IGL_WEBGPU_HEADER_V2
+#if !IGL_PLATFORM_EMSCRIPTEN
   // Dawn quantizes timestamps like browsers do unless this toggle is disabled.
   static constexpr const char* kDisabledToggles[] = {"timestamp_quantization"};
   WGPUDawnTogglesDescriptor toggles = WGPU_DAWN_TOGGLES_DESCRIPTOR_INIT;

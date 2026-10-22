@@ -163,7 +163,7 @@ bool DeviceFeatureSet::hasFeature(DeviceFeatures feature) const {
   case DeviceFeatures::UpdateBuffer:
     return false;
   case DeviceFeatures::MemorylessAttachments:
-#if IGL_WEBGPU_HEADER_V2
+#if IGL_PLATFORM_EMSCRIPTEN
     return false;
 #else
     return hasWGPUFeature(WGPUFeatureName_TransientAttachments);

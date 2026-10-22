@@ -181,14 +181,10 @@ TEST(WebGPUCompatTest, QueueWorkDoneCallbackForwardsStatusAndUserdata) {
   EXPECT_EQ(info.userdata1, &status);
   EXPECT_EQ(info.userdata2, &numCalls);
   ASSERT_NE(info.callback, nullptr);
-#if IGL_WEBGPU_HEADER_V2
   info.callback(WGPUQueueWorkDoneStatus_Success,
                 webgpu::toWGPUStringView("done"),
                 info.userdata1,
                 info.userdata2);
-#else
-  info.callback(WGPUQueueWorkDoneStatus_Success, info.userdata1, info.userdata2);
-#endif
   EXPECT_EQ(status, WGPUQueueWorkDoneStatus_Success);
   EXPECT_EQ(numCalls, 1);
 }

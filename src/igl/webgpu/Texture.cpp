@@ -212,9 +212,12 @@ std::shared_ptr<Texture> Texture::create(WebGPUContext& ctx,
   if (renderable && desc.numMipLevels > 1) {
     usage |= WGPUTextureUsage_TextureBinding;
   }
+  // Dawn allows a transient attachment only with one layer and one mip level; other shapes fall
+  // back to an ordinary texture.
   const bool transient = desc.storage == ResourceStorage::Memoryless &&
-                         features.hasFeature(DeviceFeatures::MemorylessAttachments);
-#if !IGL_WEBGPU_HEADER_V2
+                         features.hasFeature(DeviceFeatures::MemorylessAttachments) &&
+                         getWGPULayerCount(desc) == 1 && desc.numMipLevels == 1;
+#if !IGL_PLATFORM_EMSCRIPTEN
   if (transient) {
     // Dawn allows no other usage on a transient attachment.
     usage = WGPUTextureUsage_RenderAttachment | WGPUTextureUsage_TransientAttachment;
@@ -242,7 +245,9 @@ std::shared_ptr<Texture> Texture::create(WebGPUContext& ctx,
   textureDesc.format = *format;
   textureDesc.mipLevelCount = desc.numMipLevels;
   textureDesc.sampleCount = desc.numSamples;
-  const WGPUTextureFormat viewFormat = getViewFormatCounterpart(*format);
+  // Dawn rejects view formats on a transient attachment.
+  const WGPUTextureFormat viewFormat = transient ? WGPUTextureFormat_Undefined
+                                                 : getViewFormatCounterpart(*format);
   if (viewFormat != WGPUTextureFormat_Undefined) {
     textureDesc.viewFormatCount = 1;
     textureDesc.viewFormats = &viewFormat;
