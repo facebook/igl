@@ -9,9 +9,11 @@
 
 #include <algorithm>
 #include <optional>
+#include <webgpu/webgpu.h>
+#include <igl/Config.h>
+#include <igl/IGLFolly.h>
 #include <igl/webgpu/Common.h>
 #include <igl/webgpu/UniformArena.h>
-#include <igl/webgpu/WebGPUCompat.h>
 
 namespace igl::webgpu {
 
