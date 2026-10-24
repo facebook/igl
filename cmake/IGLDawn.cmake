@@ -12,8 +12,11 @@
 #      webgpu.h matches the one WebGPUCompat.h is written against. Building it takes a while.
 
 set(IGL_WEBGPU_DAWN_DIR "" CACHE PATH "Installed Dawn to use for IGL_WITH_WEBGPU")
-set(IGL_WEBGPU_DAWN_REVISION "d57bbdb7c907b4d276c6d7bd6fc50115afd9dc85" CACHE STRING
+set(IGL_WEBGPU_DAWN_REVISION "42d0e90fe3552a2a8e95ca8e506bc19bbda12729" CACHE STRING
                                                                            "Dawn revision to fetch")
+
+# The exported dawn::webgpu_dawn links Threads::Threads, but DawnConfig.cmake does not find it.
+find_package(Threads REQUIRED)
 
 if(IGL_WEBGPU_DAWN_DIR)
   find_package(Dawn CONFIG REQUIRED PATHS "${IGL_WEBGPU_DAWN_DIR}" NO_DEFAULT_PATH)
