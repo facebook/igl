@@ -323,6 +323,10 @@ class IDevice : public ICapabilities, public base::IDeviceBase {
     return false;
   }
 
+  /// Marks the device lost after its transport disconnects.
+  /// Default is a no-op for backends that do not track device loss.
+  virtual void markDeviceLost() noexcept {}
+
   /**
    * @brief Transitions device state from Lost to RecoveryArmed.
    * Called when the transport layer (e.g. Intralink) signals reconnect.
