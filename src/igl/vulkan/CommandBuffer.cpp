@@ -130,13 +130,15 @@ void CommandBuffer::present(const std::shared_ptr<ITexture>& surface) const {
     const VkPipelineStageFlagBits srcStage = (img.imageLayout_ == VK_IMAGE_LAYOUT_GENERAL)
                                                  ? VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT
                                                  : VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    img.transitionLayout(
-        wrapper_.cmdBuf,
-        VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-        srcStage,
-        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, // wait for all subsequent operations
-        VkImageSubresourceRange{
-            VK_IMAGE_ASPECT_COLOR_BIT, 0, VK_REMAINING_MIP_LEVELS, 0, VK_REMAINING_ARRAY_LAYERS});
+    img.transitionLayout(wrapper_.cmdBuf,
+                         VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                         srcStage,
+                         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, // wait for all subsequent operations
+                         VkImageSubresourceRange{.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                                                 .baseMipLevel = 0,
+                                                 .levelCount = VK_REMAINING_MIP_LEVELS,
+                                                 .baseArrayLayer = 0,
+                                                 .layerCount = VK_REMAINING_ARRAY_LAYERS});
     return;
   }
 
