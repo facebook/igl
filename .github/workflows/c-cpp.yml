@@ -307,7 +307,7 @@ jobs:
       name: "WebGPU - Dawn on lavapipe (Ubuntu)"
       runs-on: ubuntu-latest
       env:
-        DAWN_REVISION: d57bbdb7c907b4d276c6d7bd6fc50115afd9dc85
+        DAWN_REVISION: 42d0e90fe3552a2a8e95ca8e506bc19bbda12729
         CC: clang
         CXX: clang++
       steps:
