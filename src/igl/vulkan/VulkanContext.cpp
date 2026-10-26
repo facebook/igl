@@ -1223,6 +1223,18 @@ Result VulkanContext::initContext(const HWDeviceDesc& desc,
     return Result(Result::Code::InvalidOperation, "Cannot initialize VK_KHR_buffer_device_address");
   }
 
+#if !IGL_VULKAN_HAS_LEGACY_RENDERPASS
+  // Promote VK_KHR_create_renderpass2 extension functions to Vulkan 1.2 core function pointers
+  // when core is unavailable (e.g., devices that support Vulkan 1.1 + VK_KHR_create_renderpass2)
+  if (!tableImpl_->vkCreateRenderPass2) {
+    tableImpl_->vkCreateRenderPass2 = (PFN_vkCreateRenderPass2)tableImpl_->vkCreateRenderPass2KHR;
+    tableImpl_->vkCmdBeginRenderPass2 =
+        (PFN_vkCmdBeginRenderPass2)tableImpl_->vkCmdBeginRenderPass2KHR;
+    tableImpl_->vkCmdEndRenderPass2 = (PFN_vkCmdEndRenderPass2)tableImpl_->vkCmdEndRenderPass2KHR;
+    tableImpl_->vkCmdNextSubpass2 = (PFN_vkCmdNextSubpass2)tableImpl_->vkCmdNextSubpass2KHR;
+  }
+#endif // !IGL_VULKAN_HAS_LEGACY_RENDERPASS
+
   vf_.vkGetDeviceQueue(
       device, deviceQueues_.graphicsQueueFamilyIndex, 0, &deviceQueues_.graphicsQueue);
   vf_.vkGetDeviceQueue(
