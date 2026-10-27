@@ -324,7 +324,10 @@ class DescriptorPoolsArena final {
     VkDescriptorPoolSize poolSizes[IGL_ARRAY_NUM_ELEMENTS(types_)];
     for (uint32_t i = 0; i != numTypes_; i++) {
       poolSizes[i] = VkDescriptorPoolSize{
-          types_[i], numDescriptorsPerDSet_[i] ? kNumDSetsPerPool * numDescriptorsPerDSet_[i] : 1u};
+          .type = types_[i],
+          .descriptorCount =
+              numDescriptorsPerDSet_[i] ? kNumDSetsPerPool * numDescriptorsPerDSet_[i] : 1u,
+      };
     }
     VK_ASSERT(ivkCreateDescriptorPool(&ctx_.vf_,
                                       device_,
@@ -1335,7 +1338,7 @@ Result VulkanContext::initContext(const HWDeviceDesc& desc,
     const VkFormat dummyTextureFormat = VK_FORMAT_R8G8B8A8_UNORM;
     Result result;
     auto image = createImage(VK_IMAGE_TYPE_2D,
-                             VkExtent3D{1, 1, 1},
+                             VkExtent3D{.width = 1, .height = 1, .depth = 1},
                              dummyTextureFormat,
                              1,
                              1,
@@ -2753,10 +2756,10 @@ VkSamplerYcbcrConversionInfo VulkanContext::getOrCreateYcbcrConversionInfo(VkFor
       .ycbcrRange = VK_SAMPLER_YCBCR_RANGE_ITU_FULL,
       .components =
           {
-              VK_COMPONENT_SWIZZLE_IDENTITY,
-              VK_COMPONENT_SWIZZLE_IDENTITY,
-              VK_COMPONENT_SWIZZLE_IDENTITY,
-              VK_COMPONENT_SWIZZLE_IDENTITY,
+              .r = VK_COMPONENT_SWIZZLE_IDENTITY,
+              .g = VK_COMPONENT_SWIZZLE_IDENTITY,
+              .b = VK_COMPONENT_SWIZZLE_IDENTITY,
+              .a = VK_COMPONENT_SWIZZLE_IDENTITY,
           },
       .xChromaOffset = midpoint ? VK_CHROMA_LOCATION_MIDPOINT : VK_CHROMA_LOCATION_COSITED_EVEN,
       .yChromaOffset = midpoint ? VK_CHROMA_LOCATION_MIDPOINT : VK_CHROMA_LOCATION_COSITED_EVEN,
