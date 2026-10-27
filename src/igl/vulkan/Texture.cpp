@@ -199,9 +199,9 @@ Result Texture::create(const TextureDesc& desc) {
 
   if (desc_.exportability == TextureDesc::TextureExportability::NoExport) {
     image = ctx.createImage(imageType,
-                            VkExtent3D{static_cast<uint32_t>(desc_.width),
-                                       static_cast<uint32_t>(desc_.height),
-                                       static_cast<uint32_t>(desc_.depth)},
+                            VkExtent3D{.width = static_cast<uint32_t>(desc_.width),
+                                       .height = static_cast<uint32_t>(desc_.height),
+                                       .depth = static_cast<uint32_t>(desc_.depth)},
                             vkFormat,
                             static_cast<uint32_t>(desc_.numMipLevels),
                             arrayLayerCount,
