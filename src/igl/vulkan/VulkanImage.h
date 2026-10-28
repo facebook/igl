@@ -22,7 +22,7 @@ class VulkanContext;
 struct VulkanImageCreateInfo {
   VkImageUsageFlags usageFlags = 0;
   bool isExternallyManaged = true;
-  VkExtent3D extent = VkExtent3D{0, 0, 0};
+  VkExtent3D extent = VkExtent3D{.width = 0, .height = 0, .depth = 0};
   VkImageType type = VK_IMAGE_TYPE_MAX_ENUM;
   VkFormat imageFormat = VK_FORMAT_UNDEFINED;
   uint32_t mipLevels = 1;
@@ -47,7 +47,7 @@ class VulkanImage final {
               const char* debugName = nullptr,
               VkImageUsageFlags usageFlags = 0,
               bool isExternallyManaged = true,
-              VkExtent3D extent = VkExtent3D{0, 0, 0},
+              VkExtent3D extent = VkExtent3D{.width = 0, .height = 0, .depth = 0},
               VkImageType type = VK_IMAGE_TYPE_MAX_ENUM,
               VkFormat imageFormat = VK_FORMAT_UNDEFINED,
               uint32_t mipLevels = 1,
@@ -304,7 +304,7 @@ class VulkanImage final {
   VkFormatProperties formatProperties_{};
   void* mappedPtr_ = nullptr;
   bool isExternallyManaged_ = false;
-  VkExtent3D extent_ = {0, 0, 0};
+  VkExtent3D extent_ = {.width = 0, .height = 0, .depth = 0};
   VkImageType type_ = VK_IMAGE_TYPE_MAX_ENUM;
   VkFormat imageFormat_ = VK_FORMAT_UNDEFINED;
   uint32_t mipLevels_ = 1;
