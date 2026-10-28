@@ -79,6 +79,11 @@ bool InputListener::process(const igl::shell::KeyEvent& event) {
   makeCurrentContext();
 
   ImGuiIO& io = ImGui::GetIO();
+  // Ahead of the key, so a shortcut such as Ctrl+A sees its modifier.
+  io.AddKeyEvent(ImGuiMod_Ctrl, (event.modifiers & igl::shell::kKeyEventModifierControl) != 0);
+  io.AddKeyEvent(ImGuiMod_Shift, (event.modifiers & igl::shell::kKeyEventModifierShift) != 0);
+  io.AddKeyEvent(ImGuiMod_Alt, (event.modifiers & igl::shell::kKeyEventModifierOption) != 0);
+  io.AddKeyEvent(ImGuiMod_Super, (event.modifiers & igl::shell::kKeyEventModifierCommand) != 0);
   ImGuiKey key = keyFromShellKeyEvent(event);
   if (key != ImGuiKey_None) {
     io.AddKeyEvent(key, event.isDown);
