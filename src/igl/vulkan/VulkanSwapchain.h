@@ -76,7 +76,7 @@ class VulkanSwapchain final {
     return height_;
   }
   [[nodiscard]] VkExtent2D getExtent() const {
-    return VkExtent2D{width_, height_};
+    return VkExtent2D{.width = width_, .height = height_};
   }
 
   [[nodiscard]] VkFormat getFormatColor() const {
