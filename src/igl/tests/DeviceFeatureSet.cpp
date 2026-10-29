@@ -551,7 +551,60 @@ TEST_F(GpuTimerTierTest, MaliConservative) {
 
 TEST_F(GpuTimerTierTest, MaliFull) {
   EXPECT_EQ(opengl::classifyGpuTimerTier("Mali-G77", "ARM"), opengl::GpuTimerTier::Full);
-  EXPECT_EQ(opengl::classifyGpuTimerTier("Mali-G710", "ARM"), opengl::GpuTimerTier::Full);
+  EXPECT_EQ(opengl::classifyGpuTimerTier("Mali-G78", "ARM"), opengl::GpuTimerTier::Full);
+  EXPECT_EQ(opengl::classifyGpuTimerTier("Mali-G310", "ARM"), opengl::GpuTimerTier::Full);
+  EXPECT_EQ(opengl::classifyGpuTimerTier("Mali-G510", "ARM"), opengl::GpuTimerTier::Full);
+  EXPECT_EQ(opengl::classifyGpuTimerTier("Mali-G599", "ARM"), opengl::GpuTimerTier::Full);
+}
+
+TEST_F(GpuTimerTierTest, MaliModernDisabled) {
+  for (const char* renderer : {"Mali-G600",
+                               "Mali-G610",
+                               "Mali-G615",
+                               "Mali-G620",
+                               "Mali-G625",
+                               "Mali-G710",
+                               "Mali-G715",
+                               "Mali-G720",
+                               "Mali-G725",
+                               "Mali-G925",
+                               "Mali-G610 MC6",
+                               "Mali-G715MC6",
+                               "Mali-G925 MC6"}) {
+    for (const char* vendor : {"ARM", "ARM Limited", "Arm"}) {
+      EXPECT_EQ(opengl::classifyGpuTimerTier(renderer, vendor), opengl::GpuTimerTier::Disabled)
+          << renderer << ", " << vendor;
+    }
+  }
+}
+
+TEST_F(GpuTimerTierTest, ImmortalisDisabled) {
+  for (const char* renderer : {"Immortalis-G715", "Immortalis-G720 MC6", "Immortalis-G925"}) {
+    for (const char* vendor : {"ARM", "ARM Limited", "Arm"}) {
+      EXPECT_EQ(opengl::classifyGpuTimerTier(renderer, vendor), opengl::GpuTimerTier::Disabled)
+          << renderer << ", " << vendor;
+    }
+  }
+}
+
+TEST_F(GpuTimerTierTest, MaliG1Disabled) {
+  for (const char* renderer : {"Mali-G1-Ultra", "Mali-G1-Premium", "Mali-G1-Pro"}) {
+    for (const char* vendor : {"ARM", "ARM Limited", "Arm"}) {
+      EXPECT_EQ(opengl::classifyGpuTimerTier(renderer, vendor), opengl::GpuTimerTier::Disabled)
+          << renderer << ", " << vendor;
+    }
+  }
+}
+
+TEST_F(GpuTimerTierTest, ModernMaliVendorCrossCheck) {
+  for (const char* renderer : {"Mali-G710", "Immortalis-G715", "Mali-G1-Ultra"}) {
+    EXPECT_EQ(opengl::classifyGpuTimerTier(renderer, "Qualcomm"), opengl::GpuTimerTier::Full)
+        << renderer;
+    EXPECT_EQ(opengl::classifyGpuTimerTier(renderer, "ARM Spoof"), opengl::GpuTimerTier::Full)
+        << renderer;
+    EXPECT_EQ(opengl::classifyGpuTimerTier(renderer, nullptr), opengl::GpuTimerTier::Full)
+        << renderer;
+  }
 }
 
 TEST_F(GpuTimerTierTest, MaliVendorCrossCheck) {
@@ -565,7 +618,7 @@ TEST_F(GpuTimerTierTest, MaliVendorVariants) {
   EXPECT_EQ(opengl::classifyGpuTimerTier("Mali-G52", "ARM Limited"),
             opengl::GpuTimerTier::Disabled);
   EXPECT_EQ(opengl::classifyGpuTimerTier("Mali-G76", "Arm"), opengl::GpuTimerTier::Conservative);
-  EXPECT_EQ(opengl::classifyGpuTimerTier("Mali-G710", "ARM Limited"), opengl::GpuTimerTier::Full);
+  EXPECT_EQ(opengl::classifyGpuTimerTier("Mali-G510", "ARM Limited"), opengl::GpuTimerTier::Full);
 }
 
 TEST_F(GpuTimerTierTest, MaliTBudget) {

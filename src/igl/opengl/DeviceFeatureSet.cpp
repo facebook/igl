@@ -161,8 +161,12 @@ std::optional<GpuTimerTier> classifyAdrenoTimerTier(const char* renderer, const 
 // would otherwise fall through to the default `Full` tier, the same failure mode
 // that has crashed Mali-T drivers in production.
 std::optional<GpuTimerTier> classifyMaliTimerTier(const char* renderer, const char* vendor) {
-  if (vendor == nullptr || !isArmVendor(vendor)) {
+  if (renderer == nullptr || vendor == nullptr || !isArmVendor(vendor)) {
     return std::nullopt;
+  }
+  if (std::strncmp(renderer, "Immortalis-", 11) == 0 ||
+      std::strncmp(renderer, "Mali-G1-", 8) == 0) {
+    return GpuTimerTier::Disabled;
   }
   // Mali-T series: all are budget GPUs with broken timer query implementations.
   // Common models: T720, T760, T820, T830, T860, T880.
@@ -177,13 +181,13 @@ std::optional<GpuTimerTier> classifyMaliTimerTier(const char* renderer, const ch
   if (std::sscanf(renderer, "Mali-G%d", &maliGNumber) != 1) {
     return std::nullopt;
   }
-  if (maliGNumber <= 68) {
-    return GpuTimerTier::Disabled; // G31–G68: 0 slots
+  if (maliGNumber <= 68 || maliGNumber >= 600) {
+    return GpuTimerTier::Disabled; // G31–G68, G600+: 0 slots
   }
   if (maliGNumber <= 76) {
     return GpuTimerTier::Conservative; // G72, G76: 32 slots
   }
-  return GpuTimerTier::Full; // G77+: 64 slots
+  return GpuTimerTier::Full;
 }
 
 // Classify PowerVR (Imagination Technologies) timer tier from renderer string.
