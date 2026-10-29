@@ -707,7 +707,7 @@ Result D3D12Context::createDevice() {
 
   // Try each shader model from highest to lowest
   for (D3D_SHADER_MODEL sm : shaderModels) {
-    D3D12_FEATURE_DATA_SHADER_MODEL shaderModelData = {sm};
+    D3D12_FEATURE_DATA_SHADER_MODEL shaderModelData = {.HighestShaderModel = sm};
     hr = device_->CheckFeatureSupport(
         D3D12_FEATURE_SHADER_MODEL, &shaderModelData, sizeof(shaderModelData));
 
