@@ -225,7 +225,11 @@ UploadRingBuffer::Allocation UploadRingBuffer::allocate(uint64_t size,
   allocation.valid = true;
 
   // Track pending allocation for retirement
-  pendingAllocations_.push({allocationOffset, alignedSize, fenceValue});
+  pendingAllocations_.push({
+      .offset = allocationOffset,
+      .size = alignedSize,
+      .fenceValue = fenceValue,
+  });
 
   // Update head pointer
   uint64_t newHead = allocationOffset + alignedSize;
