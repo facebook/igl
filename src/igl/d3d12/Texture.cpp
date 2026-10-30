@@ -495,7 +495,14 @@ Result Texture::upload(const TextureRangeDesc& range, const void* data, size_t b
       if (isBC7) {
         cmdList->CopyTextureRegion(&dst, range.x, range.y, range.z, &src, nullptr);
       } else {
-        D3D12_BOX srcBox = {0, 0, 0, mipWidth, mipHeight, mipDepth};
+        const D3D12_BOX srcBox = {
+            .left = 0,
+            .top = 0,
+            .front = 0,
+            .right = mipWidth,
+            .bottom = mipHeight,
+            .back = mipDepth,
+        };
         cmdList->CopyTextureRegion(&dst, range.x, range.y, range.z, &src, &srcBox);
       }
 
@@ -732,8 +739,8 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
 
   D3D12_GRAPHICS_PIPELINE_STATE_DESC pso = {};
   pso.pRootSignature = rootSig;
-  pso.VS = {vsBytecode.data(), vsBytecode.size()};
-  pso.PS = {psBytecode.data(), psBytecode.size()};
+  pso.VS = {.pShaderBytecode = vsBytecode.data(), .BytecodeLength = vsBytecode.size()};
+  pso.PS = {.pShaderBytecode = psBytecode.data(), .BytecodeLength = psBytecode.size()};
   pso.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
   pso.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
   pso.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
@@ -865,8 +872,20 @@ void Texture::generateMipmap(ICommandQueue& /*cmdQueue*/, const TextureRangeDesc
     list->OMSetRenderTargets(1, &rtvCpu, FALSE, nullptr);
     const UINT w = std::max<UINT>(1u, static_cast<UINT>(resourceDesc.Width >> (mip + 1)));
     const UINT h = std::max<UINT>(1u, static_cast<UINT>(resourceDesc.Height >> (mip + 1)));
-    D3D12_VIEWPORT vp{0.0f, 0.0f, static_cast<FLOAT>(w), static_cast<FLOAT>(h), 0.0f, 1.0f};
-    D3D12_RECT sc{0, 0, static_cast<LONG>(w), static_cast<LONG>(h)};
+    const D3D12_VIEWPORT vp = {
+        .TopLeftX = 0.0f,
+        .TopLeftY = 0.0f,
+        .Width = static_cast<FLOAT>(w),
+        .Height = static_cast<FLOAT>(h),
+        .MinDepth = 0.0f,
+        .MaxDepth = 1.0f,
+    };
+    const D3D12_RECT sc = {
+        .left = 0,
+        .top = 0,
+        .right = static_cast<LONG>(w),
+        .bottom = static_cast<LONG>(h),
+    };
     list->RSSetViewports(1, &vp);
     list->RSSetScissorRects(1, &sc);
 
@@ -975,8 +994,8 @@ void Texture::generateMipmap(ICommandBuffer& /*cmdBuffer*/,
 
   D3D12_GRAPHICS_PIPELINE_STATE_DESC pso = {};
   pso.pRootSignature = rootSig;
-  pso.VS = {vsBytecode.data(), vsBytecode.size()};
-  pso.PS = {psBytecode.data(), psBytecode.size()};
+  pso.VS = {.pShaderBytecode = vsBytecode.data(), .BytecodeLength = vsBytecode.size()};
+  pso.PS = {.pShaderBytecode = psBytecode.data(), .BytecodeLength = psBytecode.size()};
   pso.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
   pso.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
   pso.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
@@ -1101,8 +1120,20 @@ void Texture::generateMipmap(ICommandBuffer& /*cmdBuffer*/,
     list->OMSetRenderTargets(1, &rtvCpu, FALSE, nullptr);
     const UINT w = std::max<UINT>(1u, static_cast<UINT>(resourceDesc.Width >> (mip + 1)));
     const UINT h = std::max<UINT>(1u, static_cast<UINT>(resourceDesc.Height >> (mip + 1)));
-    D3D12_VIEWPORT vp{0.0f, 0.0f, static_cast<FLOAT>(w), static_cast<FLOAT>(h), 0.0f, 1.0f};
-    D3D12_RECT sc{0, 0, static_cast<LONG>(w), static_cast<LONG>(h)};
+    const D3D12_VIEWPORT vp = {
+        .TopLeftX = 0.0f,
+        .TopLeftY = 0.0f,
+        .Width = static_cast<FLOAT>(w),
+        .Height = static_cast<FLOAT>(h),
+        .MinDepth = 0.0f,
+        .MaxDepth = 1.0f,
+    };
+    const D3D12_RECT sc = {
+        .left = 0,
+        .top = 0,
+        .right = static_cast<LONG>(w),
+        .bottom = static_cast<LONG>(h),
+    };
     list->RSSetViewports(1, &vp);
     list->RSSetScissorRects(1, &sc);
     list->SetGraphicsRootDescriptorTable(0, srvGpu);
