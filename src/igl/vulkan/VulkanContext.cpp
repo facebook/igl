@@ -1276,8 +1276,8 @@ Result VulkanContext::initContext(const HWDeviceDesc& desc,
                                                          device,
                                                          deviceQueues_.graphicsQueueFamilyIndex,
                                                          config_.exportableFences,
-                                                         features_.has_VK_KHR_timeline_semaphore &&
-                                                             features_.has_VK_KHR_synchronization2,
+                                                         features_.has_VK_KHR_timeline_semaphore,
+                                                         features_.has_VK_KHR_synchronization2,
                                                          "VulkanContext::immediate_");
   IGL_DEBUG_ASSERT(config_.maxResourceCount > 0,
                    "Max resource count needs to be greater than zero");

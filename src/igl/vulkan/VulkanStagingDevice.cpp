@@ -31,13 +31,14 @@ VulkanStagingDevice::VulkanStagingDevice(VulkanContext& ctx) : ctx_(ctx) {
   // Use value of 256MB (limited by some architectures), and clamp it to the max limits
   maxStagingBufferSize_ = std::min(limits.maxStorageBufferRange, 256u * 1024u * 1024u);
 
-  immediate = std::make_unique<VulkanImmediateCommands>(
-      ctx_.vf_,
-      ctx_.getVkDevice(),
-      ctx_.deviceQueues_.graphicsQueueFamilyIndex,
-      ctx_.config_.exportableFences,
-      ctx_.features_.has_VK_KHR_timeline_semaphore && ctx_.features_.has_VK_KHR_synchronization2,
-      "VulkanStagingDevice::immediate_");
+  immediate =
+      std::make_unique<VulkanImmediateCommands>(ctx_.vf_,
+                                                ctx_.getVkDevice(),
+                                                ctx_.deviceQueues_.graphicsQueueFamilyIndex,
+                                                ctx_.config_.exportableFences,
+                                                ctx_.features_.has_VK_KHR_timeline_semaphore,
+                                                ctx_.features_.has_VK_KHR_synchronization2,
+                                                "VulkanStagingDevice::immediate_");
   IGL_DEBUG_ASSERT(immediate.get());
 }
 

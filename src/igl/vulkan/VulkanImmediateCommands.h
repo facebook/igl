@@ -40,7 +40,8 @@ class VulkanImmediateCommands final {
                           VkDevice device,
                           uint32_t queueFamilyIndex,
                           bool exportableFences,
-                          bool useTimelineSemaphoreAndSynchronization2,
+                          bool useTimelineSemaphore,
+                          bool useSynchronization2,
                           const char* debugName);
   ~VulkanImmediateCommands();
   VulkanImmediateCommands(const VulkanImmediateCommands&) = delete;
@@ -235,6 +236,7 @@ class VulkanImmediateCommands final {
   // @brief The submission counter. Incremented on `submit()`
   uint32_t submitCounter_ = 1;
 
+  bool useTimelineSemaphore_ = false;
   bool useTimelineSemaphoreAndSynchronization2_ = false;
 };
 

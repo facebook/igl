@@ -7,6 +7,7 @@
 
 #include "VulkanImmediateCommands.h"
 
+#include <array>
 #include <type_traits>
 #include <igl/vulkan/Common.h>
 
@@ -18,7 +19,8 @@ VulkanImmediateCommands::VulkanImmediateCommands(const VulkanFunctionTable& vf,
                                                  VkDevice device,
                                                  uint32_t queueFamilyIndex,
                                                  bool exportableFences,
-                                                 bool useTimelineSemaphoreAndSynchronization2,
+                                                 bool useTimelineSemaphore,
+                                                 bool useSynchronization2,
                                                  const char* debugName) :
   vf_(vf),
   device_(device),
@@ -30,7 +32,8 @@ VulkanImmediateCommands::VulkanImmediateCommands(const VulkanFunctionTable& vf,
       .stageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
       .deviceIndex = 0UL,
   }),
-  useTimelineSemaphoreAndSynchronization2_(useTimelineSemaphoreAndSynchronization2) {
+  useTimelineSemaphore_(useTimelineSemaphore),
+  useTimelineSemaphoreAndSynchronization2_(useTimelineSemaphore && useSynchronization2) {
   IGL_PROFILER_FUNCTION();
 
   vf_.vkGetDeviceQueue(device_, queueFamilyIndex, 0, &queue_);
@@ -301,10 +304,13 @@ VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(
     VkPipelineStageFlags waitStageMasks[kSubmitSemaphoreCapacity] = {};
     // @lint-ignore CLANGTIDY
     VkSemaphore waitSemaphores[kSubmitSemaphoreCapacity] = {};
+    std::array<uint64_t, kSubmitSemaphoreCapacity> waitValues = {};
+    std::array<uint64_t, kSubmitSemaphoreCapacity> signalValues = {};
     uint32_t numWaitSemaphores = numWaitSemaphores_;
     for (uint32_t i = 0; i < numWaitSemaphores_; ++i) {
       waitStageMasks[i] = static_cast<VkPipelineStageFlags>(waitSemaphores_[i].stageMask);
       waitSemaphores[i] = waitSemaphores_[i].semaphore;
+      waitValues[i] = waitSemaphores_[i].value;
     }
     if (lastSubmitSemaphore_.semaphore) {
       waitStageMasks[numWaitSemaphores] = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
@@ -315,14 +321,24 @@ VulkanImmediateCommands::SubmitHandle VulkanImmediateCommands::submit(
     VkSemaphore signalSemaphores[kSubmitSemaphoreCapacity] = {};
     for (uint32_t i = 0; i < numSignalSemaphores_; ++i) {
       signalSemaphores[i] = signalSemaphores_[i].semaphore;
+      signalValues[i] = signalSemaphores_[i].value;
     }
     uint32_t numSignalSemaphores = numSignalSemaphores_;
     signalSemaphores[numSignalSemaphores++] = wrapper.semaphore.vkSemaphore_;
     if (presentationSemaphore != VK_NULL_HANDLE) {
       signalSemaphores[numSignalSemaphores++] = presentationSemaphore;
     }
+    // Values align with all semaphore entries, including zero-valued binary chain/presentation.
+    const VkTimelineSemaphoreSubmitInfo timelineInfo = {
+        .sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO,
+        .waitSemaphoreValueCount = numWaitSemaphores,
+        .pWaitSemaphoreValues = waitValues.data(),
+        .signalSemaphoreValueCount = numSignalSemaphores,
+        .pSignalSemaphoreValues = signalValues.data(),
+    };
     const VkSubmitInfo si = {
         .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+        .pNext = useTimelineSemaphore_ ? &timelineInfo : nullptr,
         .waitSemaphoreCount = numWaitSemaphores,
         .pWaitSemaphores = numWaitSemaphores ? waitSemaphores : nullptr,
         .pWaitDstStageMask = waitStageMasks,

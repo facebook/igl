@@ -13,6 +13,7 @@
 
 #include <memory>
 #include <set>
+#include <vector>
 #include <igl/vulkan/Device.h>
 #include <igl/vulkan/VulkanContext.h>
 
@@ -41,6 +42,90 @@ class VulkanImmediateCommandsTest : public ::testing::Test {
     return device.getVulkanContext();
   }
 
+  struct SubmitPayload {
+    bool synchronization2 = false;
+    bool timelineInfo = false;
+    uint32_t waitValueCount = 0;
+    uint32_t signalValueCount = 0;
+    std::vector<VkSemaphore> waits;
+    std::vector<VkSemaphore> signals;
+    std::vector<VkPipelineStageFlags2> waitStages;
+    std::vector<uint64_t> waitValues;
+    std::vector<uint64_t> signalValues;
+  };
+  static thread_local SubmitPayload submitPayload;
+
+  static VKAPI_ATTR VkResult VKAPI_CALL captureQueueSubmit([[maybe_unused]] VkQueue queue,
+                                                           uint32_t count,
+                                                           const VkSubmitInfo* submits,
+                                                           [[maybe_unused]] VkFence fence) {
+    EXPECT_EQ(count, 1u);
+    submitPayload = {};
+    const auto& submit = submits[0];
+    for (uint32_t i = 0; i < submit.waitSemaphoreCount; ++i) {
+      submitPayload.waits.push_back(submit.pWaitSemaphores[i]);
+      submitPayload.waitStages.push_back(submit.pWaitDstStageMask[i]);
+    }
+    submitPayload.signals.assign(submit.pSignalSemaphores,
+                                 submit.pSignalSemaphores + submit.signalSemaphoreCount);
+    if (submit.pNext != nullptr) {
+      const auto& timeline = *static_cast<const VkTimelineSemaphoreSubmitInfo*>(submit.pNext);
+      EXPECT_EQ(timeline.sType, VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO);
+      EXPECT_EQ(timeline.pNext, nullptr);
+      submitPayload.timelineInfo = true;
+      submitPayload.waitValueCount = timeline.waitSemaphoreValueCount;
+      submitPayload.signalValueCount = timeline.signalSemaphoreValueCount;
+      for (uint32_t i = 0; i < timeline.waitSemaphoreValueCount; ++i) {
+        submitPayload.waitValues.push_back(timeline.pWaitSemaphoreValues[i]);
+      }
+      submitPayload.signalValues.assign(
+          timeline.pSignalSemaphoreValues,
+          timeline.pSignalSemaphoreValues + timeline.signalSemaphoreValueCount);
+    }
+    return VK_SUCCESS;
+  }
+
+  static VKAPI_ATTR VkResult VKAPI_CALL captureQueueSubmit2([[maybe_unused]] VkQueue queue,
+                                                            uint32_t count,
+                                                            const VkSubmitInfo2* submits,
+                                                            [[maybe_unused]] VkFence fence) {
+    EXPECT_EQ(count, 1u);
+    submitPayload = {};
+    submitPayload.synchronization2 = true;
+    const auto& submit = submits[0];
+    EXPECT_EQ(submit.pNext, nullptr);
+    for (uint32_t i = 0; i < submit.waitSemaphoreInfoCount; ++i) {
+      const auto& wait = submit.pWaitSemaphoreInfos[i];
+      submitPayload.waits.push_back(wait.semaphore);
+      submitPayload.waitStages.push_back(wait.stageMask);
+      submitPayload.waitValues.push_back(wait.value);
+    }
+    for (uint32_t i = 0; i < submit.signalSemaphoreInfoCount; ++i) {
+      const auto& signal = submit.pSignalSemaphoreInfos[i];
+      submitPayload.signals.push_back(signal.semaphore);
+      submitPayload.signalValues.push_back(signal.value);
+    }
+    return VK_SUCCESS;
+  }
+
+  static VKAPI_ATTR VkResult VKAPI_CALL completeFenceWait([[maybe_unused]] VkDevice device,
+                                                          [[maybe_unused]] uint32_t count,
+                                                          [[maybe_unused]] const VkFence* fences,
+                                                          [[maybe_unused]] VkBool32 waitAll,
+                                                          [[maybe_unused]] uint64_t timeout) {
+    return VK_SUCCESS;
+  }
+
+  [[nodiscard]] VulkanFunctionTable captureSubmits() {
+    VulkanFunctionTable vf = getVulkanContext().vf_;
+    submitPayload = {};
+    vf.vkQueueSubmit = captureQueueSubmit;
+    vf.vkQueueSubmit2KHR = captureQueueSubmit2;
+    // Payload captures queue no work; their fences complete through the test function table.
+    vf.vkWaitForFences = completeFenceWait;
+    return vf;
+  }
+
   igl::vulkan::VulkanImmediateCommands::SubmitHandle submitForPresentation(
       igl::vulkan::VulkanImmediateCommands& commands,
       const igl::vulkan::VulkanImmediateCommands::CommandBufferWrapper& wrapper,
@@ -48,6 +133,8 @@ class VulkanImmediateCommandsTest : public ::testing::Test {
     return commands.submit(wrapper, semaphore);
   }
 };
+
+thread_local VulkanImmediateCommandsTest::SubmitPayload VulkanImmediateCommandsTest::submitPayload;
 
 TEST_F(VulkanImmediateCommandsTest, AcquireCommandBuffer) {
   auto& ctx = getVulkanContext();
@@ -283,6 +370,7 @@ TEST_F(VulkanImmediateCommandsTest, LegacyPresentationSignalPreservesInjectedSig
                                            ctx.deviceQueues_.graphicsQueueFamilyIndex,
                                            false,
                                            false,
+                                           false,
                                            "Legacy presentation test");
   std::vector<std::unique_ptr<vulkan::VulkanSemaphore>> signals;
   vulkan::VulkanSemaphore presentation(ctx.vf_, ctx.getVkDevice(), false, "Presentation test");
@@ -305,6 +393,158 @@ TEST_F(VulkanImmediateCommandsTest, LegacyPresentationSignalPreservesInjectedSig
   EXPECT_TRUE(commands.waitSemaphore(presentation.getVkSemaphore()));
   const auto presentationHandle = commands.submit(presentationConsumer);
   EXPECT_EQ(commands.wait(presentationHandle), VK_SUCCESS);
+}
+
+TEST_F(VulkanImmediateCommandsTest, LegacySubmitPreservesMixedSemaphoreValues) {
+  auto& ctx = getVulkanContext();
+  const auto vf = captureSubmits();
+  vulkan::VulkanImmediateCommands commands(vf,
+                                           ctx.getVkDevice(),
+                                           ctx.deviceQueues_.graphicsQueueFamilyIndex,
+                                           false,
+                                           true,
+                                           false,
+                                           "Legacy timeline payload test");
+  vulkan::VulkanSemaphore binary(ctx.vf_, ctx.getVkDevice(), false, "Binary payload test");
+  vulkan::VulkanSemaphore timeline(ctx.vf_, ctx.getVkDevice(), false, "Timeline payload handle");
+  vulkan::VulkanSemaphore presentation(ctx.vf_, ctx.getVkDevice(), false, "Presentation payload");
+  const auto& first = commands.acquire();
+  const VkSemaphore chain = first.semaphore.getVkSemaphore();
+  commands.submit(first);
+  EXPECT_TRUE(submitPayload.timelineInfo);
+  EXPECT_EQ(submitPayload.waitValueCount, 0u);
+  EXPECT_TRUE(submitPayload.waitValues.empty());
+  EXPECT_EQ(submitPayload.signalValues, (std::vector<uint64_t>{0}));
+
+  const auto& wrapper = commands.acquire();
+  constexpr uint64_t kWaitValue = 0x1234567800000029;
+  constexpr uint64_t kSignalValue = 0x2345678900000037;
+  ASSERT_TRUE(commands.waitSemaphore(binary.getVkSemaphore()));
+  ASSERT_TRUE(commands.waitSemaphore(timeline.getVkSemaphore(), 1));
+  commands.cancelLastWaitSemaphore();
+  ASSERT_TRUE(commands.waitSemaphore(
+      timeline.getVkSemaphore(), kWaitValue, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT));
+  ASSERT_TRUE(commands.signalSemaphore(binary.getVkSemaphore(), 0));
+  ASSERT_TRUE(commands.signalSemaphore(timeline.getVkSemaphore(), kSignalValue));
+  submitForPresentation(commands, wrapper, presentation.getVkSemaphore());
+
+  EXPECT_FALSE(submitPayload.synchronization2);
+  EXPECT_TRUE(submitPayload.timelineInfo);
+  EXPECT_EQ(submitPayload.waits,
+            (std::vector<VkSemaphore>{binary.getVkSemaphore(), timeline.getVkSemaphore(), chain}));
+  EXPECT_EQ(submitPayload.signals,
+            (std::vector<VkSemaphore>{binary.getVkSemaphore(),
+                                      timeline.getVkSemaphore(),
+                                      wrapper.semaphore.getVkSemaphore(),
+                                      presentation.getVkSemaphore()}));
+  EXPECT_EQ(submitPayload.waitValueCount, submitPayload.waits.size());
+  EXPECT_EQ(submitPayload.signalValueCount, submitPayload.signals.size());
+  EXPECT_EQ(submitPayload.waitValues, (std::vector<uint64_t>{0, kWaitValue, 0}));
+  EXPECT_EQ(submitPayload.signalValues, (std::vector<uint64_t>{0, kSignalValue, 0, 0}));
+  EXPECT_EQ(submitPayload.waitStages,
+            (std::vector<VkPipelineStageFlags2>{VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                                                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                                VK_PIPELINE_STAGE_ALL_COMMANDS_BIT}));
+  EXPECT_FALSE(commands.hasPendingInjectedSemaphores());
+}
+
+TEST_F(VulkanImmediateCommandsTest, BinaryOnlySubmitOmitsTimelineInfo) {
+  auto& ctx = getVulkanContext();
+  const auto vf = captureSubmits();
+  vulkan::VulkanImmediateCommands commands(vf,
+                                           ctx.getVkDevice(),
+                                           ctx.deviceQueues_.graphicsQueueFamilyIndex,
+                                           false,
+                                           false,
+                                           true,
+                                           "Binary payload test");
+  vulkan::VulkanSemaphore binary(ctx.vf_, ctx.getVkDevice(), false, "Binary payload");
+  const auto& wrapper = commands.acquire();
+  ASSERT_TRUE(commands.waitSemaphore(binary.getVkSemaphore(), 0, VK_PIPELINE_STAGE_TRANSFER_BIT));
+  ASSERT_TRUE(commands.signalSemaphore(binary.getVkSemaphore(), 0));
+  commands.submit(wrapper);
+
+  EXPECT_FALSE(submitPayload.synchronization2);
+  EXPECT_FALSE(submitPayload.timelineInfo);
+  EXPECT_EQ(submitPayload.waits, (std::vector<VkSemaphore>{binary.getVkSemaphore()}));
+  EXPECT_EQ(submitPayload.waitStages,
+            (std::vector<VkPipelineStageFlags2>{VK_PIPELINE_STAGE_TRANSFER_BIT}));
+  EXPECT_EQ(
+      submitPayload.signals,
+      (std::vector<VkSemaphore>{binary.getVkSemaphore(), wrapper.semaphore.getVkSemaphore()}));
+}
+
+TEST_F(VulkanImmediateCommandsTest, ModernSubmitPreservesTimelineValues) {
+  auto& ctx = getVulkanContext();
+  const auto vf = captureSubmits();
+  vulkan::VulkanImmediateCommands commands(vf,
+                                           ctx.getVkDevice(),
+                                           ctx.deviceQueues_.graphicsQueueFamilyIndex,
+                                           false,
+                                           true,
+                                           true,
+                                           "Modern payload test");
+  vulkan::VulkanSemaphore timeline(ctx.vf_, ctx.getVkDevice(), false, "Timeline payload handle");
+  vulkan::VulkanSemaphore presentation(ctx.vf_, ctx.getVkDevice(), false, "Presentation payload");
+  const auto& wrapper = commands.acquire();
+  constexpr uint64_t kWaitValue = 0x1234567800000029;
+  constexpr uint64_t kSignalValue = 0x2345678900000037;
+  ASSERT_TRUE(commands.waitSemaphore(
+      timeline.getVkSemaphore(), kWaitValue, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT));
+  ASSERT_TRUE(commands.signalSemaphore(timeline.getVkSemaphore(), kSignalValue));
+  submitForPresentation(commands, wrapper, presentation.getVkSemaphore());
+
+  EXPECT_TRUE(submitPayload.synchronization2);
+  EXPECT_FALSE(submitPayload.timelineInfo);
+  EXPECT_EQ(submitPayload.waits, (std::vector<VkSemaphore>{timeline.getVkSemaphore()}));
+  EXPECT_EQ(submitPayload.waitStages,
+            (std::vector<VkPipelineStageFlags2>{VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT}));
+  EXPECT_EQ(submitPayload.waitValues, (std::vector<uint64_t>{kWaitValue}));
+  EXPECT_EQ(submitPayload.signals,
+            (std::vector<VkSemaphore>{timeline.getVkSemaphore(),
+                                      wrapper.semaphore.getVkSemaphore(),
+                                      presentation.getVkSemaphore()}));
+  EXPECT_EQ(submitPayload.signalValues, (std::vector<uint64_t>{kSignalValue, 0, 0}));
+}
+
+TEST_F(VulkanImmediateCommandsTest, LegacyTimelineSubmitSignalsAndWaits) {
+  auto& ctx = getVulkanContext();
+  if (!ctx.features().has_VK_KHR_timeline_semaphore) {
+    GTEST_SKIP() << "Timeline semaphores are unavailable on this device";
+  }
+  vulkan::VulkanImmediateCommands commands(ctx.vf_,
+                                           ctx.getVkDevice(),
+                                           ctx.deviceQueues_.graphicsQueueFamilyIndex,
+                                           false,
+                                           true,
+                                           false,
+                                           "Legacy timeline test");
+  vulkan::VulkanSemaphore timeline(ctx.vf_, ctx.getVkDevice(), uint64_t{0}, false, "Timeline test");
+  vulkan::VulkanSemaphore binary(ctx.vf_, ctx.getVkDevice(), false, "Binary test");
+  vulkan::VulkanSemaphore presentation(ctx.vf_, ctx.getVkDevice(), false, "Presentation test");
+  const auto& producer = commands.acquire();
+  ASSERT_TRUE(commands.signalSemaphore(timeline.getVkSemaphore(), 7));
+  ASSERT_TRUE(commands.signalSemaphore(binary.getVkSemaphore(), 0));
+  const auto producerHandle =
+      submitForPresentation(commands, producer, presentation.getVkSemaphore());
+  ASSERT_EQ(commands.wait(producerHandle, 5'000'000'000), VK_SUCCESS);
+  uint64_t value = 0;
+  ASSERT_EQ(
+      ctx.vf_.vkGetSemaphoreCounterValueKHR(ctx.getVkDevice(), timeline.getVkSemaphore(), &value),
+      VK_SUCCESS);
+  EXPECT_EQ(value, 7u);
+
+  const auto& consumer = commands.acquire();
+  ASSERT_TRUE(commands.waitSemaphore(timeline.getVkSemaphore(), 7, VK_PIPELINE_STAGE_TRANSFER_BIT));
+  ASSERT_TRUE(commands.waitSemaphore(binary.getVkSemaphore()));
+  ASSERT_TRUE(commands.waitSemaphore(presentation.getVkSemaphore()));
+  ASSERT_TRUE(commands.signalSemaphore(timeline.getVkSemaphore(), 11));
+  const auto consumerHandle = commands.submit(consumer);
+  ASSERT_EQ(commands.wait(consumerHandle, 5'000'000'000), VK_SUCCESS);
+  ASSERT_EQ(
+      ctx.vf_.vkGetSemaphoreCounterValueKHR(ctx.getVkDevice(), timeline.getVkSemaphore(), &value),
+      VK_SUCCESS);
+  EXPECT_EQ(value, 11u);
 }
 
 TEST_F(VulkanImmediateCommandsTest, InjectedWaitSemaphoreReachesSubmit) {
