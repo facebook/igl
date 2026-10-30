@@ -1073,7 +1073,7 @@ std::unique_ptr<IBuffer> Device::createBufferImpl(const BufferDesc& desc,
   if (desc.data) {
     if (heapType == D3D12_HEAP_TYPE_UPLOAD) {
       void* mappedData = nullptr;
-      D3D12_RANGE readRange = {0, 0};
+      const D3D12_RANGE readRange = {.Begin = 0, .End = 0};
       hr = buffer->Map(0, &readRange, &mappedData);
 
       if (SUCCEEDED(hr)) {
@@ -1108,7 +1108,7 @@ std::unique_ptr<IBuffer> Device::createBufferImpl(const BufferDesc& desc,
       } else {
         // Map and copy data
         void* mapped = nullptr;
-        D3D12_RANGE rr = {0, 0};
+        const D3D12_RANGE rr = {.Begin = 0, .End = 0};
         if (SUCCEEDED(uploadBuffer->Map(0, &rr, &mapped)) && mapped) {
           std::memcpy(mapped, desc.data, desc.length);
           uploadBuffer->Unmap(0, nullptr);
@@ -1856,12 +1856,12 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderP
   psoDesc.pRootSignature = rootSignature.Get();
 
   // Shader bytecode
-  psoDesc.VS = {vsBytecode.data(), vsBytecode.size()};
-  psoDesc.PS = {psBytecode.data(), psBytecode.size()};
+  psoDesc.VS = {.pShaderBytecode = vsBytecode.data(), .BytecodeLength = vsBytecode.size()};
+  psoDesc.PS = {.pShaderBytecode = psBytecode.data(), .BytecodeLength = psBytecode.size()};
   // Explicitly zero unused shader stages
-  psoDesc.DS = {nullptr, 0};
-  psoDesc.HS = {nullptr, 0};
-  psoDesc.GS = {nullptr, 0};
+  psoDesc.DS = {.pShaderBytecode = nullptr, .BytecodeLength = 0};
+  psoDesc.HS = {.pShaderBytecode = nullptr, .BytecodeLength = 0};
+  psoDesc.GS = {.pShaderBytecode = nullptr, .BytecodeLength = 0};
 
   // Rasterizer state - configure based on pipeline descriptor
   // Fill mode (solid vs wireframe)
@@ -2325,22 +2325,23 @@ std::shared_ptr<IRenderPipelineState> Device::createRenderPipeline(const RenderP
   } else {
     // Default simple triangle layout: position (float3) + color (float4)
     inputElements.resize(2);
-    inputElements[0] = {"POSITION",
-                        0,
-                        DXGI_FORMAT_R32G32B32_FLOAT,
-                        0,
-                        0,
-                        D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
-                        0};
-    inputElements[1] = {"COLOR",
-                        0,
-                        DXGI_FORMAT_R32G32B32A32_FLOAT,
-                        0,
-                        12,
-                        D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
-                        0};
+    inputElements[0] = {.SemanticName = "POSITION",
+                        .SemanticIndex = 0,
+                        .Format = DXGI_FORMAT_R32G32B32_FLOAT,
+                        .InputSlot = 0,
+                        .AlignedByteOffset = 0,
+                        .InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
+                        .InstanceDataStepRate = 0};
+    inputElements[1] = {.SemanticName = "COLOR",
+                        .SemanticIndex = 0,
+                        .Format = DXGI_FORMAT_R32G32B32A32_FLOAT,
+                        .InputSlot = 0,
+                        .AlignedByteOffset = 12,
+                        .InputSlotClass = D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,
+                        .InstanceDataStepRate = 0};
   }
-  psoDesc.InputLayout = {inputElements.data(), static_cast<UINT>(inputElements.size())};
+  psoDesc.InputLayout = {.pInputElementDescs = inputElements.data(),
+                         .NumElements = static_cast<UINT>(inputElements.size())};
 
   IGL_D3D12_LOG_VERBOSE("  Final input layout: %u elements\n",
                         static_cast<unsigned>(inputElements.size()));
@@ -2609,11 +2610,11 @@ igl::d3d12::ComPtr<ID3D12PipelineState> Device::createPipelineStateVariant(
   psoDesc.pRootSignature = rootSignature;
 
   // Shader bytecode
-  psoDesc.VS = {vsBytecode.data(), vsBytecode.size()};
-  psoDesc.PS = {psBytecode.data(), psBytecode.size()};
-  psoDesc.DS = {nullptr, 0};
-  psoDesc.HS = {nullptr, 0};
-  psoDesc.GS = {nullptr, 0};
+  psoDesc.VS = {.pShaderBytecode = vsBytecode.data(), .BytecodeLength = vsBytecode.size()};
+  psoDesc.PS = {.pShaderBytecode = psBytecode.data(), .BytecodeLength = psBytecode.size()};
+  psoDesc.DS = {.pShaderBytecode = nullptr, .BytecodeLength = 0};
+  psoDesc.HS = {.pShaderBytecode = nullptr, .BytecodeLength = 0};
+  psoDesc.GS = {.pShaderBytecode = nullptr, .BytecodeLength = 0};
 
   // Rasterizer state
   psoDesc.RasterizerState.FillMode = (desc.polygonFillMode == PolygonFillMode::Line)
@@ -2907,7 +2908,8 @@ igl::d3d12::ComPtr<ID3D12PipelineState> Device::createPipelineStateVariant(
       inputElements.push_back(element);
     }
   }
-  psoDesc.InputLayout = {inputElements.data(), static_cast<UINT>(inputElements.size())};
+  psoDesc.InputLayout = {.pInputElementDescs = inputElements.data(),
+                         .NumElements = static_cast<UINT>(inputElements.size())};
 
   // Create the pipeline state
   igl::d3d12::ComPtr<ID3D12PipelineState> pipelineState;
